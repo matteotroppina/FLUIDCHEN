@@ -16,10 +16,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 file(GLOB files src/*.cpp)
 add_executable(fluidchen ${files})
 
-target_compile_definitions(fluidchen PUBLIC -Dsolution_liddriven)
-target_compile_definitions(fluidchen PUBLIC -Dsolution_energy)
-target_compile_definitions(fluidchen PUBLIC -Dsolution_parallelization)
-
 
 # You can find package likes
 # find_package(MPI)
