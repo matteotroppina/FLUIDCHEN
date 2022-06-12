@@ -220,12 +220,12 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetPoints(points);
 
     // Pressure Array
-    vtkDoubleArray *Pressure = vtkDoubleArray::New();
+    vtkSmartPointer<vtkDoubleArray> Pressure = vtkSmartPointer<vtkDoubleArray>::New();
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
 
     // Velocity Array
-    vtkDoubleArray *Velocity = vtkDoubleArray::New();
+    vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
