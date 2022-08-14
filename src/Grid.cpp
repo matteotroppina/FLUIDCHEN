@@ -214,7 +214,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
 
-    int numcols, numrows, depth;
+    int num_cells_in_x, num_cells_in_y, depth;
 
     std::ifstream infile(filedoc);
     std::stringstream ss;
@@ -232,14 +232,14 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     // Continue with a stringstream
     ss << infile.rdbuf();
     // Third line : size
-    ss >> numrows >> numcols;
+    ss >> num_cells_in_x >> num_cells_in_y;
     // Fourth line : depth
     ss >> depth;
 
-    // Following lines : data
-    for (int col = numcols - 1; col > -1; --col) {
-        for (int row = 0; row < numrows; ++row) {
-            ss >> geometry_data[row][col];
+    // Following lines : data (origin of x-y coordinate system in bottom-left corner)
+    for (int y = num_cells_in_y - 1; y > -1; --y) {
+        for (int x = 0; x < num_cells_in_x; ++x) {
+            ss >> geometry_data[x][y];
         }
     }
 
