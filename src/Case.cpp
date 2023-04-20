@@ -225,9 +225,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
 
-
     // Velocity Array for cell data
-    vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray> ::New();
+    vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
