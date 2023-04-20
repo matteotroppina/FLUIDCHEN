@@ -1,4 +1,7 @@
-default:  
+default: 
+  tags:
+    - kubernetes
+ 
   image: ubuntu:20.04
 
   before_script:
