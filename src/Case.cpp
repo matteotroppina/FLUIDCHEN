@@ -169,9 +169,10 @@ void Case::set_file_names(std::string file_name) {
  *   Flux consists of diffusion and convection part, which are located in Discretization class
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
- *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
+ *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
+ * - Update boundary conditions after each iteration of the SOR solver
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
+ * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
  *
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
@@ -224,29 +225,38 @@ void Case::output_vtk(int timestep, int my_rank) {
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
 
-    // Velocity Array
-    vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
+
+    // Velocity Array for cell data
+    vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray> ::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
-
-    // Print pressure and temperature from bottom to top
-    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
-        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-            double pressure = _field.p(i, j);
-            Pressure->InsertNextTuple(&pressure);
-        }
-    }
 
     // Temp Velocity
     float vel[3];
     vel[2] = 0; // Set z component to 0
+
+    // Print pressure, velocity and temperature from bottom to top
+    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+            double pressure = _field.p(i, j);
+            Pressure->InsertNextTuple(&pressure);
+            vel[0] = (_field.u(i - 1, j) + _field.u(i, j)) * 0.5;
+            vel[1] = (_field.v(i, j - 1) + _field.v(i, j)) * 0.5;
+            Velocity->InsertNextTuple(vel);
+        }
+    }
+
+    // Velocity Array for point data
+    vtkSmartPointer<vtkDoubleArray> VelocityPoints = vtkSmartPointer<vtkDoubleArray>::New();
+    VelocityPoints->SetName("velocity");
+    VelocityPoints->SetNumberOfComponents(3);
 
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
             vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
             vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
-            Velocity->InsertNextTuple(vel);
+            VelocityPoints->InsertNextTuple(vel);
         }
     }
 
@@ -254,7 +264,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetCellData()->AddArray(Pressure);
 
     // Add Velocity to Structured Grid
-    structuredGrid->GetPointData()->AddArray(Velocity);
+    structuredGrid->GetCellData()->AddArray(Velocity);
+    structuredGrid->GetPointData()->AddArray(VelocityPoints);
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();

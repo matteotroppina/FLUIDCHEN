@@ -6,14 +6,14 @@
 #include "Fields.hpp"
 
 /**
- * @brief Abstact of boundary conditions.
+ * @brief Abstract of boundary conditions.
  *
  * This class patches the physical values to the given field.
  */
 class Boundary {
   public:
     /**
-     * @brief Main method to patch the boundary conditons to given field and
+     * @brief Main method to patch the boundary conditions to given field and
      * grid
      *
      * @param[in] Field to be applied

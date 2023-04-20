@@ -22,11 +22,8 @@ class Grid {
     /**
      * @brief Constructor for the Grid
      *
-     * @param[in] geometry file name
-     * @param[in] number of cells in x direction
-     * @param[in] number of cells in y direction
-     * @param[in] cell size in x direction
-     * @param[in] cell size in y direction
+     * @param[in] geom_name geometry file name
+     * @param[in] domain struct storing geometry information
      *
      */
     Grid(std::string geom_name, Domain &domain);
