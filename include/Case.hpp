@@ -41,7 +41,7 @@ class Case {
   private:
     /// Plain case name without paths
     std::string _case_name;
-    /// Output directiory name
+    /// Output directory name
     std::string _dict_name;
     /// Geometry file name
     std::string _geom_name{"NONE"};

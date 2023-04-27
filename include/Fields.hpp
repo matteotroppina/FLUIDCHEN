@@ -102,9 +102,9 @@ class Fields {
 
     /// kinematic viscosity
     double _nu;
-    /// gravitional accelearation in x direction
+    /// gravitional acceleration in x direction
     double _gx{0.0};
-    /// gravitional accelearation in y direction
+    /// gravitional acceleration in y direction
     double _gy{0.0};
     /// timestep size
     double _dt;
