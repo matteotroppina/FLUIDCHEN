@@ -1,22 +1,11 @@
-#include "Case.hpp"
-#include "Enums.hpp"
-
 #include <algorithm>
-#ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
-#else
-#include <experimental/filesystem>
-#endif
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
 
-#ifdef GCC_VERSION_9_OR_HIGHER
 namespace filesystem = std::filesystem;
-#else
-namespace filesystem = std::experimental::filesystem;
-#endif
 
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
@@ -27,26 +16,30 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+#include "Case.hpp"
+#include "Enums.hpp"
+
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
-    double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
+    double nu{};      /* viscosity   */
+    double UI{};      /* velocity x-direction */
+    double VI{};      /* velocity y-direction */
+    double PI{};      /* pressure */
+    double GX{};      /* gravitation x-direction */
+    double GY{};      /* gravitation y-direction */
+    double xlength{}; /* length of the domain x-dir.*/
+    double ylength{}; /* length of the domain y-dir.*/
+    double dt{};      /* time step */
+    int imax{};       /* number of cells x-direction*/
+    int jmax{};       /* number of cells y-direction*/
+    double gamma{};   /* uppwind differencing factor*/
+    double omg{};     /* relaxation factor */
+    double tau{};     /* safety factor for time step*/
+    int itermax{};    /* max. number of iterations for pressure per time step */
+    double eps{};     /* accuracy bound for pressure*/
+
 
     if (file.is_open()) {
 
@@ -84,6 +77,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 
+
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
@@ -91,8 +85,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     Domain domain;
     domain.dx = xlength / static_cast<double>(imax);
     domain.dy = ylength / static_cast<double>(jmax);
-    domain.domain_size_x = imax;
-    domain.domain_size_y = jmax;
+    domain.domain_imax = imax;
+    domain.domain_jmax = jmax;
 
     build_domain(domain, imax, jmax);
 
@@ -163,20 +157,21 @@ void Case::set_file_names(std::string file_name) {
 
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
- * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
- *   using apply() member function of Boundary class
+ * - Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
+ *   using applyVelocity() member function of Boundary class
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
  *   Flux consists of diffusion and convection part, which are located in Discretization class
+ * - Apply Flux boundary conditions using applyFlux()
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
- * - Update boundary conditions after each iteration of the SOR solver
+ * - Update pressure boundary conditions after each iteration of the SOR solver
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
+ * - calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
  *
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface. No member functions should be defined in abstract classes. You need to define functions in inherited
+ * interface and/or common functions. You need to define functions with individual functionalities in inherited
  * classes such as MovingWallBoundary class.
  *
  * For information about the classes and functions, you can check the header files.
@@ -187,6 +182,7 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -199,16 +195,22 @@ void Case::output_vtk(int timestep, int my_rank) {
     double dx = _grid.dx();
     double dy = _grid.dy();
 
-    double x = _grid.domain().imin * dx;
-    double y = _grid.domain().jmin * dy;
+    double x = _grid.domain().iminb * dx;
+    double y = _grid.domain().jminb * dy;
 
-    { y += dy; }
-    { x += dx; }
+    {
+        y += dy;
+    }
+    {
+        x += dx;
+    }
 
     double z = 0;
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
-        x = _grid.domain().imin * dx;
-        { x += dx; }
+        x = _grid.domain().iminb * dx;
+        {
+            x += dx;
+        }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
             x += dx;
@@ -224,6 +226,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkDoubleArray> Pressure = vtkSmartPointer<vtkDoubleArray>::New();
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
+
 
     // Velocity Array for cell data
     vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
@@ -279,10 +282,10 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
+    domain.iminb = 0;
+    domain.jminb = 0;
+    domain.imaxb = imax_domain + 2;
+    domain.jmaxb = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
 }

@@ -32,13 +32,9 @@ class Grid {
     Cell cell(int i, int j) const;
 
     /// access number of cells in x direction
-    int imax() const;
+    int size_x() const;
     /// access number of cells in y direction
-    int jmax() const;
-    /// access number of cells in x direction including ghost cells
-    int imaxb() const;
-    /// access number of cells in x direction including ghost cells
-    int jmaxb() const;
+    int size_y() const;
 
     /// access number of cells in x direction excluding ghost cells
     const Domain &domain() const;
@@ -69,6 +65,7 @@ class Grid {
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
 
+
   private:
     /**@brief Default lid driven cavity case generator
      *
@@ -82,13 +79,16 @@ class Grid {
     /// Extract geometry from pgm file and create geometrical data
     void parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data);
 
+    /// Actual matrix of all cells (including ghost cells)
     Matrix<Cell> _cells;
+    /// Vector of pointers to all fluid cells
     std::vector<Cell *> _fluid_cells;
+    /// Vector of pointers to all cells belonging to fixed walls
     std::vector<Cell *> _fixed_wall_cells;
+    /// Vector of pointers to all cells belonging to moving walls
     std::vector<Cell *> _moving_wall_cells;
 
+    /// Domain object holding geometrical information
     Domain _domain;
 
-    double _dx;
-    double _dy;
 };

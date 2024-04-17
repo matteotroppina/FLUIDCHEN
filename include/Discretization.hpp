@@ -20,16 +20,6 @@ class Discretization {
     Discretization(double dx, double dy, double gamma);
 
     /**
-     * @brief Diffusion discretization in 2D using central differences
-     *
-     * @param[in] data to be discretized
-     * @param[in] x index
-     * @param[in] y index
-     *
-     */
-    static double diffusion(const Matrix<double> &A, int i, int j);
-
-    /**
      * @brief Convection in x direction using donor-cell scheme
      *
      * @param[in] x-velocity field
@@ -53,6 +43,7 @@ class Discretization {
      */
     static double convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
 
+
     /**
      * @brief Laplacian term discretization using central difference
      *
@@ -62,7 +53,7 @@ class Discretization {
      * @param[out] result
      *
      */
-    static double laplacian(const Matrix<double> &P, int i, int j);
+    static double laplacian(const Matrix<double> &A, int i, int j);
 
     /**
      * @brief Terms of laplacian needed for SOR, i.e. excluding unknown value at

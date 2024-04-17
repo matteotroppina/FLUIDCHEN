@@ -17,17 +17,10 @@ enum class border_position {
     RIGHT,
 };
 
-namespace border {
-const int TOP = 0;
-const int BOTTOM = 1;
-const int LEFT = 2;
-const int RIGHT = 3;
-} // namespace border
-
 enum class cell_type {
-
     FLUID,
     FIXED_WALL,
     MOVING_WALL,
     DEFAULT
 };
+

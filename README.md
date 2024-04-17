@@ -13,10 +13,10 @@ You will extend this code step-by-step starting from a pure framework to a paral
 
 ## Software Requirements
 
-This code is known to work on all currently supported Ubuntu LTS versions (22.04, 20.04, 18.04).
+This code is known to work on all currently supported Ubuntu LTS versions (22.04, 20.04).
 In particular, you will need:
 
-- A recent version of the GCC compiler. Other compilers should also work, but you may need to tweak the CMakeLists.txt file (contributions welcome). GCC 7.4, 9.3, and 11.2 are known to work. See `CMakeLists.txt` and `src/Case.cpp` for some compiler-specific code.
+- A recent version of the GCC compiler (>9.1). Other compilers should also work, but you may need to tweak the CMakeLists.txt file (contributions welcome). GCC 9.3, 11.2 and 13.2 are known to work.
 - CMake, to configure the build.
 - The VTK library, to generate result files. libvtk7 and libvtk9 are known to work.
 - OpenMPI (not for the skeleton, but when you implement parallelization).
@@ -40,7 +40,6 @@ make
 ```
 
 After `make` completes successfully, you will get an executable `fluidchen` in your `build` directory. Run the code from this directory.
-Note: Earlier versions of this documentation pointed to the option of `make install`. You may want to avoid this and directly work inside the repository while you develop the code.
 
 ### Build options
 

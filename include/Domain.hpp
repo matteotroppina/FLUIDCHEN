@@ -8,15 +8,15 @@
  *
  */
 struct Domain {
-    /// Minimum x index
-    int imin{-1};
-    /// Maximum x index
-    int imax{-1};
+    /// Minimum x index including ghost cells
+    int iminb{-1};
+    /// Maximum x index including ghost cells
+    int imaxb{-1};
 
-    /// Minimum y index
-    int jmin{-1};
-    /// Maximum y index
-    int jmax{-1};
+    /// Minimum y index including ghost cells
+    int jminb{-1};
+    /// Maximum y index including ghost cells
+    int jmaxb{-1};
 
     /// Cell length
     double dx{-1.0};
@@ -29,7 +29,7 @@ struct Domain {
     int size_y{-1};
 
     /// Number of cells in x direction, not-decomposed
-    int domain_size_x{-1};
+    int domain_imax{-1};
     /// Number of cells in y direction, not-decomposed
-    int domain_size_y{-1};
+    int domain_jmax{-1};
 };

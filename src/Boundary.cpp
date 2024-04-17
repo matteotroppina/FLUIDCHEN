@@ -1,20 +1,34 @@
 #include "Boundary.hpp"
-#include <cmath>
-#include <iostream>
 
-FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : _cells(cells) {}
+Boundary::Boundary(std::vector<Cell *> cells) : _cells(cells) {}
+
+void Boundary::applyFlux(Fields &field) {
+}
+
+FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
-    : _cells(cells), _wall_temperature(wall_temperature) {}
+    : Boundary(cells), _wall_temperature(wall_temperature) {}
 
-void FixedWallBoundary::apply(Fields &field) {}
+void FixedWallBoundary::applyVelocity(Fields &field) {
+}
 
-MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
+void FixedWallBoundary::applyPressure(Fields &field) {
+}
+
+
+MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                                        std::map<int, double> wall_temperature)
-    : _cells(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
+    : Boundary(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
 
-void MovingWallBoundary::apply(Fields &field) {}
+void MovingWallBoundary::applyVelocity(Fields &field) {
+}
+
+void MovingWallBoundary::applyPressure(Fields &field) {
+}
+
+

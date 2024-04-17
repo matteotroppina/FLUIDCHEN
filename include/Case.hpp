@@ -21,7 +21,7 @@ class Case {
      * @brief Parallel constructor for the Case.
      *
      * Reads input file, creates Fields, Grid, Boundary, Solver and sets
-     * Discretization parameters Creates output directory
+     * Discretization parameters. Creates output directory.
      *
      * @param[in] Input file name
      */
@@ -57,6 +57,7 @@ class Case {
     Grid _grid;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
+    /// Collection of all boundaries for the simulated case
     std::vector<std::unique_ptr<Boundary>> _boundaries;
 
     /// Solver convergence tolerance
@@ -83,8 +84,20 @@ class Case {
      * interpolated to the cell faces
      *
      * @param[in] Timestep of the solution
+     * @param[in] Current rank of the executing process
      */
     void output_vtk(int t, int my_rank = 0);
 
+    /**
+     * @brief Fill out domain object
+     *
+     * Fills the Domain object with the geometrical information about the domain size. In case of running the code in
+     * parallel, the information should correspond to the subdomain belonging to the executing MPI-process after
+     * decomposition.
+     *
+     * @param[in] Reference to the domain object
+     * @param[in] Number of cells in x-direction for this MPI rank
+     * @param[in] Number of cells in y-direction for this MPI rank
+     */
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };

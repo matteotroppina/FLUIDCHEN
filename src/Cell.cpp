@@ -1,7 +1,5 @@
 #include "Cell.hpp"
 
-#include <iostream>
-
 Cell::Cell(int i, int j, cell_type type) : _i(i), _j(j), _type(type) {}
 
 Cell::Cell(int i, int j, cell_type type, int id) : _i(i), _j(j), _type(type), _id(id) {}

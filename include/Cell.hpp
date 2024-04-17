@@ -95,7 +95,6 @@ class Cell {
     std::array<bool, 4> _border{false, false, false, false};
     /// Vector of border positions that holds existing borders
     std::vector<border_position> _borders;
-    /// Pointers to neighbours. // TOP -  BOTTOM - LEFT - RIGHT - NORTHWEST -
-    /// SOUTHEAST
-    std::array<Cell *, 6> _neighbours;
+    /// Pointers to neighbours. // TOP -  BOTTOM - LEFT - RIGHT
+    std::array<Cell *, 4> _neighbours;
 };

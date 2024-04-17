@@ -13,13 +13,32 @@
 class Boundary {
   public:
     /**
-     * @brief Main method to patch the boundary conditions to given field and
-     * grid
+     * @brief Method to patch the velocity boundary conditions to the given field.
      *
      * @param[in] Field to be applied
      */
-    virtual void apply(Fields &field) = 0;
+    virtual void applyVelocity(Fields &field) = 0;
+
+    /**
+     * @brief Method to patch the pressure boundary conditions to the given field.
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void applyPressure(Fields &field) = 0;
+
+    /**
+     * @brief Method to patch the flux (F & G) boundary conditions to the given field.
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void applyFlux(Fields &field);
+
+
     virtual ~Boundary() = default;
+
+  protected:
+    Boundary(std::vector<Cell *> cells);
+    std::vector<Cell *> _cells;
 };
 
 /**
@@ -31,10 +50,10 @@ class FixedWallBoundary : public Boundary {
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
     virtual ~FixedWallBoundary() = default;
-    virtual void apply(Fields &field);
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
 
   private:
-    std::vector<Cell *> _cells;
     std::map<int, double> _wall_temperature;
 };
 
@@ -49,10 +68,11 @@ class MovingWallBoundary : public Boundary {
     MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                        std::map<int, double> wall_temperature);
     virtual ~MovingWallBoundary() = default;
-    virtual void apply(Fields &field);
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
 
   private:
-    std::vector<Cell *> _cells;
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <utility>
+
 #include "Boundary.hpp"
 #include "Fields.hpp"
 #include "Grid.hpp"
-#include <utility>
+
 /**
  * @brief Abstract class for pressure Poisson equation solver
  *
