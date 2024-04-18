@@ -65,7 +65,6 @@ class Grid {
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
 
-
   private:
     /**@brief Default lid driven cavity case generator
      *
@@ -90,5 +89,4 @@ class Grid {
 
     /// Domain object holding geometrical information
     Domain _domain;
-
 };

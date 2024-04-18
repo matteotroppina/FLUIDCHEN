@@ -47,9 +47,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int j = 0;
 
     for (int j_geom = _domain.jminb; j_geom < _domain.jmaxb; ++j_geom) {
-        {
-            i = 0;
-        }
+        { i = 0; }
         for (int i_geom = _domain.iminb; i_geom < _domain.imaxb; ++i_geom) {
             if (geometry_data.at(i_geom).at(j_geom) == 0) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
@@ -57,8 +55,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                 _moving_wall_cells.push_back(&_cells(i, j));
-            }
-            else {
+            } else {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                 _fixed_wall_cells.push_back(&_cells(i, j));
@@ -260,4 +257,3 @@ const std::vector<Cell *> &Grid::fluid_cells() const { return _fluid_cells; }
 const std::vector<Cell *> &Grid::fixed_wall_cells() const { return _fixed_wall_cells; }
 
 const std::vector<Cell *> &Grid::moving_wall_cells() const { return _moving_wall_cells; }
-

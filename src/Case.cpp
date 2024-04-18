@@ -40,7 +40,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     int itermax{};    /* max. number of iterations for pressure per time step */
     double eps{};     /* accuracy bound for pressure*/
 
-
     if (file.is_open()) {
 
         std::string var;
@@ -76,7 +75,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-
 
     // Set file names for geometry file and output directory
     set_file_names(file_name);
@@ -182,7 +180,6 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
-
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -198,19 +195,13 @@ void Case::output_vtk(int timestep, int my_rank) {
     double x = _grid.domain().iminb * dx;
     double y = _grid.domain().jminb * dy;
 
-    {
-        y += dy;
-    }
-    {
-        x += dx;
-    }
+    { y += dy; }
+    { x += dx; }
 
     double z = 0;
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
         x = _grid.domain().iminb * dx;
-        {
-            x += dx;
-        }
+        { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
             x += dx;
@@ -226,7 +217,6 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkDoubleArray> Pressure = vtkSmartPointer<vtkDoubleArray>::New();
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
-
 
     // Velocity Array for cell data
     vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();

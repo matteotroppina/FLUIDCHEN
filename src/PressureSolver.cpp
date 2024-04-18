@@ -20,7 +20,6 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                         coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
 
-
     double res = 0.0;
     double rloc = 0.0;
 

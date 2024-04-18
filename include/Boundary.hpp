@@ -33,7 +33,6 @@ class Boundary {
      */
     virtual void applyFlux(Fields &field);
 
-
     virtual ~Boundary() = default;
 
   protected:
@@ -75,4 +74,3 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
-
