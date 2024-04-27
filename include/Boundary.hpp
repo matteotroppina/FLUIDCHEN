@@ -4,6 +4,7 @@
 
 #include "Cell.hpp"
 #include "Fields.hpp"
+#include <iostream>
 
 /**
  * @brief Abstract of boundary conditions.
