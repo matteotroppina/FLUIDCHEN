@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "Boundary.hpp"
 #include "Discretization.hpp"
@@ -10,6 +11,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+
 
 /**
  * @brief Class to hold and orchestrate the simulation flow.

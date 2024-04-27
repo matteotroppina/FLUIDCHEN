@@ -180,6 +180,12 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    int i = 0;
+    for (auto& b : _boundaries){
+//        std::cout << "boundary" << i++ << "\n";
+        b->applyVelocity(_field);
+    }
     /** 
      *  while(t < _t_end){
      *  
