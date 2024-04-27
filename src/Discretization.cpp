@@ -18,9 +18,15 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
                              - abs(interpolate(U, i, j, -1, 0))*(U(i-1, j) - U(i,j))/2);
 }
 
-double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {}
+double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
+    return 1/_dy * (pow(interpolate(V, i, j, 0, 1), 2) - pow(interpolate(V, i, j, 0, -1), 2))
+           + _gamma/_dy * (abs(interpolate(V, i, j, 0, 1))*(V(i,j) - V(i, j+1))/2
+                             - abs(interpolate(V, i, j, 0, -1))*(V(i, j-1) - V(i,j))/2);
+}
 
-double Discretization::laplacian(const Matrix<double> &A, int i, int j) {}
+double Discretization::laplacian(const Matrix<double> &A, int i, int j) {
+    
+}
 
 double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) + P(i - 1, j)) / (_dx * _dx) + (P(i, j + 1) + P(i, j - 1)) / (_dy * _dy);
