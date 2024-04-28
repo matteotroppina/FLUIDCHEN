@@ -3,8 +3,22 @@
 Boundary::Boundary(std::vector<Cell *> cells) : _cells(cells) {}
 
 void Boundary::applyFlux(Fields &field) {
-
-
+    for (auto cell: _cells){
+        int i = cell -> i();
+        int j = cell -> j();
+        if (cell -> neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
+            field.f(i,j) = field.u(i,j);
+        }
+        if (cell -> neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
+            field.f(i,j) = field.u(i,j);
+        }
+        if (cell -> neighbour(border_position::TOP)->type() == cell_type::FLUID) {
+            field.g(i,j) = field.v(i,j);
+        } 
+        if (cell -> neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
+            field.g(i,j) = field.v(i,j);
+        }        
+    }
 }
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -63,18 +77,18 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, 
     : Boundary(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
 
 void MovingWallBoundary::applyVelocity(Fields &field) {
-    int imax = 0;
-    int jmax = 0;
-    for (auto cell : _cells) {
-        if (cell->i() > imax){
-            imax = cell->i();
-        }
-        if (cell->j() > jmax){
-            jmax = cell->j();
-        }
-    }
-    imax = imax-1; // because we have the ghost cells
-    jmax = jmax-1;
+//    int imax = 0;
+//    int jmax = 0;
+//    for (auto cell : _cells) {
+//        if (cell->i() > imax){
+//            imax = cell->i();
+//        }
+//        if (cell->j() > jmax){
+//            jmax = cell->j();
+//        }
+//    }
+//    imax = imax-1; // because we have the ghost cells
+//    jmax = jmax-1;
 
 
 //    for (int j = 1; j < jmax; j++){
@@ -92,10 +106,10 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
 //        field.u(i, 0) = -field.u(i, 1);
 //    }
 
-    for (int i = 1; i < imax; i++){
-        field.v(i, jmax) = 0;
-        field.u(i, jmax) = -field.u(i, jmax+1);
-    }
+//    for (int i = 1; i < imax; i++){
+//        field.v(i, jmax) = 0;
+//        field.u(i, jmax) = -field.u(i, jmax+1);
+//    }
 }
 
 void MovingWallBoundary::applyPressure(Fields &field) {}
