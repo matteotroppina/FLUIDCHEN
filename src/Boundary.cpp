@@ -67,7 +67,28 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
 }
 
 
-void FixedWallBoundary::applyPressure(Fields &field) {}
+void FixedWallBoundary::applyPressure(Fields &field) {
+    for (auto cell: _cells){
+        int i = cell -> i();
+        int j = cell -> j();
+
+        if (cell -> is_border(border_position::RIGHT)) {
+            field.p(i,j) = field.p(i+1,j);
+        }
+
+        if (cell -> is_border(border_position::LEFT)) {
+            field.p(i,j) = field.p(i-1,j);
+        }
+
+        if (cell -> is_border(border_position::TOP)) {
+            field.p(i,j) = field.p(i,j+1);
+        }
+
+        if (cell -> is_border(border_position::BOTTOM)) {
+            field.p(i,j) = field.p(i,j-1);
+        }
+    }
+}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
@@ -92,4 +113,25 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
 }
 
 
-void MovingWallBoundary::applyPressure(Fields &field) {}
+void MovingWallBoundary::applyPressure(Fields &field) {
+    for (auto cell: _cells){
+        int i = cell -> i();
+        int j = cell -> j();
+
+        if (cell -> is_border(border_position::RIGHT)) {
+            field.p(i,j) = field.p(i+1,j);
+        }
+
+        if (cell -> is_border(border_position::LEFT)) {
+            field.p(i,j) = field.p(i-1,j);
+        }
+
+        if (cell -> is_border(border_position::TOP)) {
+            field.p(i,j) = field.p(i,j+1);
+        }
+
+        if (cell -> is_border(border_position::BOTTOM)) {
+            field.p(i,j) = field.p(i,j-1);
+        }
+    }
+}
