@@ -214,7 +214,7 @@ void Case::simulate() {
         n += 1;
 
         if (output_counter > _output_freq or n == 1){
-            std::cout << "time: " << t << " n " << n-1 << " residual: " << res << std::endl;
+            std::cout << "time: " << t-dt << " n " << n-1 << " residual: " << res << std::endl;
             output_vtk(n-1, 0);
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value() << std::endl;
             output_counter = 0;

@@ -50,7 +50,7 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         }
 
         if (cell -> is_border(border_position::LEFT)) {
-            field.u(i,j) = 0;
+            field.u(i-1,j) = 0;
             field.v(i,j) = - field.v(i-1,j);
         }
 
@@ -60,7 +60,7 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         }
 
         if (cell -> is_border(border_position::BOTTOM)) {
-            field.v(i,j) = 0;
+            field.v(i,j-1) = 0;
             field.u(i,j) = - field.u(i,j-1);
         }
     }
