@@ -57,8 +57,12 @@ void Fields::calculate_velocities(Grid &grid) {
 double Fields::calculate_dt(Grid &grid) {
     double dx_2 = grid.dx() ^ 2;
     double dy_2 = grid.dy() ^ 2;
+
+    double u_max = std::max(std::abs(_U));
+    double v_max = std::max(std::abs(_V));
+
     double coefficient = (dx_2 * dy_2) / (dx_2 + dy_2);
-    _dt = coefficient / (2 * _nu);
+    _dt = std::min(coefficient / (2 * _nu), grid.dx() / u_max, grid.dy() / v_max);
 
     return _dt;
 }
