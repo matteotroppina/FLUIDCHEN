@@ -182,6 +182,7 @@ void Case::simulate() {
 
     double res = 1;
     int iter = 0;
+    int n = 0;
 
 
     while (t < _t_end) {
@@ -189,6 +190,8 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyFlux(_field);
         }
+
+        dt = _field.calculate_dt(_grid);
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -204,12 +207,15 @@ void Case::simulate() {
 
         _field.calculate_velocities(_grid);
 
-        std::cout << res << std::endl;
-
         t += dt;
-        output_vtk(t, 0);
+        output_counter += dt;
+        n += 1;
 
-        dt = _field.calculate_dt(_grid);
+        if (output_counter > _output_freq or n == 0){
+            std::cout << "time: " << t << " iter " << n << " residual: " << res << std::endl;
+            output_vtk(t, 0);
+            output_counter = 0;
+        }
 
     }
 }
@@ -298,7 +304,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     std::string outputname =
         _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
 
-    std::cout << "saving output to : " << outputname << std::endl;
+//    std::cout << "saving output to : " << outputname << std::endl;
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
