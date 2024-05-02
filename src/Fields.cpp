@@ -33,7 +33,7 @@ void Fields::calculate_fluxes(Grid &grid) {
 void Fields::calculate_rs(Grid &grid) {
     for(int i = 1; i <= grid.size_x(); i++){
         for (int j = 1; j <= grid.size_y(); j++) {
-            1/_dt * ((_F(i,j)-_F(i-1,j))/grid.dx() + (_G(i,j)-_G(i,j-1))/grid.dy());
+            rs(i,j) = 1/_dt * ((_F(i,j)-_F(i-1,j))/grid.dx() + (_G(i,j)-_G(i,j-1))/grid.dy());
         }
     }
 }

@@ -184,7 +184,15 @@ void Case::simulate() {
     for (auto& b : _boundaries){
 //        std::cout << "boundary" << i++ << "\n";
         b->applyVelocity(_field);
+        b->applyFlux(_field);
     }
+
+    _field.calculate_fluxes(_grid);
+    _field.calculate_rs(_grid);
+
+    output_vtk(0, 0);
+
+
     /** 
      *  while(t < _t_end){
      *  

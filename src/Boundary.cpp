@@ -6,16 +6,16 @@ void Boundary::applyFlux(Fields &field) {
     for (auto cell: _cells){
         int i = cell -> i();
         int j = cell -> j();
-        if (cell -> neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
+        if (cell -> is_border(border_position::RIGHT)) {
             field.f(i,j) = field.u(i,j); //why not directly 0?
         }
-        if (cell -> neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
+        if (cell -> is_border(border_position::LEFT)) {
             field.f(i,j) = field.u(i,j);
         }
-        if (cell -> neighbour(border_position::TOP)->type() == cell_type::FLUID) {
+        if (cell -> is_border(border_position::TOP)) {
             field.g(i,j) = field.v(i,j);
         } 
-        if (cell -> neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
+        if (cell -> is_border(border_position::BOTTOM)) {
             field.g(i,j) = field.v(i,j);
         }        
     }
@@ -26,62 +26,45 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
     : Boundary(cells), _wall_temperature(wall_temperature) {}
 
+
+
+std::string cellTypeToString(cell_type type) {
+    std::map<cell_type, std::string> cellTypeMap = {
+        {cell_type::FLUID, "FLUID"},
+        {cell_type::FIXED_WALL, "FIXED_WALL"},
+        {cell_type::MOVING_WALL, "MOVING_WALL"},
+        {cell_type::DEFAULT, "DEFAULT"}
+    };
+
+    return cellTypeMap[type];
+}
+
 void FixedWallBoundary::applyVelocity(Fields &field) {
     for (auto cell: _cells){
         int i = cell -> i();
         int j = cell -> j();
-        if (cell -> neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
+
+        if (cell -> is_border(border_position::RIGHT)) {
             field.u(i,j) = 0;
-            field.v(i,j) = - field.v(1,j);
+            field.v(i,j) = - field.v(i+1,j);
         }
-        if (cell -> neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
+
+        if (cell -> is_border(border_position::LEFT)) {
             field.u(i,j) = 0;
-            field.v(i+1,j) = - field.v(i,j);
+            field.v(i,j) = - field.v(i-1,j);
         }
-        if (cell -> neighbour(border_position::TOP)->type() == cell_type::FLUID) {
+
+        if (cell -> is_border(border_position::TOP)) {
             field.v(i,j) = 0;
-            field.u(i,j) = - field.u(i,1);
-        } 
+            field.u(i,j) = - field.u(i,j+1);
+        }
+
+        if (cell -> is_border(border_position::BOTTOM)) {
+            field.v(i,j) = 0;
+            field.u(i,j) = - field.u(i,j-1);
+        }
     }
 }
-//    std::cout << "printing fixedwallboundary cells" << "\n";
-//    for (auto cell : _cells){
-//        std::cout << cell->i() << ", " << cell->j() << "\n";
-//    }
-/**    int imax = 0;
-    int jmax = 0;
-    for (auto cell : _cells) {
-        if (cell->i() > imax){
-            imax = cell->i();
-        }
-        if (cell->j() > jmax){
-            jmax = cell->j();
-        }
-    }
-    imax = imax-1; // because we have the ghost cells
-    jmax = jmax-1;
-
-
-    for (int j = 1; j < jmax; j++){
-        field.v(0, j) = -field.v(1, j);
-        field.u(0, j) = 0;
-    }
-
-    for (int j = 1; j < jmax; j++){
-        field.v(imax, j) = -field.v(imax+1, j);
-        field.u(imax, j) = 0;
-    }
-
-    for (int i = 1; i < imax; i++){
-        field.v(i, 0) = 0;
-        field.u(i, 0) = -field.u(i, 1);
-    }
-
-//    for (int i = 1; i < imax; i++){
-//        field.v(i, jmax) = 0;
-//        field.u(i, jmax) = -field.u(i, jmax+1);
-//    }
- */
 
 
 void FixedWallBoundary::applyPressure(Fields &field) {}
@@ -95,48 +78,18 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, 
     : Boundary(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
 
 void MovingWallBoundary::applyVelocity(Fields &field) {
+
         for (auto cell: _cells){
-        int i = cell -> i();
-        int j = cell -> j();
-        if (cell -> neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-            field.v(i,j) = 0;
-            field.u(i,j) = - 1;
-        }        
-    }
+            int i = cell -> i();
+            int j = cell -> j();
+
+            if (cell -> is_border(border_position::BOTTOM)) {
+                field.v(i,j) = 0;
+                field.u(i,j) = - 1;
+            }
+        }
+
 }
-//    int imax = 0;
-//    int jmax = 0;
-//    for (auto cell : _cells) {
-//        if (cell->i() > imax){
-//            imax = cell->i();
-//        }
-//        if (cell->j() > jmax){
-//            jmax = cell->j();
-//        }
-//    }
-//    imax = imax-1; // because we have the ghost cells
-//    jmax = jmax-1;
-
-
-//    for (int j = 1; j < jmax; j++){
-//        field.v(0, j) = -field.v(1, j);
-//        field.u(0, j) = 0;
-//    }
-//
-//    for (int j = 1; j < jmax; j++){
-//        field.v(imax, j) = -field.v(imax+1, j);
-//        field.u(imax, j) = 0;
-//    }
-//
-//    for (int i = 1; i < imax; i++){
-//        field.v(i, 0) = 0;
-//        field.u(i, 0) = -field.u(i, 1);
-//    }
-
-//    for (int i = 1; i < imax; i++){
-//        field.v(i, jmax) = 0;
-//        field.u(i, jmax) = -field.u(i, jmax+1);
-//    }
 
 
 void MovingWallBoundary::applyPressure(Fields &field) {}
