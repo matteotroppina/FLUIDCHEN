@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 
 /**
  * @brief General 2D data structure around std::vector, in column
@@ -105,6 +106,10 @@ template <typename T> class Matrix {
 
     /// get the number of elements in y direction
     int num_rows() const { return _num_rows; }
+
+    T max_value() const {
+        return *std::max_element(_container.begin(), _container.end());
+    }
 
   private:
     /// Number of elements in x direction
