@@ -54,7 +54,14 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
-double Fields::calculate_dt(Grid &grid) { return _dt; }
+double Fields::calculate_dt(Grid &grid) {
+    double dx_2 = grid.dx() ^ 2;
+    double dy_2 = grid.dy() ^ 2;
+    double coefficient = (dx_2 * dy_2) / (dx_2 + dy_2);
+    _dt = coefficient / (2 * _nu);
+
+    return _dt;
+}
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
