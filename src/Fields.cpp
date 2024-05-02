@@ -16,9 +16,27 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
-void Fields::calculate_fluxes(Grid &grid) {}
+void Fields::calculate_fluxes(Grid &grid) {
+    for (int i = 1; i <= grid.size_x()-1; i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
+            _F(i,j) = _U(i,j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U,_V,i,j));
+        }   
+    }
 
-void Fields::calculate_rs(Grid &grid) {}
+    for(int i = 1; i <= grid.size_x(); i++){
+        for (int j = 1; j <= grid.size_y()-1; j++) {
+            _G(i,j) = _V(i,j) + _dt * (_nu * (Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j));
+        }
+    }
+}
+
+void Fields::calculate_rs(Grid &grid) {
+    for(int i = 1; i <= grid.size_x(); i++){
+        for (int j = 1; j <= grid.size_y(); j++) {
+            rs(i,j) = 1/_dt * ((_F(i,j)-_F(i-1,j))/grid.dx() + (_G(i,j)-_G(i,j-1))/grid.dy());
+        }
+    }
+}
 
 void Fields::calculate_velocities(Grid &grid) {}
 

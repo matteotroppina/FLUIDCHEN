@@ -155,12 +155,12 @@ void Case::set_file_names(std::string file_name) {
 
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
- * - Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
- *   using applyVelocity() member function of Boundary class
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Apply Flux boundary conditions using applyFlux()
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
+ * Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
+ * using applyVelocity() member function of Boundary class
+ * Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
+ * Flux consists of diffusion and convection part, which are located in Discretization class
+ * Apply Flux boundary conditions using applyFlux()
+ * Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
  * - Update pressure boundary conditions after each iteration of the SOR solver
@@ -171,7 +171,6 @@ void Case::set_file_names(std::string file_name) {
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
  * interface and/or common functions. You need to define functions with individual functionalities in inherited
  * classes such as MovingWallBoundary class.
- *
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
@@ -180,6 +179,29 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    int i = 0;
+    for (auto& b : _boundaries){
+//        std::cout << "boundary" << i++ << "\n";
+        b->applyVelocity(_field);
+        b->applyFlux(_field);
+    }
+
+    _field.calculate_fluxes(_grid);
+    _field.calculate_rs(_grid);
+
+    output_vtk(0, 0);
+
+
+    /** 
+     *  while(t < _t_end){
+     *  
+     *  t = t + dt;
+     *  }
+    */
+    //Boundary::applyVelocity(_boundaries);
+    //Fields::calculate_fluxes(_grid);
+    //Boundary::applyFlux(_boundaries); ? 
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
