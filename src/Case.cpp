@@ -180,9 +180,8 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    int i = 0;
-    for (auto& b : _boundaries){
-//        std::cout << "boundary" << i++ << "\n";
+    for (auto &b : _boundaries) {
+        //        std::cout << "boundary" << i++ << "\n";
         b->applyVelocity(_field);
         b->applyFlux(_field);
     }
@@ -190,18 +189,15 @@ void Case::simulate() {
     _field.calculate_fluxes(_grid);
     _field.calculate_rs(_grid);
 
+    int iterations{0};
+    double res{1};
+
+    while (iterations < _max_iter && res > _tolerance) {
+        res = _pressure_solver->solve(_field, _grid, _boundaries);
+        iterations++;
+    }
+
     output_vtk(0, 0);
-
-
-    /** 
-     *  while(t < _t_end){
-     *  
-     *  t = t + dt;
-     *  }
-    */
-    //Boundary::applyVelocity(_boundaries);
-    //Fields::calculate_fluxes(_grid);
-    //Boundary::applyFlux(_boundaries); ? 
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
