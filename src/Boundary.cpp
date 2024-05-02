@@ -85,7 +85,7 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
 
             if (cell -> is_border(border_position::BOTTOM)) {
                 field.v(i,j) = 0;
-                field.u(i,j) = - 1;
+                field.u(i,j) = 1;
             }
         }
 
