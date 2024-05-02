@@ -180,24 +180,38 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    for (auto &b : _boundaries) {
-        //        std::cout << "boundary" << i++ << "\n";
-        b->applyVelocity(_field);
-        b->applyFlux(_field);
+    double res = 1;
+    int iter = 0;
+
+
+    while (t < _t_end) {
+        for (auto &b : _boundaries) {
+            b->applyVelocity(_field);
+            b->applyFlux(_field);
+        }
+
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+
+        res = 1;
+        iter = 0;
+        while (iter++ < _max_iter and res > _tolerance) {
+            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            for (auto &b : _boundaries) {
+                b->applyPressure(_field);
+            }
+        }
+
+        _field.calculate_velocities(_grid);
+
+        std::cout << res << std::endl;
+
+        t += dt;
+        output_vtk(t, 0);
+
+        dt = _field.calculate_dt(_grid);
+
     }
-
-    _field.calculate_fluxes(_grid);
-    _field.calculate_rs(_grid);
-
-    int iterations{0};
-    double res{1};
-
-    while (iterations < _max_iter && res > _tolerance) {
-        res = _pressure_solver->solve(_field, _grid, _boundaries);
-        iterations++;
-    }
-
-    output_vtk(0, 0);
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -283,6 +297,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Create Filename
     std::string outputname =
         _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+
+    std::cout << "saving output to : " << outputname << std::endl;
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
