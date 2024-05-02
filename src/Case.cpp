@@ -191,7 +191,9 @@ void Case::simulate() {
             b->applyFlux(_field);
         }
 
+//        std::cout << "dt: " << dt << std::endl;
         dt = _field.calculate_dt(_grid);
+
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -211,9 +213,10 @@ void Case::simulate() {
         output_counter += dt;
         n += 1;
 
-        if (output_counter > _output_freq or n == 0){
-            std::cout << "time: " << t << " iter " << n << " residual: " << res << std::endl;
-            output_vtk(t, 0);
+        if (output_counter > _output_freq or n == 1){
+            std::cout << "time: " << t << " n " << n-1 << " residual: " << res << std::endl;
+            output_vtk(n-1, 0);
+            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value() << std::endl;
             output_counter = 0;
         }
 
