@@ -111,6 +111,10 @@ template <typename T> class Matrix {
         return *std::max_element(_container.begin(), _container.end());
     }
 
+    T min_value() const {
+        return *std::min_element(_container.begin(), _container.end());
+    }
+
   private:
     /// Number of elements in x direction
     int _num_cols;
