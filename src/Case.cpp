@@ -183,7 +183,7 @@ void Case::simulate() {
     double res = 1;
     int iter = 0;
     int n = 0;
-
+    std::vector<int> iter_vec{0};
 
     while (t < _t_end) {
         for (auto &b : _boundaries) {
@@ -191,20 +191,27 @@ void Case::simulate() {
             b->applyFlux(_field);
         }
 
-//        std::cout << "dt: " << dt << std::endl;
+        //        std::cout << "dt: " << dt << std::endl;
         dt = _field.calculate_dt(_grid);
-
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
 
         res = 1;
         iter = 0;
-        while (iter++ < _max_iter and res > _tolerance) {
+        int count = 0;
+        while (iter < _max_iter and res > _tolerance) {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
             }
+            iter += 1;
+        }
+
+        iter_vec.push_back(iter);
+
+        if (iter == _max_iter) {
+            std::cout << "Exceeded max iterations" << std::endl;
         }
 
         _field.calculate_velocities(_grid);
@@ -213,13 +220,17 @@ void Case::simulate() {
         output_counter += dt;
         n += 1;
 
-        if (output_counter > _output_freq or n == 1){
-            std::cout << "time: " << t-dt << " n " << n-1 << " residual: " << res << std::endl;
-            output_vtk(n-1, 0);
-            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value() << std::endl;
+        if (output_counter > _output_freq or n == 1) {
+            std::cout << "time: " << t - dt << " n " << n - 1 << " residual: " << res << std::endl;
+            output_vtk(n - 1, 0);
+            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
+                      << std::endl;
             output_counter = 0;
         }
+    }
 
+    for (auto elem : iter_vec) {
+        std::cout << elem << ",";
     }
 }
 
@@ -307,7 +318,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     std::string outputname =
         _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
 
-//    std::cout << "saving output to : " << outputname << std::endl;
+    //    std::cout << "saving output to : " << outputname << std::endl;
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
