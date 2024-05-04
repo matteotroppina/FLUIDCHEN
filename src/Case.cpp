@@ -176,14 +176,13 @@ void Case::set_file_names(std::string file_name) {
 void Case::simulate() {
 
     double t = 0.0;
-    // double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
 
     double res = 1;
     int iter = 0;
     int n = 0;
-    std::vector<int> iter_vec{0};
+    std::vector<int> iter_vec;
 
     while (t < _t_end) {
         for (auto &b : _boundaries) {
@@ -191,8 +190,8 @@ void Case::simulate() {
             b->applyFlux(_field);
         }
 
-        // _field.calculate_dt(_grid);
-        // std::cout << _field.dt() << std::endl;
+//         _field.calculate_dt(_grid);
+//         std::cout << _field.dt() << std::endl;
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -228,9 +227,25 @@ void Case::simulate() {
             output_counter = 0;
         }
     }
+    std::string filename;
+    std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
+    std::cin >> filename;
 
-    for (auto elem : iter_vec) {
-        std::cout << elem << ",";
+    output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
+}
+
+void Case::output_csv(const std::vector<int>& vec, const std::string& filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        for (size_t i = 0; i < vec.size(); ++i) {
+            file << vec[i];
+            if (i != vec.size() - 1) {
+                file << ",";
+            }
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
     }
 }
 
