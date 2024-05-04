@@ -176,7 +176,7 @@ void Case::set_file_names(std::string file_name) {
 void Case::simulate() {
 
     double t = 0.0;
-    double dt = _field.dt();
+    // double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
 
@@ -191,8 +191,8 @@ void Case::simulate() {
             b->applyFlux(_field);
         }
 
-        //        std::cout << "dt: " << dt << std::endl;
-        dt = _field.calculate_dt(_grid);
+        // _field.calculate_dt(_grid);
+        // std::cout << _field.dt() << std::endl;
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -216,12 +216,12 @@ void Case::simulate() {
 
         _field.calculate_velocities(_grid);
 
-        t += dt;
-        output_counter += dt;
+        t += _field.dt();
+        output_counter += _field.dt();
         n += 1;
 
         if (output_counter > _output_freq or n == 1) {
-            std::cout << "time: " << t - dt << " n " << n - 1 << " residual: " << res << std::endl;
+            std::cout << "time: " << t - _field.dt() << " n " << n - 1 << " residual: " << res << std::endl;
             output_vtk(n - 1, 0);
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
