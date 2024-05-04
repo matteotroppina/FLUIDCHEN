@@ -198,7 +198,6 @@ void Case::simulate() {
 
         res = 1;
         iter = 0;
-        int count = 0;
         while (iter < _max_iter and res > _tolerance) {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             for (auto &b : _boundaries) {
@@ -224,6 +223,10 @@ void Case::simulate() {
             output_vtk(n - 1, 0);
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
+            if (_field.p_matrix().max_abs_value() > 1e6) {
+                std::cerr << "Divergence detected" << std::endl;
+                break;
+            }
             output_counter = 0;
         }
     }
