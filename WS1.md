@@ -51,7 +51,8 @@ The fixed dt should fulfill all three stability conditions mentioned in equation
 ### Pressure field, nu = 0.00005
 ![Pressure, nu = 0.0005](imgs/nu_0.0005_pressure.png)
 
-
+### Convergence
+![Convergence] (imgs/nu_iterations.png)
 
 
 ## Difficulties
