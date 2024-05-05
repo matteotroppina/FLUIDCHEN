@@ -54,22 +54,20 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
-double Fields::calculate_dt(Grid &grid) {
+void Fields::calculate_dt(Grid &grid) {
     double dx_2 = grid.dx() * grid.dx();
     double dy_2 = grid.dy() * grid.dy();
 
-    double u_max = _U.max_value();
-    double u_min = _U.min_value();
-    u_max = std::max(u_max, std::abs(u_min));
+    double u_max = _U.max_abs_value();
+    double v_max = _V.max_abs_value();
 
-    double v_max =_V.max_value();
-    double v_min =_V.min_value();
-    v_max = std::max(v_max, std::abs(v_min));
+//    std::cout << "u_max: " << u_max << std::endl;
+//    std::cout << "v_max: " << v_max << std::endl;
 
     double coefficient = (dx_2 * dy_2) / (dx_2 + dy_2);
     _dt = std::min({coefficient / (2 * _nu), grid.dx() / u_max, grid.dy() / v_max});
 
-    return _tau*_dt;
+    _dt = _tau * _dt;
 }
 
 double &Fields::p(int i, int j) { return _P(i, j); }
