@@ -10,14 +10,14 @@ void Boundary::applyFlux(Fields &field) {
             field.f(i,j) = field.u(i,j); //why not directly 0?
         }
         if (cell -> is_border(border_position::LEFT)) {
-            field.f(i,j) = field.u(i,j);
+            field.f(i-1,j) = field.u(i-1,j);
         }
         if (cell -> is_border(border_position::TOP)) {
             field.g(i,j) = field.v(i,j);
         } 
         if (cell -> is_border(border_position::BOTTOM)) {
-            field.g(i,j) = field.v(i,j);
-        }        
+            field.g(i,j-1) = field.v(i,j-1);
+        }
     }
 }
 
@@ -26,18 +26,6 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
     : Boundary(cells), _wall_temperature(wall_temperature) {}
 
-
-
-std::string cellTypeToString(cell_type type) {
-    std::map<cell_type, std::string> cellTypeMap = {
-        {cell_type::FLUID, "FLUID"},
-        {cell_type::FIXED_WALL, "FIXED_WALL"},
-        {cell_type::MOVING_WALL, "MOVING_WALL"},
-        {cell_type::DEFAULT, "DEFAULT"}
-    };
-
-    return cellTypeMap[type];
-}
 
 void FixedWallBoundary::applyVelocity(Fields &field) {
     for (auto cell: _cells){
