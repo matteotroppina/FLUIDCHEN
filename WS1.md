@@ -40,6 +40,20 @@ The fixed dt should fulfill all three stability conditions mentioned in equation
 
 ## Kinematic viscosity (with adaptive timestep)
 
+### nu = 0.01
+![nu = 0.01](imgs/nu_0.01.png)
+### nu = 0.002
+![nu = 0.002](imgs/nu_0.002.png)
+### nu = 0.0005
+![nu = 0.0005](imgs/nu_0.0005.png)
+### nu = 0.0001
+![nu = 0.0001](imgs/nu_0.0001.png)
+### Pressure field, nu = 0.00005
+![Pressure, nu = 0.0005](imgs/nu_0.0005_pressure.png)
+
+
+
+
 ## Difficulties
 
 
