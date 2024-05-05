@@ -65,7 +65,15 @@ void Fields::calculate_dt(Grid &grid) {
 //    std::cout << "v_max: " << v_max << std::endl;
 
     double coefficient = (dx_2 * dy_2) / (dx_2 + dy_2);
-    _dt = std::min({coefficient / (2 * _nu), grid.dx() / u_max, grid.dy() / v_max});
+    double conv_cond = coefficient / (2 * _nu);
+    double cfl_x = grid.dx() / u_max;
+    double cfl_y = grid.dy() / v_max;
+
+//    std::cout << "conv_cond: " << conv_cond << std::endl;
+//    std::cout << "cfl_x: " << cfl_x << std::endl;
+//    std::cout << "cfl_y: " << cfl_y << std::endl;
+
+    _dt = std::min({conv_cond, cfl_x, cfl_y});
 
     _dt = _tau * _dt;
 }
