@@ -92,8 +92,23 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
 
         if (cell->is_border(border_position::BOTTOM)) {
             field.v(i, j - 1) = 0;
-            field.u(i, j) = 2 - field.u(i, j - 1);
+            field.u(i, j) = 2*_wall_velocity[8] - field.u(i, j - 1);
         }
+        if (cell->is_border(border_position::TOP)) {
+            field.v(i, j) = 0;
+            field.u(i, j) = 2*_wall_velocity[8] - field.u(i, j + 1);
+        }
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.u(i, j) = 0;
+            field.v(i, j) = 2*_wall_velocity[8] - field.v(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.u(i - 1, j) = 0;
+            field.v(i, j) = 2*_wall_velocity[8] - field.v(i - 1, j);
+        }
+
     }
 }
 
