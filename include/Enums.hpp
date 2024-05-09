@@ -21,5 +21,7 @@ enum class cell_type {
     FLUID,
     FIXED_WALL,
     MOVING_WALL,
+    INFLOW,
+    OUTFLOW,
     DEFAULT,
 };

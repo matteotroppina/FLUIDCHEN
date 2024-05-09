@@ -76,3 +76,34 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+
+class InflowBoundary : public Boundary {
+  public:
+    InflowBoundary(std::vector<Cell *> cells, double inflow_u_velocity, double inflow_v_velocity);
+    InflowBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
+                       std::map<int, double> wall_temperature);
+    virtual ~InflowBoundary() = default;
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
+
+  private:
+    std::map<int, double> _inflow_u_velocity;
+    std::map<int, double> _inflow_v_velocity;
+    std::map<int, double> _wall_temperature;
+};
+
+class OutflowBoundary : public Boundary {
+  public:
+    OutflowBoundary(std::vector<Cell *> cells, double outflow_u_velocity, double inflow_v_velocity);
+    OutflowBoundary(std::vector<Cell *> cells, std::map<int, double> outflow_u_velocity, std::map<int, double> outflow_v_velocity,
+                       std::map<int, double> wall_temperature);
+    virtual ~OutflowBoundary() = default;
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
+
+  private:
+    std::map<int, double> _outflow_u_velocity;
+    std::map<int, double> _outflow_v_velocity;
+    std::map<int, double> _wall_temperature;
+};
+

@@ -40,6 +40,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau{};     /* safety factor for time step*/
     int itermax{};    /* max. number of iterations for pressure per time step */
     double eps{};     /* accuracy bound for pressure*/
+    double UIN{};     /*inlet velocity*/
+    double VIN{}; 
+    // int num_of_walls{}; 
 
     if (file.is_open()) {
 
@@ -67,6 +70,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                if (var == "UIN") file >> UIN;
+                if (var == "VIN") file >> VIN;
+                if (var == "geo_file") file >> _geom_name; 
             }
         }
     }
@@ -108,6 +114,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.infow_cells(), UIN, VIN));
+    }
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.infow_cells(), - UIN, - VIN)); //does this make sense??
+    }
+
 }
 
 void Case::set_file_names(std::string file_name) {
