@@ -41,8 +41,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     int itermax{};    /* max. number of iterations for pressure per time step */
     double eps{};     /* accuracy bound for pressure*/
     double UIN{};     /*inlet velocity*/
-    double VIN{}; 
-    // int num_of_walls{}; 
+    double VIN{};
+    // int num_of_walls{};
 
     if (file.is_open()) {
 
@@ -72,7 +72,8 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "jmax") file >> jmax;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
-                if (var == "geo_file") file >> _geom_name; 
+                // read geometry file name from .dat file and directly assign it to private member fo Case
+                if (var == "geo_file") file >> _geom_name;
             }
         }
     }
@@ -118,9 +119,9 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.infow_cells(), UIN, VIN));
     }
     if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.infow_cells(), - UIN, - VIN)); //does this make sense??
+        _boundaries.push_back(
+            std::make_unique<OutflowBoundary>(_grid.infow_cells(), -UIN, -VIN)); // does this make sense??
     }
-
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -248,7 +249,6 @@ void Case::simulate() {
         timestep += 1;
         output_counter += dt;
         t += dt;
-
     }
     std::string filename;
     std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
