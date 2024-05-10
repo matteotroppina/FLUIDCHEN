@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -88,6 +89,9 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
 
+    // std::cout << domain.dx << " " << imax << " "
+    //           << " " << domain.imaxb << domain.size_x << std::endl;
+
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
 
@@ -155,12 +159,12 @@ void Case::set_file_names(std::string file_name) {
 
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
- * - Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
- *   using applyVelocity() member function of Boundary class
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Apply Flux boundary conditions using applyFlux()
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
+ * Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
+ * using applyVelocity() member function of Boundary class
+ * Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
+ * Flux consists of diffusion and convection part, which are located in Discretization class
+ * Apply Flux boundary conditions using applyFlux()
+ * Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
  * - Update pressure boundary conditions after each iteration of the SOR solver
@@ -171,7 +175,6 @@ void Case::set_file_names(std::string file_name) {
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
  * interface and/or common functions. You need to define functions with individual functionalities in inherited
  * classes such as MovingWallBoundary class.
- *
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
@@ -180,6 +183,80 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    double residual = 1;
+    int iter = 0;
+    std::vector<int> iter_vec;
+
+    while (t < _t_end) {
+
+        _field.calculate_dt(_grid);
+        dt = _field.dt();
+
+        for (auto &b : _boundaries) {
+            b->applyVelocity(_field);
+            b->applyFlux(_field);
+        }
+        // _field.printMatrix(_grid);
+
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+
+        residual = 1;
+        iter = 0;
+        while (iter < _max_iter and residual > _tolerance) {
+            residual = _pressure_solver->solve(_field, _grid, _boundaries);
+            for (auto &b : _boundaries) {
+                b->applyPressure(_field);
+            }
+            iter += 1;
+        }
+
+        iter_vec.push_back(iter);
+
+        if (iter == _max_iter) {
+            std::cerr << "Exceeded max iterations" << std::endl;
+        }
+
+        _field.calculate_velocities(_grid);
+
+        if (output_counter > _output_freq or timestep == 1) {
+            std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
+            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
+                      << std::endl;
+            if (_field.p_matrix().max_abs_value() > 1e6) {
+                std::cerr << "Divergence detected" << std::endl;
+                break;
+            }
+            output_vtk(timestep, 0);
+            output_counter = 0;
+        }
+
+        timestep += 1;
+        output_counter += dt;
+        t += dt;
+
+    }
+    std::string filename;
+    std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
+    std::cin >> filename;
+
+    output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
+}
+
+void Case::output_csv(const std::vector<int> &vec, const std::string &filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        for (size_t i = 0; i < vec.size(); ++i) {
+            file << vec[i];
+            if (i != vec.size() - 1) {
+                file << ",";
+            }
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -265,6 +342,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Create Filename
     std::string outputname =
         _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+
+    //    std::cout << "saving output to : " << outputname << std::endl;
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);

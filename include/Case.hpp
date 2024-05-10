@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "Boundary.hpp"
 #include "Discretization.hpp"
@@ -10,6 +11,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+
 
 /**
  * @brief Class to hold and orchestrate the simulation flow.
@@ -100,4 +102,5 @@ class Case {
      * @param[in] Number of cells in y-direction for this MPI rank
      */
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+    void output_csv(const std::vector<int> &vec, const std::string &filename);
 };
