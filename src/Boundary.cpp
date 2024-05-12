@@ -18,6 +18,19 @@ void Boundary::applyFlux(Fields &field) {
         if (cell->is_border(border_position::BOTTOM)) {
             field.g(i, j - 1) = field.v(i, j - 1);
         }
+
+        // B_NW cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.f(i-1, j) = field.u(i-1, j);
+            field.g(i, j) = field.v(i, j);
+        }
+        // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.f(i+1, j) = field.u(i+1, j);
+            field.g(i, j) = field.v(i, j);
+        }
+
+        //TODO: implement the rest of the corners
     }
 }
 
@@ -74,6 +87,21 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
             field.v(i, j - 1) = 0;
             field.u(i, j) = -field.u(i, j - 1);
         }
+
+        // B_NW cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.u(i,j) = -field.u(i,j+1);
+            field.v(i,j) = 0;
+            field.u(i-1,j) = 0;
+            field.v(i,j-1) = -field.v(-i,j-1);
+        }
+        // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.u(i,j) = -field.u(i,j-1);
+            field.v(i,j) = 0;
+            field.u(i+1,j) = 0;
+            field.v(i,j+1) = -field.v(i,j+1);
+        }
     }
     //TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc...
 }
@@ -97,6 +125,15 @@ void FixedWallBoundary::applyPressure(Fields &field) {
 
         if (cell->is_border(border_position::BOTTOM)) {
             field.p(i, j) = field.p(i, j - 1);
+        }
+
+        // B_NW cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.p(i,j) = (field.p(i,j+1) + field.p(i-1, j))/2;
+        }
+        // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.p(i,j) = (field.p(i,j-1) + field.p(i+1, j))/2;
         }
     }
 }
@@ -133,7 +170,6 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
             field.u(i - 1, j) = 0;
             field.v(i, j) = 2*_wall_velocity[GeometryIDs::moving_wall] - field.v(i - 1, j);
         }
-
     }
 }
 
