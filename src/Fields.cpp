@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
 #include "Communication.hpp"
 #include "Fields.hpp"
@@ -16,6 +17,20 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 }
 
 void Fields::printMatrix(Grid &grid) {
+    std::cout << std::fixed;
+    std::cout << std::setprecision(1); // digits after decimal point
+
+    std::cout << "P matrix" << std::endl;
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            std::cout << _P(i, j) << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "U matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
         for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _U(i, j) << ", ";
@@ -24,6 +39,7 @@ void Fields::printMatrix(Grid &grid) {
     }
     std::cout << std::endl;
 
+    std::cout << "V matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
         for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _V(i, j) << ", ";

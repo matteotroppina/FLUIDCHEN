@@ -58,6 +58,15 @@ class FixedWallBoundary : public Boundary {
     std::map<int, double> _wall_temperature;
 };
 
+class InnerObstacle : public Boundary {
+  public:
+    InnerObstacle(std::vector<Cell *> cells);
+    virtual ~InnerObstacle() = default;
+    virtual void applyVelocity(Fields &field); // do nothing
+    virtual void applyPressure(Fields &field); // do nothing
+    virtual void applyFlux(Fields &field); // do nothing
+};
+
 /**
  * @brief Moving wall boundary condition for the outer boundaries of the domain.
  * Dirichlet for velocities for the given velocity parallel to the fluid,
@@ -77,12 +86,12 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_temperature;
 };
 
-class FixedVelocity : public Boundary {
+class FixedVelocityBoundary : public Boundary {
   public:
-    FixedVelocity(std::vector<Cell *> cells, double inflow_u_velocity, double inflow_v_velocity);
-    FixedVelocity(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
+    FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity, double inflow_v_velocity);
+    FixedVelocityBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
                        std::map<int, double> wall_temperature);
-    virtual ~FixedVelocity() = default;
+    virtual ~FixedVelocityBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
@@ -92,10 +101,11 @@ class FixedVelocity : public Boundary {
     std::map<int, double> _wall_temperature;
 };
 
-class ZeroGradient : public Boundary {
+class ZeroGradientBoundary : public Boundary {
   public:
-    ZeroGradient(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
-    virtual ~ZeroGradient() = default;
+    ZeroGradientBoundary(std::vector<Cell *> cells);
+    ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    virtual ~ZeroGradientBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 

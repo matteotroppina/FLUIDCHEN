@@ -65,9 +65,11 @@ class Grid {
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
 
-    const std::vector<Cell *> &inflow_cells() const;
+    const std::vector<Cell *> &fixed_velocity_cells() const;
 
-    const std::vector<Cell *> &outflow_cells() const;
+    const std::vector<Cell *> &zero_gradient_cells() const;
+
+    const std::vector<Cell *> &inner_obstacle_cells() const;
 
   private:
     /**@brief Default lid driven cavity case generator
@@ -91,8 +93,9 @@ class Grid {
     /// Vector of pointers to all cells belonging to moving walls
     std::vector<Cell *> _moving_wall_cells;
 
-    std::vector<Cell *> _inflow_cells;
-    std::vector<Cell *> _outflow_cells;
+    std::vector<Cell *> _fixed_velocity_cells;
+    std::vector<Cell *> _zero_gradient_cells;
+    std::vector<Cell *> _inner_obstacle_cells;
 
     /// Domain object holding geometrical information
     Domain _domain;
