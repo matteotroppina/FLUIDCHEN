@@ -136,8 +136,6 @@ void MovingWallBoundary::applyPressure(Fields &field) {
     }
 }
 
-InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_u_velocity, double inflow_v_velocity) : Boundary(cells) {} //should there be insert?
-
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
                                        std::map<int, double> wall_temperature)
     : Boundary(cells), _inflow_u_velocity(inflow_u_velocity), _inflow_v_velocity(inflow_v_velocity), _wall_temperature(wall_temperature) {}
@@ -176,8 +174,6 @@ void InflowBoundary::applyPressure(Fields &field) {
     }
     //Neumann condition, can we just leave it like this?
 }
-
-OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outflow_u_velocity, double outflow_v_velocity) : Boundary(cells) {} //should there be insert?
 
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, std::map<int, double> outflow_u_velocity, std::map<int, double> outflow_v_velocity,
                                        std::map<int, double> wall_temperature)
