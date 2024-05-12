@@ -116,11 +116,11 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
     if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.infow_cells(), UIN, VIN));
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN));
     }
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(
-            std::make_unique<OutflowBoundary>(_grid.infow_cells(), -UIN, -VIN)); // does this make sense??
+            std::make_unique<OutflowBoundary>(_grid.inflow_cells(), -UIN, -VIN)); // does this make sense??
     }
 }
 
