@@ -136,11 +136,11 @@ void MovingWallBoundary::applyPressure(Fields &field) {
     }
 }
 
-InflowBoundary::InflowBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
+FixedVelocity::FixedVelocity(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
                                        std::map<int, double> wall_temperature)
     : Boundary(cells), _inflow_u_velocity(inflow_u_velocity), _inflow_v_velocity(inflow_v_velocity), _wall_temperature(wall_temperature) {}
 
-void InflowBoundary::applyVelocity(Fields &field) {
+void FixedVelocity::applyVelocity(Fields &field) {
 
     for (auto cell : _cells) {
         int i = cell->i();
@@ -151,7 +151,7 @@ void InflowBoundary::applyVelocity(Fields &field) {
     }
 }
 
-void InflowBoundary::applyPressure(Fields &field) {
+void FixedVelocity::applyPressure(Fields &field) {
     for (auto cell : _cells) {
         int i = cell->i();
         int j = cell->j();
@@ -175,11 +175,10 @@ void InflowBoundary::applyPressure(Fields &field) {
     //Neumann condition, can we just leave it like this?
 }
 
-OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, std::map<int, double> outflow_u_velocity, std::map<int, double> outflow_v_velocity,
-                                       std::map<int, double> wall_temperature)
-    : Boundary(cells), _outflow_u_velocity(outflow_u_velocity), _outflow_v_velocity(outflow_v_velocity), _wall_temperature(wall_temperature) {}
+ZeroGradient::ZeroGradient(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
+    : Boundary(cells), _wall_temperature(wall_temperature) {}
 
-void OutflowBoundary::applyVelocity(Fields &field) {
+void ZeroGradient::applyVelocity(Fields &field) {
 
     for (auto cell : _cells) {
         int i = cell->i();
@@ -187,10 +186,11 @@ void OutflowBoundary::applyVelocity(Fields &field) {
 
         //field.u(i,j) = _outflow_u_velocity;
         //field.v(i,j) = _outflow_v_velocity;  //how are the outflow velocities??
+        // It should be zero gradient fluid speed for outflow - Daniels
     }
 }
 
-void OutflowBoundary::applyPressure(Fields &field) {
+void ZeroGradient::applyPressure(Fields &field) {
     for (auto cell : _cells) {
         int i = cell->i();
         int j = cell->j();
