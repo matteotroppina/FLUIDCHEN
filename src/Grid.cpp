@@ -65,7 +65,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             } else {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _inner_obstacle_cells.push_back(&_cells(i, j));
+                _fixed_wall_cells.push_back(&_cells(i, j));
                 // also contains _fixed_wall_cells, but it doesn't matter since they are not modified
             }
             ++i;
@@ -199,19 +199,15 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             if (_cells(i, j).type() != cell_type::FLUID) {
                 if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::LEFT);
-                    _fixed_wall_cells.push_back(&_cells(i, j));
                 }
                 if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::RIGHT);
-                    _fixed_wall_cells.push_back(&_cells(i, j));
                 }
                 if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::BOTTOM);
-                    _fixed_wall_cells.push_back(&_cells(i, j));
                 }
                 if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::TOP);
-                    _fixed_wall_cells.push_back(&_cells(i, j));
                 }
             }
         }

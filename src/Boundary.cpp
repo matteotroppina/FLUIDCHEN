@@ -50,22 +50,8 @@ InnerObstacle::InnerObstacle(std::vector<Cell *> cells) : Boundary(cells) {}
 // currently I am setting the velocity to zero in the obstacle cells.
 // This works because the boundaries are set in order,
 // and the obstacle cells are set before the fixed wall cells
-void InnerObstacle::applyVelocity(Fields &field) {
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-        field.u(i, j) = 0;
-        field.v(i, j) = 0;
-    }
-}
-void InnerObstacle::applyFlux(Fields &field) {
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-        field.f(i, j) = 0;
-        field.g(i, j) = 0;
-    }
-}
+void InnerObstacle::applyVelocity(Fields &field) {} // do nothing
+void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -344,22 +330,22 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
 
         if (cell->is_border(border_position::RIGHT)) {
             field.p(i, j) = 0;
-            field.p(i - 1, j) = 0;
+//            field.p(i + 1, j) = 0;
         }
 
         if (cell->is_border(border_position::LEFT)) {
             field.p(i, j) = 0;
-            field.p(i + 1, j) = 0;
+//            field.p(i - 1, j) = 0;
         }
 
         if (cell->is_border(border_position::TOP)) {
             field.p(i, j) = 0;
-            field.p(i, j - 1) = 0;
+//            field.p(i, j + 1) = 0;
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
             field.p(i, j) = 0;
-            field.p(i, j + 1) = 0;
+//            field.p(i, j - 1) = 0;
         }
     }
 }
