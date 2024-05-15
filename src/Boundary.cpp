@@ -7,7 +7,7 @@ void Boundary::applyFlux(Fields &field) {
         int i = cell->i();
         int j = cell->j();
         if (cell->is_border(border_position::RIGHT)) {
-            field.f(i, j) = field.u(i, j); // why not directly 0?
+            field.f(i, j) = field.u(i, j); 
         }
         if (cell->is_border(border_position::LEFT)) {
             field.f(i - 1, j) = field.u(i - 1, j);
@@ -26,11 +26,21 @@ void Boundary::applyFlux(Fields &field) {
         }
         // B_SE cell
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-            field.f(i+1, j) = field.u(i+1, j);
-            field.g(i, j) = field.v(i, j);
+            field.f(i, j) = field.u(i, j);
+            field.g(i, j-1) = field.v(i, j-1);
+        }
+        // B_NE cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.f(i,j) = field.u(i,j);
+            field.g(i,j) = field.v(i,j);
+        }
+        // B_SW cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.f(i,j) = field.u(i-1,j);
+            field.g(i,j-1) = field.v(i,j-1);
         }
 
-        //TODO: implement the rest of the corners
+        
     }
 }
 
@@ -68,43 +78,71 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         int i = cell->i();
         int j = cell->j();
 
+        // B_E cell
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = 0;
             field.v(i, j) = -field.v(i + 1, j);
         }
-
+        // B_W cell
         if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = 0;
             field.v(i, j) = -field.v(i - 1, j);
         }
-
+        // B_N cell 
         if (cell->is_border(border_position::TOP)) {
             field.v(i, j) = 0;
             field.u(i, j) = -field.u(i, j + 1);
         }
-
+        // B_S cell
         if (cell->is_border(border_position::BOTTOM)) {
             field.v(i, j - 1) = 0;
             field.u(i, j) = -field.u(i, j - 1);
         }
 
         // B_NW cell
-        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
             field.u(i,j) = -field.u(i,j+1);
             field.v(i,j) = 0;
             field.u(i-1,j) = 0;
-            field.v(i,j-1) = -field.v(-i,j-1);
+            field.v(i,j-1) = -field.v(i-1,j-1);
         }
         // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
+            field.u(i,j) = 0;
+            field.v(i,j-1) = 0;
+            field.u(i-1,j) = -field.u(i-1,j-1);
+            field.v(i,j) = -field.v(i+1,j);
+        }
+        // B_NE cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.u(i,j) = 0;
+            field.v(i,j) = 0;
+            field.u(i-1,j) = -field.u(i-1,j+1);
+            field.v(i,j-1) = -field.v(i+1,j-1);
+        }
+        // B_SW cell
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
             field.u(i,j) = -field.u(i,j-1);
-            field.v(i,j) = 0;
-            field.u(i+1,j) = 0;
-            field.v(i,j+1) = -field.v(i,j+1);
+            field.v(i,j) = -field.v(i-1,j);
+            field.u(i-1,j) = 0;
+            field.v(i,j-1) = 0;
         }
+
+        // forbidden cells with two opposite borders or three boundaries
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::TOP)) {
+            std::cout << "there are forbidden cells with two opposite borders or three boundaries \n";
+        }
+        if (cell->is_border(border_position::LEFT) && cell->is_border(border_position::RIGHT)) {
+            std::cout << "there are forbidden cells with two opposite borders or three boundaries \n";
+        }
+        // forbidden cells with obstacles only consisting of 1 cell
+        if (cell->is_border(border_position::LEFT) && cell->is_border(border_position::RIGHT) && cell->is_border(border_position::TOP) && cell->is_border(border_position::BOTTOM)) {
+            std::cout << "there are forbidden cells with four boundaries \n";
+        }
+
     }
-    //TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc...
-}
+    //TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc... is it maybe useful to change the order
+    // and do else if and else statements? Does the order of if clauses make a difference anyway?? 
 
 void FixedWallBoundary::applyPressure(Fields &field) {
     for (auto cell : _cells) {
