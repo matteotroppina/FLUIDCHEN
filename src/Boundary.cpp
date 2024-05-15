@@ -166,13 +166,21 @@ void FixedWallBoundary::applyPressure(Fields &field) {
         }
 
         // B_NW cell
-        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
             field.p(i,j) = (field.p(i,j+1) + field.p(i-1, j))/2;
         }
         // B_SE cell
-        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-            field.p(i,j) = (field.p(i,j-1) + field.p(i+1, j))/2;
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
+            field.p(i,j) = (field.p(i+1,j) + field.p(i, j-1))/2;
         }
+        // B_SW cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.p(i,j) = (field.p(i-1,j) + field.p(i, j-1))/2;
+        }
+        // B_NE cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.p(i,j) = (field.p(i,j+1) + field.p(i+1, j))/2;
+        }   
     }
 }
 
