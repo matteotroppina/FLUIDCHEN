@@ -42,7 +42,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double eps{};     /* accuracy bound for pressure*/
     double UIN{};     /*inlet velocity*/
     double VIN{};
-    // int num_of_walls{};
+    int num_of_walls{};
 
     if (file.is_open()) {
 
@@ -74,13 +74,15 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "VIN") file >> VIN;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
+                if (var == "num_of_walls") file >> num_of_walls;
             }
         }
     }
     file.close();
 
-    std::map<int, double> wall_vel;
+
     if (_geom_name.compare("NONE") == 0) {
+        std::map<int, double> wall_vel;
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 
@@ -96,9 +98,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
 
-    // std::cout << domain.dx << " " << imax << " "
-    //           << " " << domain.imaxb << domain.size_x << std::endl;
-
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
 
@@ -107,20 +106,30 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
 
-    // Construct boundaries
-    if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
-    }
-    if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.infow_cells(), UIN, VIN));
-    }
-    if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<OutflowBoundary>(_grid.infow_cells(), -UIN, -VIN)); // does this make sense??
+    if (_geom_name.compare("NONE") == 0) { // Construct boundaries for lid driven cavity
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+    } else { // general case
+        if (not _grid.inner_obstacle_cells().empty()) {
+            _boundaries.push_back(std::make_unique<InnerObstacle>(_grid.inner_obstacle_cells()));
+        }
+        if (not _grid.moving_wall_cells().empty()) {
+//            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), ??)); // TODO: set wall velocity according to input file
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+        if (not _grid.fixed_velocity_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedVelocityBoundary>(_grid.fixed_velocity_cells(), UIN, VIN));
+        }
+        if (not _grid.zero_gradient_cells().empty()) {
+            _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
+        }
     }
 }
 
@@ -238,12 +247,16 @@ void Case::simulate() {
             std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
-            if (_field.p_matrix().max_abs_value() > 1e6) {
+
+            double max_p = _field.p_matrix().max_abs_value();
+            if (max_p > 1e6 or max_p != max_p) { //check larger than or nan
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
             output_vtk(timestep, 0);
             output_counter = 0;
+
+//            return; // remove this line to run normally
         }
 
         timestep += 1;
