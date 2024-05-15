@@ -143,6 +143,7 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
     }
     //TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc... is it maybe useful to change the order
     // and do else if and else statements? Does the order of if clauses make a difference anyway?? 
+}
 
 void FixedWallBoundary::applyPressure(Fields &field) {
     for (auto cell : _cells) {
@@ -316,22 +317,18 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
 
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = field.u(i + 1, j);
-            field.v(i, j) = field.v(i + 1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
             field.u(i, j) = field.u(i - 1, j);
-            field.v(i, j) = field.v(i - 1, j);
         }
 
         if (cell->is_border(border_position::TOP)) {
             field.v(i, j) = field.v(i, j + 1);
-            field.u(i, j) = field.u(i, j + 1);
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
             field.v(i, j) = field.v(i, j - 1);
-            field.u(i, j) = field.u(i, j - 1);
         }
 //        //field.u(i,j) = _outflow_u_velocity;
 //        //field.v(i,j) = _outflow_v_velocity;  //how are the outflow velocities??
@@ -346,19 +343,23 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = -field.p(i + 1, j);
+            field.p(i, j) = 0;
+            field.p(i - 1, j) = 0;
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = -field.p(i - 1, j);
+            field.p(i, j) = 0;
+            field.p(i + 1, j) = 0;
         }
 
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = -field.p(i, j + 1);
+            field.p(i, j) = 0;
+            field.p(i, j - 1) = 0;
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = -field.p(i, j - 1);
+            field.p(i, j) = 0;
+            field.p(i, j + 1) = 0;
         }
     }
 }
