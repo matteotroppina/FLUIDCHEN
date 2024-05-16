@@ -80,7 +80,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     file.close();
 
-
     if (_geom_name.compare("NONE") == 0) {
         std::map<int, double> wall_vel;
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
@@ -119,7 +118,8 @@ Case::Case(std::string file_name, int argn, char **args) {
             _boundaries.push_back(std::make_unique<InnerObstacle>(_grid.inner_obstacle_cells()));
         }
         if (not _grid.moving_wall_cells().empty()) {
-//            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), ??)); // TODO: set wall velocity according to input file
+            //            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), ??)); //
+            //            TODO: set wall velocity according to input file
         }
         if (not _grid.fixed_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
@@ -130,7 +130,6 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.zero_gradient_cells().empty()) {
             _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
         }
-        
     }
 }
 
@@ -221,7 +220,7 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyFlux(_field);
         }
-        // _field.printMatrix(_grid);
+        _field.printMatrix(_grid);
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -250,25 +249,25 @@ void Case::simulate() {
                       << std::endl;
 
             double max_p = _field.p_matrix().max_abs_value();
-            if (max_p > 1e6 or max_p != max_p) { //check larger than or nan
+            if (max_p > 1e6 or max_p != max_p) { // check larger than or nan
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
             output_vtk(timestep, 0);
             output_counter = 0;
 
-//            return; // remove this line to run normally
+            //            return; // remove this line to run normally
         }
 
         timestep += 1;
         output_counter += dt;
         t += dt;
     }
-    std::string filename;
-    std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
-    std::cin >> filename;
+    // std::string filename;
+    // std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
+    // std::cin >> filename;
 
-    output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
+    // output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
 }
 
 void Case::output_csv(const std::vector<int> &vec, const std::string &filename) {
