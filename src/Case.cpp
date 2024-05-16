@@ -220,7 +220,7 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyFlux(_field);
         }
-        _field.printMatrix(_grid);
+        // _field.printMatrix(_grid);
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);

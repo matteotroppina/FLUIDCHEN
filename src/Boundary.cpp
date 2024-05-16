@@ -248,26 +248,22 @@ void FixedVelocityBoundary::applyVelocity(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
-            // field.v(i, j) = 2* - field.v(i, j - 1);
-            field.v(i, j) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
+            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
         }
         if (cell->is_border(border_position::TOP)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
-            // field.v(i, j) = 2*_inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i, j + 1);
-            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
+            field.v(i, j) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            // field.u(i, j) = 2*_inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i + 1, j);
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
+            field.u(i, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i + 1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            // field.u(i, j) = 2*_inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i - 1, j);
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i + 1, j);
+            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
         }
     }
 }
@@ -279,19 +275,19 @@ void FixedVelocityBoundary::applyPressure(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = field.p(i - 1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
             field.p(i, j) = field.p(i + 1, j);
         }
 
+        if (cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = field.p(i - 1, j);
+        }
+
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = field.p(i, j - 1);
+            field.p(i, j) = field.p(i, j + 1);
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = field.p(i, j + 1);
+            field.p(i, j) = field.p(i, j - 1);
         }
     }
     // Neumann condition, can we just leave it like this?
@@ -308,24 +304,18 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
 
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = field.u(i + 1, j);
-            // field.v(i, j) = field.v(i, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = 5;
-            // field.u(i, j) = field.u(i-1, j);
-            // std::cout << "left:" << i <<" " << j << "\n";
-            // field.v(i + 1, j) = field.v(i, j);
-            // field.v(i,j) = field.v(i-1,j);
+            field.u(i, j) = field.u(i - 1, j);
         }
 
         if (cell->is_border(border_position::TOP)) {
-            field.v(i, j - 1) = field.v(i, j);
-            // field.u(i, j - 1) = field.u(i, j);
+            field.v(i, j) = field.v(i, j + 1);
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.v(i, j + 1) = field.v(i, j);
+            field.v(i, j) = field.v(i, j - 1);
             // field.u(i, j + 1) = field.u(i, j);
         }
         //        //field.u(i,j) = _outflow_u_velocity;
@@ -341,19 +331,19 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = -field.p(i - 1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
             field.p(i, j) = -field.p(i + 1, j);
         }
 
+        if (cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = -field.p(i - 1, j);
+        }
+
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = -field.p(i, j - 1);
+            field.p(i, j) = -field.p(i, j + 1);
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = -field.p(i, j + 1);
+            field.p(i, j) = -field.p(i, j - 1);
         }
     }
 }
