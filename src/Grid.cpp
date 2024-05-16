@@ -211,18 +211,18 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 }
 
                 //also for outlet?
-                if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::ZERO_GRADIENT) {
-                    _cells(i, j).add_border(border_position::LEFT);
-                }
-                if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::ZERO_GRADIENT) {
-                    _cells(i, j).add_border(border_position::RIGHT);
-                }
-                if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::ZERO_GRADIENT) {
-                    _cells(i, j).add_border(border_position::BOTTOM);
-                }
-                if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::ZERO_GRADIENT) {
-                    _cells(i, j).add_border(border_position::TOP);
-                }
+                //if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::ZERO_GRADIENT) {
+                //    _cells(i, j).add_border(border_position::LEFT);
+                //}
+                //if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::ZERO_GRADIENT) {
+                //    _cells(i, j).add_border(border_position::RIGHT);
+                //}
+                //if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::ZERO_GRADIENT) {
+                //    _cells(i, j).add_border(border_position::BOTTOM);
+                //}
+                //if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::ZERO_GRADIENT) {
+                //    _cells(i, j).add_border(border_position::TOP);
+                //}
             }
         }
     }

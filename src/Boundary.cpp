@@ -306,17 +306,18 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
         int i = cell->i();
         int j = cell->j();
 
-        
+
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i-1, j) = field.u(i, j);
             field.v(i-1,j) = field.v(i,j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i+1,j) = field.u(i-1,j);
-            field.u(i, j) = field.u(i-1, j);
-            field.v(i+1,j) = field.v(i-1,j);
-            field.v(i,j) = field.v(i-1,j);
+            field.u(i-1,j) = field.u(i-2,j);
+            //field.u(i, j) = field.u(i-1, j);
+            //std::cout << "left:" << i <<" " << j << "\n";
+            field.v(i+1,j) = field.v(i,j);
+            //field.v(i,j) = field.v(i-1,j);
         }
 
         if (cell->is_border(border_position::TOP)) {
