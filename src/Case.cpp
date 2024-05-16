@@ -130,6 +130,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.zero_gradient_cells().empty()) {
             _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
         }
+        
     }
 }
 
