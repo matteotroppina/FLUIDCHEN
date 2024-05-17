@@ -28,6 +28,14 @@ void Fields::printMatrix(Grid &grid) {
         std::cout << std::endl;
     }
 
+//    std::cout << "RS matrix" << std::endl;
+//    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+//        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+//            std::cout << _RS(i, j) << ", ";
+//        }
+//        std::cout << std::endl;
+//    }
+
     std::cout << std::endl;
 
     std::cout << "U matrix" << std::endl;
@@ -47,6 +55,29 @@ void Fields::printMatrix(Grid &grid) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+void Fields::printCellTypes(Grid &grid){
+
+    std::map<cell_type, int> cellTypeToInt = {
+        {cell_type::FLUID, GeometryIDs::fluid},
+        {cell_type::FIXED_WALL, GeometryIDs::fixed_wall},
+        {cell_type::FIXED_VELOCITY, GeometryIDs::fixed_velocity},
+        {cell_type::ZERO_GRADIENT, GeometryIDs::zero_gradient},
+        {cell_type::MOVING_WALL, GeometryIDs::moving_wall}};
+
+
+    std::cout << std::fixed;
+    std::cout << std::setprecision(1);
+
+    std::cout << "Cell types" << std::endl;
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            int cell_id = cellTypeToInt[grid.cell(i, j).type()];
+            std::cout << cell_id  << ", ";
+        }
+        std::cout << std::endl;
+    }
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
