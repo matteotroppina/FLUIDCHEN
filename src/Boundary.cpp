@@ -42,6 +42,14 @@ void Boundary::applyFlux(Fields &field) {
     }
 }
 
+void ZeroGradientBoundary::applyFlux(Fields &field) {
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+    }
+}
+
+
 InnerObstacle::InnerObstacle(std::vector<Cell *> cells) : Boundary(cells) {}
 
 // TODO: there's a bug currently where the velocity is changing in the obstacle cells

@@ -243,7 +243,11 @@ void Case::simulate() {
 
         _field.calculate_velocities(_grid);
 
-        if (output_counter > _output_freq or timestep == 1) {
+        timestep += 1;
+        output_counter += dt;
+        t += dt;
+
+        if (output_counter + dt/2 >= _output_freq or timestep == 1) {
             std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
@@ -254,14 +258,10 @@ void Case::simulate() {
                 break;
             }
             output_vtk(timestep, 0);
-            output_counter = 0;
+            output_counter = output_counter - _output_freq;
 
             //            return; // remove this line to run normally
         }
-
-        timestep += 1;
-        output_counter += dt;
-        t += dt;
     }
     // std::string filename;
     // std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
