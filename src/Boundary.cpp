@@ -11,12 +11,14 @@ void Boundary::applyFlux(Fields &field) {
         }
         if (cell->is_border(border_position::LEFT)) {
             field.f(i - 1, j) = field.u(i - 1, j);
+            field.f(i, j) = 0; // not used
         }
         if (cell->is_border(border_position::TOP)) {
             field.g(i, j) = field.v(i, j);
         }
         if (cell->is_border(border_position::BOTTOM)) {
             field.g(i, j - 1) = field.v(i, j - 1);
+            field.g(i, j) = 0; // not used
         }
 
         // B_NW cell
@@ -42,20 +44,8 @@ void Boundary::applyFlux(Fields &field) {
     }
 }
 
-void ZeroGradientBoundary::applyFlux(Fields &field) {
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-    }
-}
-
 
 InnerObstacle::InnerObstacle(std::vector<Cell *> cells) : Boundary(cells) {}
-
-// TODO: there's a bug currently where the velocity is changing in the obstacle cells
-//  currently I am setting the velocity to zero in the obstacle cells.
-//  This works because the boundaries are set in order,
-//  and the obstacle cells are set before the fixed wall cells
 void InnerObstacle::applyVelocity(Fields &field) {} // do nothing
 void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
@@ -72,23 +62,25 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
 
         // B_E cell
         if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = 0;
             field.v(i, j) = -field.v(i + 1, j);
+            field.u(i, j) = 0;
         }
         // B_W cell
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i - 1, j) = 0;
             field.v(i, j) = -field.v(i - 1, j);
+            field.u(i - 1, j) = 0;
+            field.u(i, j) = 0; // not used
         }
         // B_N cell
         if (cell->is_border(border_position::TOP)) {
-            field.v(i, j) = 0;
             field.u(i, j) = -field.u(i, j + 1);
+            field.v(i, j) = 0;
         }
         // B_S cell
         if (cell->is_border(border_position::BOTTOM)) {
-            field.v(i, j - 1) = 0;
             field.u(i, j) = -field.u(i, j - 1);
+            field.v(i, j - 1) = 0;
+            field.v(i, j) = 0; // not used
         }
 
         // // B_NW cell
@@ -133,9 +125,6 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
             std::cout << "there are forbidden cells with four boundaries \n";
         }
     }
-    // TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc... is it
-    // maybe useful to change the order
-    //  and do else if and else statements? Does the order of if clauses make a difference anyway??
 }
 
 void FixedWallBoundary::applyPressure(Fields &field) {
@@ -144,19 +133,19 @@ void FixedWallBoundary::applyPressure(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = field.p(i + 1, j);
+            field.p(i, j) = field.p(i + 1, j); // i = 0
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = field.p(i - 1, j);
+            field.p(i, j) = field.p(i - 1, j); // i = imax + 1
         }
 
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = field.p(i, j + 1);
+            field.p(i, j) = field.p(i, j + 1); // j = 0
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = field.p(i, j - 1);
+            field.p(i, j) = field.p(i, j - 1); // j = jmax + 1
         }
 
         // B_NW cell
@@ -195,6 +184,7 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
         if (cell->is_border(border_position::BOTTOM)) {
             field.u(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.u(i, j - 1);
             field.v(i, j - 1) = 0;
+            field.v(i, j) = 0; // not used
         }
         if (cell->is_border(border_position::TOP)) {
             field.u(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.u(i, j + 1);
@@ -202,13 +192,15 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = 0;
             field.v(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.v(i + 1, j);
+            field.u(i, j) = 0;
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i - 1, j) = 0;
             field.v(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.v(i - 1, j);
+            field.u(i - 1, j) = 0;
+            field.u(i, j) = 0; // not used
+
         }
     }
 }
@@ -258,6 +250,7 @@ void FixedVelocityBoundary::applyVelocity(Fields &field) {
         if (cell->is_border(border_position::BOTTOM)) {
             field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
             field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+            field.v(i, j) = 0; // not used
         }
         if (cell->is_border(border_position::TOP)) {
             field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
@@ -271,6 +264,7 @@ void FixedVelocityBoundary::applyVelocity(Fields &field) {
 
         if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
+            field.u(i, j) = 0; // not used
             field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
         }
     }
@@ -312,23 +306,26 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
 
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = field.u(i + 1, j);
+            field.v(i, j) = -field.v(i + 1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = field.u(i - 1, j);
+            field.u(i, j) = 0; // not used
+            field.u(i - 1, j) = field.u(i - 2, j);
+            field.v(i, j) = -field.v(i - 1, j);
         }
 
         if (cell->is_border(border_position::TOP)) {
             field.v(i, j) = field.v(i, j + 1);
+            field.u(i, j) = -field.u(i, j + 1);
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.v(i, j) = field.v(i, j - 1);
-            // field.u(i, j + 1) = field.u(i, j);
+            field.v(i, j) = 0; // not used
+            field.v(i, j - 1) = field.v(i, j - 2);
+            field.u(i, j) = -field.u(i, j - 1);
+
         }
-        //        //field.u(i,j) = _outflow_u_velocity;
-        //        //field.v(i,j) = _outflow_v_velocity;  //how are the outflow velocities??
-        //        // It should be zero gradient fluid speed for outflow - Daniels
     }
 }
 
@@ -339,19 +336,19 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = -field.p(i + 1, j);
+            field.p(i, j) = 0;
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = -field.p(i - 1, j);
+            field.p(i, j) = 0;
         }
 
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = -field.p(i, j + 1);
+            field.p(i, j) = 0;
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = -field.p(i, j - 1);
+            field.p(i, j) = 0;
         }
     }
 }

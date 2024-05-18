@@ -108,7 +108,6 @@ class ZeroGradientBoundary : public Boundary {
     virtual ~ZeroGradientBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
-    void applyFlux(Fields &field);
 
 
   private:
