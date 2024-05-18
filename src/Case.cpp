@@ -211,6 +211,8 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
+    _field.printCellTypes(_grid);
+
     while (t < _t_end) {
 
         _field.calculate_dt(_grid);
@@ -220,7 +222,6 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyFlux(_field);
         }
-        // _field.printMatrix(_grid);
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
@@ -260,7 +261,7 @@ void Case::simulate() {
             output_vtk(timestep, 0);
             output_counter = output_counter - _output_freq;
 
-            //            return; // remove this line to run normally
+            _field.printMatrix(_grid); // remove this line to run normally
         }
     }
     // std::string filename;
