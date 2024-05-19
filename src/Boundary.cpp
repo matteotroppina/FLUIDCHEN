@@ -20,12 +20,12 @@ void Boundary::applyFlux(Fields &field) {
         }
 
         // B_NW cell
-        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
             field.f(i - 1, j) = field.u(i - 1, j);
             field.g(i, j) = field.v(i, j);
         }
         // B_SE cell
-        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
             field.f(i, j) = field.u(i, j);
             field.g(i, j - 1) = field.v(i, j - 1);
         }
@@ -83,34 +83,34 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
             field.u(i, j) = -field.u(i, j - 1);
         }
 
-        // // B_NW cell
-        // if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
-        //     field.u(i,j) = -field.u(i,j+1);
-        //     field.v(i,j) = 0;
-        //     field.u(i-1,j) = 0;
-        //     field.v(i,j-1) = -field.v(i-1,j-1);
-        // }
-        // // B_SE cell
-        // if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
-        //     field.u(i,j) = 0;
-        //     field.v(i,j-1) = 0;
-        //     field.u(i-1,j) = -field.u(i-1,j-1);
-        //     field.v(i,j) = -field.v(i+1,j);
-        // }
-        // // B_NE cell
-        // if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
-        //     field.u(i,j) = 0;
-        //     field.v(i,j) = 0;
-        //     field.u(i-1,j) = -field.u(i-1,j+1);
-        //     field.v(i,j-1) = -field.v(i+1,j-1);
-        // }
-        // // B_SW cell
-        // if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-        //     field.u(i,j) = -field.u(i,j-1);
-        //     field.v(i,j) = -field.v(i-1,j);
-        //     field.u(i-1,j) = 0;
-        //     field.v(i,j-1) = 0;
-        // }
+        // B_NW cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
+            field.u(i,j) = -field.u(i,j+1);
+            field.v(i,j) = 0;
+            field.u(i-1,j) = 0;
+            field.v(i,j-1) = -field.v(i-1,j-1);
+        }
+        // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
+            field.u(i,j) = 0;
+            field.v(i,j-1) = 0;
+            field.u(i-1,j) = -field.u(i-1,j-1);
+            field.v(i,j) = -field.v(i+1,j);
+        }
+        // B_NE cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.u(i,j) = 0;
+            field.v(i,j) = 0;
+            field.u(i-1,j) = -field.u(i-1,j+1);
+            field.v(i,j-1) = -field.v(i+1,j-1);
+        }
+        // B_SW cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.u(i,j) = -field.u(i,j-1);
+            field.v(i,j) = -field.v(i-1,j);
+            field.u(i-1,j) = 0;
+            field.v(i,j-1) = 0;
+        }
 
         // forbidden cells with two opposite borders or three boundaries
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::TOP)) {
@@ -303,11 +303,13 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = field.u(i + 1, j);
+            field.u(i, j) = field.u(i+1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = field.u(i - 1, j);
+            //field.u(i, j) = field.u(i-1, j);
+            field.u(i-1,j) = field.u(i-2,j);
+            //field.v(i,j) = field.v(i-1,j);
         }
 
         if (cell->is_border(border_position::TOP)) {
