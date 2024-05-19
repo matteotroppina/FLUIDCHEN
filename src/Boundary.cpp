@@ -125,9 +125,6 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
             std::cout << "there are forbidden cells with four boundaries \n";
         }
     }
-    // TODO: probably we should go through all cases ex. (border_position::RIGHT && border_position::TOP) etc... is it
-    // maybe useful to change the order
-    //  and do else if and else statements? Does the order of if clauses make a difference anyway??
 }
 
 void FixedWallBoundary::applyPressure(Fields &field) {
