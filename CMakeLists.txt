@@ -32,7 +32,7 @@ include(${VTK_USE_FILE})
 target_include_directories(fluidchen PUBLIC include)
 
 # Add Compiler warnings (Try to write clean code!)
-target_compile_options(fluidchen PRIVATE -Wall -Wextra)
+target_compile_options(fluidchen PRIVATE -Wall -Wextra -O3)
 
 # if you use external libraries you have to link them like
 target_link_libraries(fluidchen PRIVATE MPI::MPI_CXX)

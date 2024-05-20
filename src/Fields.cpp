@@ -59,62 +59,75 @@ void Fields::printMatrix(Grid &grid) {
 
 void Fields::printCellTypes(Grid &grid){
 
-    std::map<cell_type, int> cellTypeToInt = {
+    std::map<cell_type, char> cellTypeToChar = {
         {cell_type::FLUID, GeometryIDs::fluid},
         {cell_type::FIXED_WALL, GeometryIDs::fixed_wall},
         {cell_type::FIXED_VELOCITY, GeometryIDs::fixed_velocity},
         {cell_type::ZERO_GRADIENT, GeometryIDs::zero_gradient},
-        {cell_type::MOVING_WALL, GeometryIDs::moving_wall}};
+        {cell_type::MOVING_WALL, GeometryIDs::moving_wall},
+        {cell_type::INNER_OBSTACLE, ' ' - '0'}};
 
 
     std::cout << std::fixed;
     std::cout << std::setprecision(1);
 
-    std::cout << "Cell types" << std::endl;
+    std::cout <<std::endl << "Cell types" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
         for (auto i = 0; i <= grid.size_x() + 1; i++) {
-            int cell_id = cellTypeToInt[grid.cell(i, j).type()];
+            char cell_id = cellTypeToChar[grid.cell(i, j).type()];
+            cell_id += '0';
             std::cout << cell_id  << ", ";
         }
         std::cout << std::endl;
     }
 }
 
-void Fields::calculate_fluxes(Grid &grid) {
-    for (int i = 1; i <= grid.size_x() - 1; i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
-            _F(i, j) = _U(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
-        }
-    }
+void Fields::printBorders(Grid &grid) {
+    std::cout << std::endl << "Borders" << std::endl;
 
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y() - 1; j++) {
-            _G(i, j) = _V(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            if (grid.cell(i, j).is_border(border_position::LEFT)) {
+                std::cout << "L, ";
+            } else if (grid.cell(i, j).is_border(border_position::RIGHT)) {
+                    std::cout << "R, ";
+            } else if (grid.cell(i, j).is_border(border_position::TOP)) {
+                    std::cout << "T, ";
+            } else if (grid.cell(i, j).is_border(border_position::BOTTOM)) {
+                    std::cout << "B, ";
+            } else {
+                std::cout << ".  ";
+            }
         }
+        std::cout << std::endl;
+    }
+}
+
+void Fields::calculate_fluxes(Grid &grid) {
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        _F(i, j) = _U(i, j) +
+                       _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
+        _G(i, j) = _V(i, j) +
+                       _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
     }
 }
 
 void Fields::calculate_rs(Grid &grid) {
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
-            _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
-        }
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
     }
 }
 
 void Fields::calculate_velocities(Grid &grid) {
-    for (int i = 1; i <= grid.size_x() - 1; i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
-            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
-        }
-    }
-
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y() - 1; j++) {
-            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
-        }
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
+        _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
     }
 }
 

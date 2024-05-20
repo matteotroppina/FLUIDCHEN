@@ -46,6 +46,8 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int i = 0;
     int j = 0;
 
+    std::vector<Cell *> _temp_fixed_wall_cells;
+
     for (int j_geom = _domain.jminb; j_geom < _domain.jmaxb; ++j_geom) {
         { i = 0; }
         for (int i_geom = _domain.iminb; i_geom < _domain.imaxb; ++i_geom) {
@@ -65,13 +67,80 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             } else {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _fixed_wall_cells.push_back(&_cells(i, j));
-                // also contains _fixed_wall_cells, but it doesn't matter since they are not modified
+                _temp_fixed_wall_cells.push_back(&_cells(i, j));
+//                _fixed_wall_cells.push_back(&_cells(i, j));
             }
             ++i;
         }
         ++j;
     }
+
+    // Determine fixed walls and inner obstacles
+
+    for (auto cell : _temp_fixed_wall_cells) {
+        i = cell->i();
+        j = cell->j();
+
+
+        if (i == 0) {
+            if (_cells(i + 1, j).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        } else if (i == _domain.size_x + 1) {
+            if (_cells(i - 1, j).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+
+        } else if (j == 0) {
+            if (_cells(i, j + 1).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        } else if (j == _domain.size_y + 1) {
+            if (_cells(i, j - 1).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        }
+
+        if (_cells(i + 1, j).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i - 1, j).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i, j + 1).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i, j - 1).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        _inner_obstacle_cells.push_back(cell);
+        _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+    }
+
 
     // Corner cell neighbour assigment
     // Bottom-Left Corner
@@ -209,20 +278,6 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::TOP);
                 }
-
-                //also for outlet?
-                //if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::ZERO_GRADIENT) {
-                //    _cells(i, j).add_border(border_position::LEFT);
-                //}
-                //if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::ZERO_GRADIENT) {
-                //    _cells(i, j).add_border(border_position::RIGHT);
-                //}
-                //if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::ZERO_GRADIENT) {
-                //    _cells(i, j).add_border(border_position::BOTTOM);
-                //}
-                //if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::ZERO_GRADIENT) {
-                //    _cells(i, j).add_border(border_position::TOP);
-                //}
             }
         }
     }

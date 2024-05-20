@@ -38,4 +38,5 @@ enum class cell_type {
     FIXED_VELOCITY,
     ZERO_GRADIENT,
     DEFAULT,
+    INNER_OBSTACLE
 };

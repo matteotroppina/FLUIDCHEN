@@ -212,6 +212,7 @@ void Case::simulate() {
     std::vector<int> iter_vec;
 
     _field.printCellTypes(_grid);
+    _field.printBorders(_grid);
 
     while (t < _t_end) {
 
@@ -220,19 +221,23 @@ void Case::simulate() {
 
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
-            b->applyFlux(_field);
         }
 
         _field.calculate_fluxes(_grid);
+
+        for (auto &b : _boundaries) {
+            b->applyFlux(_field);
+        }
+
         _field.calculate_rs(_grid);
 
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = _pressure_solver->solve(_field, _grid, _boundaries);
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
             }
+            residual = _pressure_solver->solve(_field, _grid, _boundaries);
             iter += 1;
         }
 
@@ -249,6 +254,10 @@ void Case::simulate() {
         t += dt;
 
         if (output_counter + dt/2 >= _output_freq or timestep == 1) {
+            for (auto &b : _boundaries) {
+                b->applyVelocity(_field); // for debugging
+            }
+
             std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
@@ -264,14 +273,12 @@ void Case::simulate() {
             _field.printMatrix(_grid); // remove this line to run normally
         }
     }
-    // std::string filename;
-    // std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
-    // std::cin >> filename;
-
-    // output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
+     output_csv(iter_vec);
 }
 
-void Case::output_csv(const std::vector<int> &vec, const std::string &filename) {
+void Case::output_csv(const std::vector<int> &vec) {
+    std::string filename = _dict_name + "/iterations.csv";
+
     std::ofstream file(filename);
     if (file.is_open()) {
         for (size_t i = 0; i < vec.size(); ++i) {
@@ -317,6 +324,16 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
 
+    // Set blank cells
+    for (int col = 0; col < _grid.domain().size_y; col++) {
+        for (int row = 0; row < _grid.domain().size_x; row++) {
+            if (_grid.cell(row+1, col+1).type() == cell_type::FLUID) {
+                continue;
+            }
+            structuredGrid->BlankCell(row + col * (_grid.domain().size_x));
+        }
+    }
+
     // Pressure Array
     vtkSmartPointer<vtkDoubleArray> Pressure = vtkSmartPointer<vtkDoubleArray>::New();
     Pressure->SetName("pressure");
@@ -346,6 +363,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkDoubleArray> VelocityPoints = vtkSmartPointer<vtkDoubleArray>::New();
     VelocityPoints->SetName("velocity");
     VelocityPoints->SetNumberOfComponents(3);
+
+
 
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {

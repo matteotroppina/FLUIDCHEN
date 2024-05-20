@@ -29,6 +29,7 @@ class Fields {
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);
+    void printBorders(Grid &grid);
 
 
     /**

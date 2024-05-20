@@ -102,5 +102,5 @@ class Case {
      * @param[in] Number of cells in y-direction for this MPI rank
      */
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
-    void output_csv(const std::vector<int> &vec, const std::string &filename);
+    void output_csv(const std::vector<int> &vec);
 };
