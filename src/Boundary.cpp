@@ -1,7 +1,6 @@
 #include "Boundary.hpp"
 
 Boundary::Boundary(std::vector<Cell *> cells) : _cells(cells) {}
-
 void Boundary::applyFlux(Fields &field) {
     for (auto cell : _cells) {
         int i = cell->i();
@@ -58,26 +57,26 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         int i = cell->i();
         int j = cell->j();
 
-        // B_E cell
-        if (cell->is_border(border_position::RIGHT)) {
-            field.v(i, j) = -field.v(i + 1, j);
-            field.u(i, j) = 0;
-        }
-        // B_W cell
-        if (cell->is_border(border_position::LEFT)) {
-            field.v(i, j) = -field.v(i - 1, j);
-            field.u(i - 1, j) = 0;
-        }
-        // B_N cell
-        if (cell->is_border(border_position::TOP)) {
-            field.u(i, j) = -field.u(i, j + 1);
-            field.v(i, j) = 0;
-        }
-        // B_S cell
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.u(i, j) = -field.u(i, j - 1);
-            field.v(i, j - 1) = 0;
-        }
+         // B_E cell
+         if (cell->is_border(border_position::RIGHT)) {
+             field.v(i, j) = -field.v(i + 1, j);
+             field.u(i, j) = 0;
+         }
+         // B_W cell
+         if (cell->is_border(border_position::LEFT)) {
+             field.v(i, j) = -field.v(i - 1, j);
+             field.u(i - 1, j) = 0;
+         }
+         // B_N cell
+         if (cell->is_border(border_position::TOP)) {
+             field.u(i, j) = -field.u(i, j + 1);
+             field.v(i, j) = 0;
+         }
+         // B_S cell
+         if (cell->is_border(border_position::BOTTOM)) {
+             field.u(i, j) = -field.u(i, j - 1);
+             field.v(i, j - 1) = 0;
+         }
 
          // B_NW cell
          if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
@@ -162,15 +161,128 @@ void FixedWallBoundary::applyPressure(Fields &field) {
         }
     }
 }
+FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
+                                             double inflow_v_velocity)
+    : Boundary(cells) {
+    _inflow_u_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_u_velocity));
+    _inflow_v_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_v_velocity));
+}
+
+FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity,
+                                             std::map<int, double> inflow_v_velocity,
+                                             std::map<int, double> wall_temperature)
+    : Boundary(cells), _inflow_u_velocity(inflow_u_velocity), _inflow_v_velocity(inflow_v_velocity),
+      _wall_temperature(wall_temperature) {}
+
+void FixedVelocityBoundary::applyVelocity(Fields &field) {
+
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
+            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+        }
+        if (cell->is_border(border_position::TOP)) {
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
+            field.v(i, j) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+        }
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.u(i, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
+        }
+    }
+}
+void FixedVelocityBoundary::applyPressure(Fields &field) {
+    // Neumann condition
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.p(i, j) = field.p(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = field.p(i - 1, j);
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            field.p(i, j) = field.p(i, j + 1);
+        }
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.p(i, j) = field.p(i, j - 1);
+        }
+    }
+}
+ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
+ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
+    : Boundary(cells), _wall_temperature(wall_temperature) {}
+void ZeroGradientBoundary::applyVelocity(Fields &field) {
+    // Neumann condition !!! CHange needed
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.u(i, j) = field.u(i + 1, j);
+            field.v(i, j) = field.v(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.u(i - 1, j) = field.u(i - 2, j);
+            field.v(i, j) = field.v(i - 1, j);
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            field.v(i, j) = field.v(i, j + 1);
+            field.u(i, j) = field.u(i, j + 1);
+        }
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.v(i, j - 1) = field.v(i, j - 2);
+            field.u(i, j) = field.u(i, j - 1);
+        }
+    }
+}
+void ZeroGradientBoundary::applyPressure(Fields &field) {
+    // Dirichlet condition pressure on boundary = 0
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.p(i, j) = -field.p(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = -field.p(i - 1, j);
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            field.p(i, j) = -field.p(i, j + 1);
+        }
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.p(i, j) = -field.p(i, j - 1);
+        }
+    }
+}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
-
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                                        std::map<int, double> wall_temperature)
     : Boundary(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
-
 void MovingWallBoundary::applyVelocity(Fields &field) {
 
     for (auto cell : _cells) {
@@ -198,7 +310,6 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
         }
     }
 }
-
 void MovingWallBoundary::applyPressure(Fields &field) {
     for (auto cell : _cells) {
         int i = cell->i();
@@ -218,126 +329,6 @@ void MovingWallBoundary::applyPressure(Fields &field) {
 
         if (cell->is_border(border_position::BOTTOM)) {
             field.p(i, j) = field.p(i, j - 1);
-        }
-    }
-}
-
-FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
-                                             double inflow_v_velocity)
-    : Boundary(cells) {
-    _inflow_u_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_u_velocity));
-    _inflow_v_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_v_velocity));
-}
-
-FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity,
-                                             std::map<int, double> inflow_v_velocity,
-                                             std::map<int, double> wall_temperature)
-    : Boundary(cells), _inflow_u_velocity(inflow_u_velocity), _inflow_v_velocity(inflow_v_velocity),
-      _wall_temperature(wall_temperature) {}
-
-void FixedVelocityBoundary::applyVelocity(Fields &field) {
-
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
-            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
-            field.v(i, j) = 0; // not used
-        }
-        if (cell->is_border(border_position::TOP)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
-            field.v(i, j) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
-        }
-
-        if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i + 1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
-            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            field.u(i, j) = 0; // not used
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
-        }
-    }
-}
-
-void FixedVelocityBoundary::applyPressure(Fields &field) {
-    // Neumann condition
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-
-        if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = field.p(i + 1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = field.p(i - 1, j);
-        }
-
-        if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = field.p(i, j + 1);
-        }
-
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = field.p(i, j - 1);
-        }
-    }
-    // Neumann condition, can we just leave it like this?
-}
-ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
-ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
-    : Boundary(cells), _wall_temperature(wall_temperature) {}
-
-void ZeroGradientBoundary::applyVelocity(Fields &field) {
-    // Neumann condition !!! CHange needed
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-
-        if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = field.u(i + 1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = 0; // not used
-            field.u(i - 1, j) = field.u(i - 2, j);
-        }
-
-        if (cell->is_border(border_position::TOP)) {
-            field.v(i, j) = field.v(i, j + 1);
-        }
-
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.v(i, j) = 0; // not used
-            field.v(i, j - 1) = field.v(i, j - 2);
-        }
-    }
-}
-
-void ZeroGradientBoundary::applyPressure(Fields &field) {
-    // Dirichlet condition pressure on boundary = 0
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-
-        if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = -field.p(i+1, j);
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = -field.p(i-1, j);
-        }
-
-        if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = -field.p(i, j+1);
-        }
-
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = -field.p(i, j-1);
         }
     }
 }

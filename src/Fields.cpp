@@ -28,14 +28,6 @@ void Fields::printMatrix(Grid &grid) {
         std::cout << std::endl;
     }
 
-//    std::cout << "RS matrix" << std::endl;
-//    for (auto j = grid.size_y() + 1; j >= 0; j--) {
-//        for (auto i = 0; i <= grid.size_x() + 1; i++) {
-//            std::cout << _RS(i, j) << ", ";
-//        }
-//        std::cout << std::endl;
-//    }
-
     std::cout << std::endl;
 
     std::cout << "U matrix" << std::endl;
@@ -55,6 +47,7 @@ void Fields::printMatrix(Grid &grid) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
+    std::cout << std::setprecision(4); // digits after decimal point
 }
 
 void Fields::printCellTypes(Grid &grid){
@@ -104,30 +97,40 @@ void Fields::printBorders(Grid &grid) {
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-    for (auto currentCell : grid.fluid_cells()) {
-        int i = currentCell->i();
-        int j = currentCell->j();
-        _F(i, j) = _U(i, j) +
+    for (int i = 1; i <= grid.size_x() - 1; i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
+            _F(i, j) = _U(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
-        _G(i, j) = _V(i, j) +
+        }
+    }
+        for (int i = 1; i <= grid.size_x(); i++) {
+            for (int j = 1; j <= grid.size_y() - 1; j++) {
+            _G(i, j) = _V(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
+        }
     }
 }
 
 void Fields::calculate_rs(Grid &grid) {
-    for (auto currentCell : grid.fluid_cells()) {
-        int i = currentCell->i();
-        int j = currentCell->j();
-        _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
+            _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
+        }
     }
 }
 
 void Fields::calculate_velocities(Grid &grid) {
-    for (auto currentCell : grid.fluid_cells()) {
-        int i = currentCell->i();
-        int j = currentCell->j();
-        _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
-        _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
+    //grid.size_x() = i_max
+    //grid.size_y() = j_max
+    for (int i = 1; i <= grid.size_x() - 1; i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
+            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
+        }
+    }
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y() - 1; j++) {
+            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
+        }
     }
 }
 
@@ -138,17 +141,10 @@ void Fields::calculate_dt(Grid &grid) {
     double u_max = _U.max_abs_value();
     double v_max = _V.max_abs_value();
 
-    //    std::cout << "u_max: " << u_max << std::endl;
-    //    std::cout << "v_max: " << v_max << std::endl;
-
     double coefficient = (dx_2 * dy_2) / (dx_2 + dy_2);
     double conv_cond = coefficient / (2 * _nu);
     double cfl_x = grid.dx() / u_max;
     double cfl_y = grid.dy() / v_max;
-
-    //    std::cout << "conv_cond: " << conv_cond << std::endl;
-    //    std::cout << "cfl_x: " << cfl_x << std::endl;
-    //    std::cout << "cfl_y: " << cfl_y << std::endl;
 
     _dt = std::min({conv_cond, cfl_x, cfl_y});
 

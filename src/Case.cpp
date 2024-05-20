@@ -121,14 +121,14 @@ Case::Case(std::string file_name, int argn, char **args) {
             //            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), ??)); //
             //            TODO: set wall velocity according to input file
         }
-        if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
-        }
         if (not _grid.fixed_velocity_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedVelocityBoundary>(_grid.fixed_velocity_cells(), UIN, VIN));
         }
         if (not _grid.zero_gradient_cells().empty()) {
             _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
     }
 }
@@ -234,10 +234,10 @@ void Case::simulate() {
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
+            residual = _pressure_solver->solve(_field, _grid, _boundaries);
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
             }
-            residual = _pressure_solver->solve(_field, _grid, _boundaries);
             iter += 1;
         }
 
@@ -254,16 +254,13 @@ void Case::simulate() {
         t += dt;
 
         if (output_counter + dt/2 >= _output_freq or timestep == 1) {
-            for (auto &b : _boundaries) {
-                b->applyVelocity(_field); // for debugging
-            }
 
             std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
                       << std::endl;
 
             double max_p = _field.p_matrix().max_abs_value();
-            if (max_p > 1e6 or max_p != max_p) { // check larger than or nan
+            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
