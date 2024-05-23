@@ -167,6 +167,8 @@ void FixedWallBoundary::applyPressure(Fields &field) {
     }
 }
 
+
+
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
