@@ -45,6 +45,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     double TI{};      /*initial temperature*/
     double alpha{};   /*thermal diffusivity*/
     double beta{};    /*coefficient of thermal expansion*/
+    double wall_temp_3{}; 
+    double wall_temp_4{};
+    double wall_temp_5{};
+
     int num_of_walls{};
 
     if (file.is_open()) {
@@ -81,6 +85,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
+                if (var == "wall_temp_3") file >> wall_temp_3;
+                if (var == "wall_temp_4") file >> wall_temp_4;
+                if (var == "wall_temp_5") file >> wall_temp_5;
             }
         }
     }
@@ -136,6 +143,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.fixed_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
+        
     }
 }
 
