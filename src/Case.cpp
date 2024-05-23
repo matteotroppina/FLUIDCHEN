@@ -42,6 +42,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double eps{};     /* accuracy bound for pressure*/
     double UIN{};     /*inlet velocity*/
     double VIN{};
+    double TI{};      /*initial temperature*/
+    double alpha{};   /*thermal diffusivity*/
+    double beta{};    /*coefficient of thermal expansion*/
     int num_of_walls{};
 
     if (file.is_open()) {
@@ -72,6 +75,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "jmax") file >> jmax;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
+                if (var == "TI") file >> TI;
+                if (var == "alpha") file >> alpha;
+                if (var == "beta") file >> beta;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
@@ -98,7 +104,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);

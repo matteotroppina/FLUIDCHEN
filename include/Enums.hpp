@@ -13,7 +13,9 @@ const double wall_velocity = 1.0;
 // # 0  Fluid
 // # 1  Inflow
 // # 2  Outflow
-// # 3  Wall/Obstacle
+// # 3  Wall/Obstacle (adiabatic)
+// # 4  Wall/Obstacle (hot)
+// # 5  Wall/Obstacle (cold)
 
 namespace GeometryIDs {
 const int fluid = 0;
@@ -21,6 +23,8 @@ const int fixed_velocity = 1;
 const int zero_gradient = 2;
 const int fixed_wall = 3;
 const int moving_wall = 8;
+const int hot_wall = 4;
+const int cold_wall = 5;
 } // namespace GeometryIDs
 
 
@@ -38,5 +42,7 @@ enum class cell_type {
     FIXED_VELOCITY,
     ZERO_GRADIENT,
     DEFAULT,
-    INNER_OBSTACLE
+    INNER_OBSTACLE,
+    HOT_WALL,
+    COLD_WALL
 };
