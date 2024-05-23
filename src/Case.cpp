@@ -141,9 +141,14 @@ Case::Case(std::string file_name, int argn, char **args) {
             _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
         }
         if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(), wall_temp_3));
         }
-        
+        if (not _grid.hot_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_wall_cells(), wall_temp_4));
+        }
+        if (not _grid.hot_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
+        }
     }
 }
 
@@ -235,8 +240,10 @@ void Case::simulate() {
 
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
+            b->applyTemperature(_field);
         }
 
+        _field.calculate_temperature(_grid);
         _field.calculate_fluxes(_grid);
 
         for (auto &b : _boundaries) {
@@ -353,6 +360,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
 
+    // Temperature Array
+    vtkSmartPointer<vtkDoubleArray> Temperature = vtkSmartPointer<vtkDoubleArray>::New();
+    Temperature->SetName("Temperature");
+    Temperature->SetNumberOfComponents(1);
+
     // Velocity Array for cell data
     vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
     Velocity->SetName("velocity");
@@ -366,7 +378,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
+            double temperature = _field.T(i, j);
             Pressure->InsertNextTuple(&pressure);
+            Temperature->InsertNextTuple(&temperature);
             vel[0] = (_field.u(i - 1, j) + _field.u(i, j)) * 0.5;
             vel[1] = (_field.v(i, j - 1) + _field.v(i, j)) * 0.5;
             Velocity->InsertNextTuple(vel);
@@ -391,6 +405,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
+    structuredGrid->GetCellData()->AddArray(Temperature);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetCellData()->AddArray(Velocity);

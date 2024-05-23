@@ -47,6 +47,16 @@ void Fields::printMatrix(Grid &grid) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
+
+    std::cout << "T matrix" << std::endl;
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            std::cout << _T(i, j) << ", ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
     std::cout << std::setprecision(4); // digits after decimal point
 }
 

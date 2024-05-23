@@ -65,11 +65,11 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _zero_gradient_cells.push_back(&_cells(i, j));
                 // determine fixed walls in the next sections by checking if neighbour is fluid
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::hot_wall) {
-                _cells(i, j) = Cell(i, j, cell_type::HOT_WALL, geometry_data.at(i_geom).at(j_geom));
-                _hot_walls_cells.push_back(&_cells(i, j));
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _hot_wall_cells.push_back(&_cells(i, j));
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::cold_wall) {
-                _cells(i, j) = Cell(i, j, cell_type::COLD_WALL, geometry_data.at(i_geom).at(j_geom));
-                _cold_walls_cells.push_back(&_cells(i, j));
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _cold_wall_cells.push_back(&_cells(i, j));
             } else {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
@@ -348,4 +348,4 @@ const std::vector<Cell *> &Grid::inner_obstacle_cells() const { return _inner_ob
 
 const std::vector<Cell *> &Grid::hot_wall_cells() const { return _hot_wall_cells; }
 
-const std::vector<Cell *> &Grid::cold_Wall_cells() const { return _cold_wall_cells; }
+const std::vector<Cell *> &Grid::cold_wall_cells() const { return _cold_wall_cells; }

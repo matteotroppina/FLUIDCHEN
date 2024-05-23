@@ -45,7 +45,7 @@ void Boundary::applyFlux(Fields &field) {
         }
     }
 }
-
+void Boundary::applyTemperature(Fields &field) {}
 
 InnerObstacle::InnerObstacle(std::vector<Cell *> cells) : Boundary(cells) {}
 void InnerObstacle::applyVelocity(Fields &field) {
@@ -62,7 +62,8 @@ void InnerObstacle::applyPressure(Fields &field) {}
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
 
-FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
+
+FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, double wall_temperature)
     : Boundary(cells), _wall_temperature(wall_temperature) {}
 
 void FixedWallBoundary::applyVelocity(Fields &field) {
@@ -139,6 +140,53 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         if (cell->is_border(border_position::LEFT) && cell->is_border(border_position::RIGHT) &&
             cell->is_border(border_position::TOP) && cell->is_border(border_position::BOTTOM)) {
             std::cerr << "there are forbidden cells with four boundaries \n";
+        }
+    }
+}
+
+void FixedWallBoundary::applyTemperature(Fields &field) {
+
+    if (_wall_temperature == -1) { // Neumann
+        for (auto cell : _cells) {
+            int i = cell->i();
+            int j = cell->j();
+
+            if (cell->is_border(border_position::RIGHT)) {
+                field.T(i, j) = field.T(i + 1, j);
+            }
+
+            if (cell->is_border(border_position::LEFT)) {
+                field.T(i, j) = field.T(i - 1, j);
+            }
+
+            if (cell->is_border(border_position::TOP)) {
+                field.T(i, j) = field.T(i, j + 1);
+            }
+
+            if (cell->is_border(border_position::BOTTOM)) {
+                field.T(i, j) = field.T(i, j - 1);
+            }
+        }
+    } else { // Dirichlet
+
+        for (auto cell : _cells) {
+            int i = cell->i();
+            int j = cell->j();
+
+            if (cell->is_border(border_position::BOTTOM)) {
+                field.T(i, j) = 2 * _wall_temperature - field.T(i, j - 1);
+            }
+            if (cell->is_border(border_position::TOP)) {
+                field.T(i, j) = 2 * _wall_temperature - field.T(i, j + 1);
+            }
+
+            if (cell->is_border(border_position::RIGHT)) {
+                field.T(i, j) = 2 * _wall_temperature - field.T(i + 1, j);
+            }
+
+            if (cell->is_border(border_position::LEFT)) {
+                field.T(i, j) = 2 * _wall_temperature - field.T(i - 1, j);
+            }
         }
     }
 }

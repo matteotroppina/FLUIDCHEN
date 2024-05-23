@@ -35,6 +35,8 @@ class Boundary {
      */
     virtual void applyFlux(Fields &field);
 
+    virtual void applyTemperature(Fields &field);
+
     virtual ~Boundary() = default;
 
   protected:
@@ -50,12 +52,15 @@ class FixedWallBoundary : public Boundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    FixedWallBoundary(std::vector<Cell *> cells, double wall_temperature);
     virtual ~FixedWallBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
+    void applyTemperature(Fields &field);
 
   private:
-    std::map<int, double> _wall_temperature;
+        double _wall_temperature;
+
 };
 
 class InnerObstacle : public Boundary {
