@@ -254,6 +254,9 @@ void Case::simulate() {
         t += dt;
 
         if (output_counter + dt/2 >= _output_freq or timestep == 1) {
+            for (auto &b : _boundaries) {
+                b->applyVelocity(_field); // apply boundary conditions for debug
+            }
 
             std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
             std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()

@@ -13,21 +13,29 @@ Discretization::Discretization(double dx, double dy, double gamma) {
 }
 
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    return 1/_dx * (pow(interpolate(U, i, j, 1, 0), 2) - pow(interpolate(U, i, j, -1, 0), 2))
-            + _gamma/_dx * (abs(interpolate(U, i, j, 1, 0))*(U(i,j) - U(i+1, j))/2
-            - abs(interpolate(U, i, j, -1, 0))*(U(i-1, j) - U(i,j))/2)
-            + 1/_dy * (interpolate(V,i,j,1,0)*interpolate(U,i,j,0,1) - interpolate(V,i,j-1,1,0)*interpolate(U,i,j,0,-1))
-            + _gamma/_dy * (abs(interpolate(V,i,j,1,0))*(U(i,j) - U(i,j+1))/2 
-            - abs(interpolate(V,i,j-1,1,0))* (U(i,j-1) - U(i,j))/2);
+    double du2_dx = 1 / _dx * (pow(interpolate(U, i, j, 1, 0), 2) - pow(interpolate(U, i, j, -1, 0), 2)) +
+                    _gamma / _dx *
+                        ((std::abs(interpolate(U, i, j, 1, 0)) * (U(i, j) - U(i + 1, j)) / 2) -
+                         std::abs(interpolate(U, i, j, -1, 0)) * (U(i - 1, j) - U(i, j)) / 2);
+    double dv2_dy = 1 / _dy *
+                        (((interpolate(V, i, j, 1, 0)) * (interpolate(U, i, j, 0, 1))) -
+                         ((interpolate(V, i, j - 1, 1, 0)) * (interpolate(U, i, j, 0, -1)))) +
+                    _gamma / _dy *
+                        ((std::abs(interpolate(V, i, j, 1, 0)) * (U(i, j) - U(i, j + 1)) / 2) -
+                         (std::abs(interpolate(V, i, j - 1, 1, 0)) * (U(i, j - 1) - U(i, j)) / 2));
+
+    return du2_dx + dv2_dy;;
 }
 
 double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    return 1/_dy * (pow(interpolate(V, i, j, 0, 1), 2) - pow(interpolate(V, i, j, 0, -1), 2))
-            + _gamma/_dy * (abs(interpolate(V, i, j, 0, 1))*(V(i,j) - V(i, j+1))/2
-            - abs(interpolate(V, i, j, 0, -1))*(V(i, j-1) - V(i,j))/2)
-            + 1/_dx * (interpolate(U,i,j,0,1)*interpolate(V,i,j,1,0) - interpolate(U,i-1,j,0,1)*interpolate(V,i,j,-1,0))
-            + _gamma/_dx * (abs(interpolate(U,i,j,0,1)) * (V(i,j)-V(i+1,j))/2
-            - abs(interpolate(U,i-1,j,0,1)) * (V(i-1,j) - V(i,j))/2);
+    double dv2_dy = 1/ _dy * (pow(interpolate(V,i,j,0,1), 2) - pow(interpolate(V,i,j - 1,0,1), 2)) +
+                    _gamma/_dy * ((std::abs(interpolate(V,i,j,0,1)) * (V(i, j) - V(i, j + 1)) / 2) -
+                                    std::abs(interpolate(V, i, j - 1, 0, 1)) * (V(i, j - 1)- V(i, j)) / 2) ;
+    double du2_dx = 1/ _dx * (((interpolate(U, i, j, 0, 1)) * (interpolate(V, i, j, 1, 0)))  - ( (interpolate(U,i-1,j,0,1)) * (interpolate(V,i-1,j,1,0)))) +
+                    _gamma / _dx * ( (std::abs(interpolate(U,i,j,0,1))*(V(i, j) - V(i + 1, j)) / 2) -
+                                    (std::abs(interpolate(U,i - 1,j,0,1)) * (V(i - 1, j) - V(i, j)) / 2 ));
+
+    return dv2_dy + du2_dx;;
 }
 
 double Discretization::laplacian(const Matrix<double> &A, int i, int j) {
