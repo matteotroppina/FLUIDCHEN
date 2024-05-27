@@ -21,7 +21,7 @@ Run the code with the "Plane Shear Flow" case:
 ![Shearflow Velocity](imgs/shearflow_velocity.png)
 
 #### Analytical Solution Comparison
-At x = 0.5. 
+At x = 5.0 
 ![Analytical Solution](imgs/shearflow_plot.png)
 
 ### Pressure Field
