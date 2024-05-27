@@ -106,3 +106,7 @@ Run different cases:
 ![Shearflow Velocity](imgs/fluidtrap_temp.png)
 
 ## Rayleigh Benard Convection
+
+#### Velocity Field
+
+![Rayleigh Benard Convection](imgs/rayleigh_benard_velocity.png)
