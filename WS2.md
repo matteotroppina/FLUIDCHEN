@@ -2,7 +2,7 @@
 
 Build instructions.
 
-```shell
+```
 mkdir build && cd build
 cmake ..
 make
@@ -12,19 +12,15 @@ make
 
 Run the code with the "Plane Shear Flow" case:
 
-```shell
+```
 ./fluidchen ../example_cases/ShearFlow/ShearFlow.dat
 ```
 
-### Velocity Field
+#### Velocity Field
 
 ![Shearflow Velocity](imgs/shearflow_velocity.png)
 
-#### Analytical Solution Comparison
-At x = 5.0 
-![Analytical Solution](imgs/shearflow_plot.png)
-
-### Pressure Field
+#### Pressure Field
 
 ![Velocity Field](imgs/shearflow_pressure.png)
 
@@ -32,18 +28,18 @@ At x = 5.0
 
 Run the code with the "Karman Vortex Street" case:
 
-```shell
+```
 ./fluidchen ../example_cases/ChannelWithObstacle/ChannelWithObstacle.dat
 ```
 
-### Velocity Field
+#### Velocity Field
 
 ![Shearflow Velocity](imgs/karman_velocity.png)
 
 <!-- ### Streamlines
 ![Velocity Field](imgs/karman_streamlines.png) -->
 
-### Pressure Field
+#### Pressure Field
 
 ![Velocity Field](imgs/karman_pressure.png)
 
@@ -51,35 +47,61 @@ Run the code with the "Karman Vortex Street" case:
 
 Run the code with the "Flow over a step" case:
 
-```shell
+```
 ./fluidchen ../example_cases/ChannelWithBFS/ChannelWithBFS.dat
 ```
 
-### Velocity Field
+#### Velocity Field
 
 ![Shearflow Velocity](imgs/BFS_velocity.png)
 
-### Pressure Field
+#### Pressure Field
 
 ![Velocity Field](imgs/BFS_pressure.png)
 
 ## Natural Convection
 
-Run the code with the "Natural Convection" case;
+### Case (a) - high $\nu$
 
-```shell
-./fluidchen ../example_cases/NaturalConvection/NaturalConvection.dat
+Run the code with the "Natural Convection" case with high Kinematic Viscosisty $\nu = 0.001$ ;
+
 ```
+./fluidchen ../example_cases/NaturalConvection/NaturalConvection_a.dat
+```
+
+#### Velocity Field
+
+![Shearflow Velocity](imgs/NC_a_velocity.png)
+
+#### Temperature Field
+
+![Velocity Field](imgs/NC_a_temp.png)
+
+### Case (b) - low $\nu$
+
+Run the code with the "Natural Convection" case with low Kinematic Viscosisty $\nu = 0.0002$;
+
+```
+./fluidchen ../example_cases/NaturalConvection/NaturalConvection_b.dat
+```
+
+#### Velocity Field
+
+![Shearflow Velocity](imgs/NC_b_velocity.png)
+
+#### Pressure Field
+
+![Velocity Field](imgs/NC_b_temp.png)
 
 ## Fluid Trap
 
 Run the code with the "Fluid Trap" case:
 
-```shell
+```
 ./fluidchen ../example_cases/FluidTrap/FluidTrap.dat
 ```
 
-### Velocity Field
+#### Velocity Field
 
 ![Shearflow Velocity](imgs/fluidtrap_temp.png)
 
@@ -87,6 +109,6 @@ Run the code with the "Fluid Trap" case:
 
 Run the code with the "Rayleigh Benard Convection" case:
 
-```shell
+```
 ./fluidchen ../example_cases/RayleighBenard/RayleighBenard.dat
 ```
