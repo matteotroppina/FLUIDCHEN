@@ -42,10 +42,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     double eps{};     /* accuracy bound for pressure*/
     double UIN{};     /*inlet velocity*/
     double VIN{};
-    double TI{};      /*initial temperature*/
-    double alpha{};   /*thermal diffusivity*/
-    double beta{};    /*coefficient of thermal expansion*/
-    double wall_temp_3{}; 
+    double TI{};    /*initial temperature*/
+    double alpha{}; /*thermal diffusivity*/
+    double beta{};  /*coefficient of thermal expansion*/
+    double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
 
@@ -230,8 +230,8 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
-    _field.printCellTypes(_grid);
-    _field.printBorders(_grid);
+    // _field.printCellTypes(_grid);
+    // _field.printBorders(_grid);
 
     while (t < _t_end) {
 
@@ -274,7 +274,7 @@ void Case::simulate() {
         output_counter += dt;
         t += dt;
 
-        if (output_counter + dt/2 >= _output_freq or timestep == 1) {
+        if (output_counter + dt / 2 >= _output_freq or timestep == 1) {
             for (auto &b : _boundaries) {
                 b->applyVelocity(_field); // apply boundary conditions for debug
             }
@@ -291,10 +291,10 @@ void Case::simulate() {
             output_vtk(timestep, 0);
             output_counter = output_counter - _output_freq;
 
-            _field.printMatrix(_grid); // remove this line to run normally
+            // _field.printMatrix(_grid); // remove this line to run normally
         }
     }
-     output_csv(iter_vec);
+    output_csv(iter_vec);
 }
 
 void Case::output_csv(const std::vector<int> &vec) {
@@ -348,7 +348,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Set blank cells
     for (int col = 0; col < _grid.domain().size_y; col++) {
         for (int row = 0; row < _grid.domain().size_x; row++) {
-            if (_grid.cell(row+1, col+1).type() == cell_type::FLUID) {
+            if (_grid.cell(row + 1, col + 1).type() == cell_type::FLUID) {
                 continue;
             }
             structuredGrid->BlankCell(row + col * (_grid.domain().size_x));
@@ -391,8 +391,6 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkDoubleArray> VelocityPoints = vtkSmartPointer<vtkDoubleArray>::New();
     VelocityPoints->SetName("velocity");
     VelocityPoints->SetNumberOfComponents(3);
-
-
 
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
