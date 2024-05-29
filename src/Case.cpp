@@ -113,7 +113,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_imax = imax;
     domain.domain_jmax = jmax;
 
-    build_domain(domain, imax, jmax);
+    build_domain(domain, imax, jmax, iproc, jproc);
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
@@ -429,7 +429,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     writer->Write();
 }
 
-void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
+void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int iproc, int jproc) {
     domain.iminb = 0;
     domain.jminb = 0;
     domain.imaxb = imax_domain + 2;

@@ -8,15 +8,8 @@ int main(int argn, char **args) {
 
     if (argn > 1) {
         std::string file_name{args[1]};
-        int iproc{*args[2]};
-        int jproc{*args[3]};
-        iproc = iproc - 48; // convert ascii to integer
-        jproc = jproc - 48;
 
-        std::cout << "iproc: " << iproc << std::endl;
-        std::cout << "jproc: " << jproc << std::endl;
-
-        init_parallel(iproc, jproc);
+        init_parallel(argn, args);
 
         Case problem(file_name, argn, args);
         problem.simulate();

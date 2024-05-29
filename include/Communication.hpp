@@ -1,8 +1,13 @@
 #include <mpi.h>
 #include <iostream>
 
-static void init_parallel(int iproc, int jproc){
-    MPI_Init(nullptr, nullptr);
+static void init_parallel(int argn, char **args){
+    MPI_Init(&argn, &args);
+
+    int iproc{*args[2]};
+    int jproc{*args[3]};
+    iproc = iproc - 48; // convert ascii to integer
+    jproc = jproc - 48;
 
     int num_proc;
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
@@ -15,7 +20,7 @@ static void init_parallel(int iproc, int jproc){
 
     // Ask MPI to decompose our processes in a 2D cartesian grid for us
     int dims[2] = {iproc, jproc};
-    MPI_Dims_create(size, 2, dims);
+    MPI_Dims_create(num_proc, 2, dims);
  
     // Make both dimensions periodic
     int periods[2] = {false, false};
@@ -37,7 +42,5 @@ static void init_parallel(int iproc, int jproc){
  
     // Print my location in the 2D torus.
     printf("[MPI process %d] I am located at (%d, %d).\n", my_rank, my_coords[0],my_coords[1]);
- 
-    
 
 }
