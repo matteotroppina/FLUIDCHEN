@@ -51,6 +51,11 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     int num_of_walls{};
 
+    int iproc{*args[2]};
+    int jproc{*args[3]};
+    iproc = iproc - 48; // convert ascii to integer
+    jproc = jproc - 48;
+
     if (file.is_open()) {
 
         std::string var;
