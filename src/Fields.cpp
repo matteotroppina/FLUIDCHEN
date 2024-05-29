@@ -5,15 +5,15 @@
 #include "Communication.hpp"
 #include "Fields.hpp"
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI)
+Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
-    _U = Matrix<double>(imax + 2, jmax + 2, UI);
-    _V = Matrix<double>(imax + 2, jmax + 2, VI);
-    _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    _T = Matrix<double>(imax + 2, jmax + 2, TI);
-    _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _U = Matrix<double>(size_x + 2, size_y + 2, UI);
+    _V = Matrix<double>(size_x + 2, size_y + 2, VI);
+    _P = Matrix<double>(size_x + 2, size_y + 2, PI);
+    _T = Matrix<double>(size_x + 2, size_y + 2, TI);
+    _F = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _G = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 }
 
 void Fields::printMatrix(Grid &grid) {

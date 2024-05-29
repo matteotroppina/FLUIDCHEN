@@ -11,6 +11,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 
 /**

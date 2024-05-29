@@ -294,7 +294,7 @@ void Case::simulate() {
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
-            output_vtk(timestep, 0);
+            output_vtk(timestep, my_rank_global);
             output_counter = output_counter - _output_freq;
 
             // _field.printMatrix(_grid); // remove this line to run normally
@@ -430,10 +430,19 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int iproc, int jproc) {
-    domain.iminb = 0;
-    domain.jminb = 0;
-    domain.imaxb = imax_domain + 2;
-    domain.jmaxb = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
+
+    int i = my_coords_global[0];
+    int j = my_coords_global[1];
+
+    int size_x = imax_domain / iproc;
+    int size_y = jmax_domain / jproc;
+
+    domain.size_x = size_x;
+    domain.size_y = size_y;
+
+    domain.iminb = i * size_x;
+    domain.jminb = j * size_y;
+    domain.imaxb = (i+1) * size_x + 2;
+    domain.jmaxb = (j+1) * size_y + 2;
+
 }
