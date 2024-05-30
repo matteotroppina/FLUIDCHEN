@@ -2,6 +2,8 @@
 #include <iostream>
 #include "Communication.hpp"
 
+MPI_Comm MPI_COMMUNICATOR;
+
 Communication::Communication(int argn, char **args){
     init_parallel(argn, args);
 }
@@ -38,7 +40,6 @@ void Communication::init_parallel(int argn, char **args){
     int reorder = true;
 
     // Create a communicator given the 2D torus topology.
-    MPI_Comm MPI_COMMUNICATOR;
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, reorder, &MPI_COMMUNICATOR);
 
     // My rank in the new communicator
@@ -58,4 +59,9 @@ void Communication::init_parallel(int argn, char **args){
 
 void Communication::finalize(){
     MPI_Finalize();
+}
+
+void Communication::communicate(){
+    // int coords[2];
+    // MPI_Cart_create(MPI_COMMUNICATOR)
 }

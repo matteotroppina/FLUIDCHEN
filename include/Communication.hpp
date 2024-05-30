@@ -8,8 +8,10 @@ inline int my_rank_global;
 // stores the 2D coordinates of the current process in the cartesian grid
 inline int my_coords_global[2];
 
+extern MPI_Comm MPI_COMMUNICATOR;
 class Communication{
     public:
+
         Communication() = default;
         
         /**
@@ -29,9 +31,6 @@ class Communication{
         *
         */ 
         static void init_parallel(int argn, char **args);
-
-
-
 
         /**
         * @brief finalize communication
@@ -64,4 +63,5 @@ class Communication{
         static double reduce_sum();
 
         ~Communication() = default;
+        
 };
