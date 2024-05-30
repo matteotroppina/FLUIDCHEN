@@ -53,11 +53,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         for (int i_geom = _domain.iminb; i_geom < _domain.imaxb; ++i_geom) {
             if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fluid) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                _fluid_cells.push_back(&_cells(i, j));
-                // if ( not ((i == 0 || i == _domain.imaxb) || (j == 0 || j == _domain.jmaxb))) {
-                //     // std::cout << i << " " << j << std::endl;
-                // }
-                
+                if ( not ((i == 0) or (i == _domain.size_x + 1) or (j == 0) or (j == _domain.size_y + 1)) ) {
+                    _fluid_cells.push_back(&_cells(i, j));
+                }
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::moving_wall) {
                 _moving_wall_cells.push_back(&_cells(i, j));
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));

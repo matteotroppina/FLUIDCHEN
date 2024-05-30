@@ -458,8 +458,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     domain.iminb = i * size_x;
     domain.jminb = j * size_y;
-    domain.imaxb = (i+1) * size_x + 1;
-    domain.jmaxb = (j+1) * size_y + 1;
+    domain.imaxb = (i+1) * size_x + 2;
+    domain.jmaxb = (j+1) * size_y + 2;
 
     std::cout << "i : " << i << std::endl;
     std::cout << "j : " << j << std::endl;
