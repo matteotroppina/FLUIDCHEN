@@ -55,7 +55,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 if ( not ((i == 0) or (i == _domain.size_x + 1) or (j == 0) or (j == _domain.size_y + 1)) ) {
                     _fluid_cells.push_back(&_cells(i, j));
+                } else {
+                    _comm_cells.push_back(&_cells(i, j));
                 }
+
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::moving_wall) {
                 _moving_wall_cells.push_back(&_cells(i, j));
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
@@ -351,3 +354,5 @@ const std::vector<Cell *> &Grid::inner_obstacle_cells() const { return _inner_ob
 const std::vector<Cell *> &Grid::hot_wall_cells() const { return _hot_wall_cells; }
 
 const std::vector<Cell *> &Grid::cold_wall_cells() const { return _cold_wall_cells; }
+
+const std::vector<Cell *> &Grid::comm_cells() const { return _comm_cells; }

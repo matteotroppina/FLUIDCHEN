@@ -75,6 +75,8 @@ class Grid {
 
     const std::vector<Cell *> &cold_wall_cells() const;
 
+    const std::vector<Cell *> &comm_cells() const;
+
   private:
     /**@brief Default lid driven cavity case generator
      *
@@ -103,6 +105,8 @@ class Grid {
 
     std::vector<Cell *> _cold_wall_cells;
     std::vector<Cell *> _hot_wall_cells;
+
+    std::vector<Cell *> _comm_cells;
 
     /// Domain object holding geometrical information
     Domain _domain;
