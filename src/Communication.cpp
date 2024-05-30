@@ -68,9 +68,7 @@ void Communication::communicate(Fields &field){
     MPI_Cart_coords(MPI_COMMUNICATOR, my_rank_global, 2, my_coords);
 
     int left, right, up, down;
-    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &left, &right);
-    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &down, &up);
-
-    std::cout << left << " " << right << " " << up << " " << down << std::endl;
+    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &left, &right);
+    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &down, &up);
 
 }
