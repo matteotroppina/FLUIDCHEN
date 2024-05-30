@@ -51,10 +51,14 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     int num_of_walls{};
 
-    // int iproc{*args[2]};
-    // int jproc{*args[3]};
-    // iproc = iproc - 48; // convert ascii to integer
-    // jproc = jproc - 48;
+    // initialized to sequential execution
+    int iproc{1};
+    int jproc{1};
+
+    if (argn > 2){
+        iproc = *args[2] - 48;  //convert to ASCII
+        jproc = *args[3] - 48;
+    }
 
     if (file.is_open()) {
 
@@ -96,6 +100,7 @@ Case::Case(std::string file_name, int argn, char **args) {
             }
         }
     }
+
     file.close();
 
     if (_geom_name.compare("NONE") == 0) {

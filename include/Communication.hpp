@@ -1,5 +1,4 @@
-#ifndef COMMUNICATION_H
-#define COMMUNICATION_H
+#pragma once
 
 #include <mpi.h>
 #include <iostream>
@@ -9,57 +8,60 @@ inline int my_rank_global;
 // stores the 2D coordinates of the current process in the cartesian grid
 inline int my_coords_global[2];
 
-static void init_parallel(int argn, char **args){
-    MPI_Init(&argn, &args);
+class Communication{
+    public:
+        Communication() = default;
+        
+        /**
+        * @brief Communication constructor
+        *
+        * @param[in] argn number of arguments from command line
+        * @param[in] args arguments from command line
+        *
+        */ 
+        Communication(int argn, char **args);
 
-    // initialized to sequential execution
-    int iproc{1};
-    int jproc{1};
+        /**
+        * @brief initialize communication
+        *
+        * @param[in] argn number of arguments from command line
+        * @param[in] args arguments from command line
+        *
+        */ 
+        static void init_parallel(int argn, char **args);
 
-    if (argn > 2){
-        iproc = *args[2] - 48;  //convert to ASCII
-        jproc = *args[3] - 48;
-    }
 
-    int num_proc; // total number of processes
-    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
-    if (num_proc != iproc * jproc) {
-        std::cerr << "Incompatible number of processors and domain decomposition!";
-        return;
-    }
 
-    // Ask MPI to decompose our processes in a 2D cartesian grid for us
-    int dims[2] = {iproc, jproc};
-    MPI_Dims_create(num_proc, 2, dims);     // #processes - #dimensions of cartesian grid - #dimensions vector
+        /**
+        * @brief finalize communication
+        *
+        */ 
+        static void finalize();
 
-    // both dimensions are not periodic
-    int periods[2] = {false, false};
+        /**
+        * @brief communicate a field
+        *
+        * @param[in] field 
+        *
+        */ 
+        static void communicate();
 
-    // Let MPI assign arbitrary ranks if it deems it necessary
-    int reorder = true;
+        /**
+        * @brief find minimum value across all processes
+        *
+        * @param[in] value
+        *
+        */ 
+        static double reduce_min();
 
-    // Create a communicator given the 2D torus topology.
-    MPI_Comm MPI_COMMUNICATOR;
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, reorder, &MPI_COMMUNICATOR);
+        /**
+        * @brief find total sum across all processes
+        *
+        * @param[in] value
+        *
+        */ 
+        static double reduce_sum();
 
-    // My rank in the new communicator
-    int my_rank;
-    MPI_Comm_rank(MPI_COMMUNICATOR, &my_rank);
-    my_rank_global = my_rank;
-
-    // Get my coordinates in the new communicator
-    int my_coords[2];
-    MPI_Cart_coords(MPI_COMMUNICATOR, my_rank, 2, my_coords);
-    my_coords_global[0] = my_coords[0];
-    my_coords_global[1] = my_coords[1];
-
-    // Print my location in the 2D torus.
-    printf("[MPI process %d] I am located at (%d, %d).\n", my_rank, my_coords[0],my_coords[1]);
-}
-
-static void finalize(){
-    MPI_Finalize();
-}
-
-#endif
+        ~Communication() = default;
+};
