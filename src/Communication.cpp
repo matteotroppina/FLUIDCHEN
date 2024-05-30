@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <iostream>
 #include "Communication.hpp"
+#include "Fields.hpp"
 
 MPI_Comm MPI_COMMUNICATOR;
 
@@ -61,7 +62,15 @@ void Communication::finalize(){
     MPI_Finalize();
 }
 
-void Communication::communicate(){
-    // int coords[2];
-    // MPI_Cart_create(MPI_COMMUNICATOR)
+void Communication::communicate(Fields &field){
+    // Get my coordinates in the new communicator
+    int my_coords[2];
+    MPI_Cart_coords(MPI_COMMUNICATOR, my_rank_global, 2, my_coords);
+
+    int left, right, up, down;
+    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &left, &right);
+    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &down, &up);
+
+    std::cout << left << " " << right << " " << up << " " << down << std::endl;
+
 }

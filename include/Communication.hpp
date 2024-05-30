@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 #include <iostream>
+#include "Fields.hpp"
 
 // stores the rank of the current process in the custom communicator
 inline int my_rank_global;
@@ -44,7 +45,7 @@ class Communication{
         * @param[in] field 
         *
         */ 
-        static void communicate();
+        static void communicate(Fields &field);
 
         /**
         * @brief find minimum value across all processes
