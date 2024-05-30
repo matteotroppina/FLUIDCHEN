@@ -5,6 +5,12 @@
 
 MPI_Comm MPI_COMMUNICATOR;
 
+/*
+TODO -->  each process should store here information about its rank and communicator,
+as well as its neighbors. If a process does not have any neighbor in some direction, simply
+use MPI_PROC_NULL as rank to skip the respective communication steps
+*/
+
 Communication::Communication(int argn, char **args){
     init_parallel(argn, args);
 }
@@ -70,5 +76,32 @@ void Communication::communicate(Fields &field){
     int left, right, up, down;
     MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &left, &right);
     MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &down, &up);
+
+    if(left != MPI_PROC_NULL){
+        // MPI_Sendrecv();
+    }
+
+    if(right != MPI_PROC_NULL){
+        // MPI_Sendrecv();
+    }
+
+    if(up != MPI_PROC_NULL){
+        // MPI_Sendrecv();
+    }
+
+    if(down != MPI_PROC_NULL){
+        // MPI_Sendrecv();
+    }
+}
+
+double reduce_min(){
+// // Finding the global Minimum
+// // ...
+// double localMin = *std::min_element(myVector.begin(),myVector.end());
+// double globalMin;
+// MPI_Allreduce(&localMin, &globalMin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+}
+
+double reduce_sum(){
 
 }

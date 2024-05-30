@@ -456,6 +456,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
     domain.size_x = size_x;
     domain.size_y = size_y;
 
+    // TODO --> why +2 sequential and +1 parallel?
+
     domain.iminb = i * size_x;
     domain.jminb = j * size_y;
     domain.imaxb = (i+1) * size_x + 2;

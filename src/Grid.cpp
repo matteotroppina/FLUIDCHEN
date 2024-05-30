@@ -56,6 +56,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 if ( not ((i == 0) or (i == _domain.size_x + 1) or (j == 0) or (j == _domain.size_y + 1)) ) {
                     _fluid_cells.push_back(&_cells(i, j));
                 } else {
+                    // assign communication cells
                     _comm_cells.push_back(&_cells(i, j));
                 }
 
