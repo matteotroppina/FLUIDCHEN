@@ -51,10 +51,10 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     int num_of_walls{};
 
-    int iproc{*args[2]};
-    int jproc{*args[3]};
-    iproc = iproc - 48; // convert ascii to integer
-    jproc = jproc - 48;
+    // int iproc{*args[2]};
+    // int jproc{*args[3]};
+    // iproc = iproc - 48; // convert ascii to integer
+    // jproc = jproc - 48;
 
     if (file.is_open()) {
 
@@ -445,4 +445,13 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
     domain.imaxb = (i+1) * size_x + 2;
     domain.jmaxb = (j+1) * size_y + 2;
 
+    // std::cout << "i : " << i << std::endl;
+    // std::cout << "j : " << j << std::endl;
+    // std::cout << "size_x : " << size_x << std::endl;
+    // std::cout << "size_y : " << size_y << std::endl;
+    // std::cout << "imin : " << domain.iminb << std::endl;
+    // std::cout << "imax : " << domain.imaxb << std::endl;
+    // std::cout << "jmin : " << domain.jminb << std::endl;
+    // std::cout << "jmax : " << domain.jmaxb << std::endl;
+    
 }

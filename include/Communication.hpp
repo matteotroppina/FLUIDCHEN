@@ -4,18 +4,24 @@
 #include <mpi.h>
 #include <iostream>
 
+// stores the rank of the current process in the custom communicator
 inline int my_rank_global;
+// stores the 2D coordinates of the current process in the cartesian grid
 inline int my_coords_global[2];
 
 static void init_parallel(int argn, char **args){
     MPI_Init(&argn, &args);
 
-    int iproc{*args[2]};
-    int jproc{*args[3]};
-    iproc = iproc - 48; // convert ascii to integer
-    jproc = jproc - 48;
+    // initialized to sequential execution
+    int iproc{1};
+    int jproc{1};
 
-    int num_proc;
+    if (argn > 2){
+        iproc = *args[2] - 48;  //convert to ASCII
+        jproc = *args[3] - 48;
+    }
+
+    int num_proc; // total number of processes
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
     if (num_proc != iproc * jproc) {
@@ -23,12 +29,11 @@ static void init_parallel(int argn, char **args){
         return;
     }
 
-
     // Ask MPI to decompose our processes in a 2D cartesian grid for us
     int dims[2] = {iproc, jproc};
-    MPI_Dims_create(num_proc, 2, dims);
+    MPI_Dims_create(num_proc, 2, dims);     // #processes - #dimensions of cartesian grid - #dimensions vector
 
-    // Make both dimensions periodic
+    // both dimensions are not periodic
     int periods[2] = {false, false};
 
     // Let MPI assign arbitrary ranks if it deems it necessary
