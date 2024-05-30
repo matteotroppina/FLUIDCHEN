@@ -241,8 +241,11 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
-    // _field.printCellTypes(_grid);
+    // if (my_rank_global == 0){
     // _field.printBorders(_grid);
+    // _field.printCellTypes(_grid);
+
+    // }
 
     while (t < _t_end) {
 
@@ -253,15 +256,21 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyTemperature(_field);
         }
+        //std::cout << "1. Applied Velocities: Process " << my_rank_global << std::endl;
 
-        _field.calculate_temperature(_grid);
+        // _field.calculate_temperature(_grid);
+
+
         _field.calculate_fluxes(_grid);
+        //std::cout << "2. Calculated Fluxes: Process " << my_rank_global << std::endl;
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
         }
+        //std::cout << "3. Applied Fluxes: Process " << my_rank_global << std::endl;
 
         _field.calculate_rs(_grid);
+        //std::cout << "4. Calculated RS: Process " << my_rank_global << std::endl;
 
         residual = 1;
         iter = 0;
@@ -272,6 +281,7 @@ void Case::simulate() {
             }
             iter += 1;
         }
+        //std::cout << "5. Applied Pressures: Process " << my_rank_global << std::endl;
 
         iter_vec.push_back(iter);
 
@@ -280,7 +290,8 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-
+        //std::cout << "6. Calculated Velocities: Process " << my_rank_global << std::endl;
+        
         timestep += 1;
         output_counter += dt;
         t += dt;
@@ -447,16 +458,16 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     domain.iminb = i * size_x;
     domain.jminb = j * size_y;
-    domain.imaxb = (i+1) * size_x + 2;
-    domain.jmaxb = (j+1) * size_y + 2;
+    domain.imaxb = (i+1) * size_x + 1;
+    domain.jmaxb = (j+1) * size_y + 1;
 
-    // std::cout << "i : " << i << std::endl;
-    // std::cout << "j : " << j << std::endl;
-    // std::cout << "size_x : " << size_x << std::endl;
-    // std::cout << "size_y : " << size_y << std::endl;
-    // std::cout << "imin : " << domain.iminb << std::endl;
-    // std::cout << "imax : " << domain.imaxb << std::endl;
-    // std::cout << "jmin : " << domain.jminb << std::endl;
-    // std::cout << "jmax : " << domain.jmaxb << std::endl;
+    std::cout << "i : " << i << std::endl;
+    std::cout << "j : " << j << std::endl;
+    std::cout << "size_x : " << size_x << std::endl;
+    std::cout << "size_y : " << size_y << std::endl;
+    std::cout << "imin : " << domain.iminb << std::endl;
+    std::cout << "imax : " << domain.imaxb << std::endl;
+    std::cout << "jmin : " << domain.jminb << std::endl;
+    std::cout << "jmax : " << domain.jmaxb << std::endl;
     
 }

@@ -146,7 +146,7 @@ void Fields::calculate_velocities(Grid &grid) {
 
 void Fields::calculate_temperature(Grid &grid) {
     for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y() - 1; j++){
+        for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
                 _T(i, j) = _T(i,j) + _dt * ((_alpha * Discretization::laplacian(_T,i,j)) - Discretization::convection_t(_T,_U,_V,i,j));
             }
