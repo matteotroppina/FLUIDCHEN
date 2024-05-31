@@ -1,7 +1,9 @@
 #include <mpi.h>
 #include <iostream>
 #include "Communication.hpp"
+#include <vector>
 #include "Fields.hpp"
+#include "Datastructures.hpp"
 
 MPI_Comm MPI_COMMUNICATOR;
 
@@ -68,30 +70,61 @@ void Communication::finalize(){
     MPI_Finalize();
 }
 
-void Communication::communicate(Fields &field){
+void Communication::communicate(Matrix<double> &field){
     // Get my coordinates in the new communicator
     int my_coords[2];
     MPI_Cart_coords(MPI_COMMUNICATOR, my_rank_global, 2, my_coords);
 
-    int left, right, up, down;
-    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &left, &right);
-    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &down, &up);
+    enum DIRECTIONS {DOWN, UP, LEFT, RIGHT};
+    char* neighbours_names[4] = {"down", "up", "left", "right"};
+    int neighbours_ranks[4];
+ 
+    // check if neighbours to communicate with
+    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &neighbours_ranks[LEFT], &neighbours_ranks[RIGHT]);
+    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &neighbours_ranks[DOWN], &neighbours_ranks[UP]);
+ 
+    // for(int i = 0; i < 4; i++)
+    // {
+    //     if(neighbours_ranks[i] == MPI_PROC_NULL)
+    //         printf("[MPI process %d] I have no %s neighbour.\n", my_rank_global, neighbours_names[i]);
+    //     else
+    //         printf("[MPI process %d] I have a %s neighbour: process %d.\n", my_rank_global, neighbours_names[i], neighbours_ranks[i]);
+    // }
+ 
+    // for(auto &neighbour : neighbours_ranks){
+    //     if(neighbour != MPI_PROC_NULL){
+    //         MPI_Sendrecv(&field, );
+    //     }
+    // }
 
-    if(left != MPI_PROC_NULL){
-        // MPI_Sendrecv();
+    MPI_Status status;
+
+    // TODO --> execution gets stuck, potenetial deadlocks
+
+    if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+        // std::cout << "COMM LEFT" << std::endl;
+        MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+                     &field(0,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
     }
 
-    if(right != MPI_PROC_NULL){
-        // MPI_Sendrecv();
+    if(neighbours_ranks[RIGHT] != MPI_PROC_NULL){
+        // std::cout << "COMM RIGHT" << std::endl;             
+        MPI_Sendrecv(&field(field.num_cols() - 2,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+                     &field(field.num_cols() - 1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
     }
 
-    if(up != MPI_PROC_NULL){
-        // MPI_Sendrecv();
+    if(neighbours_ranks[UP]!= MPI_PROC_NULL){
+        // std::cout << "COMM UP" << std::endl;
+        MPI_Sendrecv(&field(1,field.num_rows() - 2), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0, 
+                     &field(1,field.num_rows() - 1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
     }
 
-    if(down != MPI_PROC_NULL){
-        // MPI_Sendrecv();
+    if(neighbours_ranks[DOWN] != MPI_PROC_NULL){
+        // std::cout << "COMM DOWN" << std::endl;
+        MPI_Sendrecv(&field(1,1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
+                     &field(1,0), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
     }
+
 }
 
 double reduce_min(){

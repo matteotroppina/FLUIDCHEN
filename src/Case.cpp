@@ -256,32 +256,34 @@ void Case::simulate() {
             b->applyVelocity(_field);
             b->applyTemperature(_field);
         }
-        //std::cout << "1. Applied Velocities: Process " << my_rank_global << std::endl;
+
+        // TODO --> handle temperature
 
         // _field.calculate_temperature(_grid);
+        // Communication::communicate(_field.t_matrix);
 
 
         _field.calculate_fluxes(_grid);
-        //std::cout << "2. Calculated Fluxes: Process " << my_rank_global << std::endl;
+        Communication::communicate(_field.f_matrix());
+        Communication::communicate(_field.g_matrix());
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
         }
-        //std::cout << "3. Applied Fluxes: Process " << my_rank_global << std::endl;
 
         _field.calculate_rs(_grid);
-        //std::cout << "4. Calculated RS: Process " << my_rank_global << std::endl;
 
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             residual = _pressure_solver->solve(_field, _grid, _boundaries);
+            Communication::communicate(_field.p_matrix());
+
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
             }
             iter += 1;
         }
-        //std::cout << "5. Applied Pressures: Process " << my_rank_global << std::endl;
 
         iter_vec.push_back(iter);
 
@@ -290,7 +292,8 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-        //std::cout << "6. Calculated Velocities: Process " << my_rank_global << std::endl;
+        Communication::communicate(_field.u_matrix());
+        Communication::communicate(_field.v_matrix());
         
         timestep += 1;
         output_counter += dt;
