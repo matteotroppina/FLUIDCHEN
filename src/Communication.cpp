@@ -101,29 +101,55 @@ void Communication::communicate(Matrix<double> &field){
 
     // TODO --> execution gets stuck, potenetial deadlocks
 
+       // TODO --> execution gets stuck, potenetial deadlocks
+    
+    if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
+        if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
+            MPI_Sendrecv(&field(1,field.num_cols()-1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+                         &field(1,field.num_cols()), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+        }
+    }
+
+    if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
+        if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+            MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+                         &field(1,0), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+        }
+    }
+
     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        // std::cout << "COMM LEFT" << std::endl;
-        MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
-                     &field(0,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
-    }
+        if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
+            MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+                         &field(1,field.num_cols()), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            MPI_Sendrecv(&field(1,field.num_cols()-1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+                         &field(1,0), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+        }
+    }   
+    
 
-    if(neighbours_ranks[RIGHT] != MPI_PROC_NULL){
-        // std::cout << "COMM RIGHT" << std::endl;             
-        MPI_Sendrecv(&field(field.num_cols() - 2,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
-                     &field(field.num_cols() - 1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
-    }
+    // if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+    //     // std::cout << "COMM LEFT" << std::endl;
+    //     MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+    //                  &field(0,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+    // }
 
-    if(neighbours_ranks[UP]!= MPI_PROC_NULL){
-        // std::cout << "COMM UP" << std::endl;
-        MPI_Sendrecv(&field(1,field.num_rows() - 2), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0, 
-                     &field(1,field.num_rows() - 1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
-    }
+    // if(neighbours_ranks[RIGHT] != MPI_PROC_NULL){
+    //     // std::cout << "COMM RIGHT" << std::endl;             
+    //     MPI_Sendrecv(&field(field.num_cols() - 2,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+    //                  &field(field.num_cols() - 1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+    // }
 
-    if(neighbours_ranks[DOWN] != MPI_PROC_NULL){
-        // std::cout << "COMM DOWN" << std::endl;
-        MPI_Sendrecv(&field(1,1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
-                     &field(1,0), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
-    }
+    // if(neighbours_ranks[UP]!= MPI_PROC_NULL){
+    //     // std::cout << "COMM UP" << std::endl;
+    //     MPI_Sendrecv(&field(1,field.num_rows() - 2), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0, 
+    //                  &field(1,field.num_rows() - 1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+    // }
+
+    // if(neighbours_ranks[DOWN] != MPI_PROC_NULL){
+    //     // std::cout << "COMM DOWN" << std::endl;
+    //     MPI_Sendrecv(&field(1,1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
+    //                  &field(1,0), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+    // }
 
 }
 
