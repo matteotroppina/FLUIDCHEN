@@ -118,6 +118,7 @@ void Communication::communicate(Matrix<double> &field){
     }
 
     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+<<<<<<< HEAD
         if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
             MPI_Sendrecv(&field(1,1), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
                          &field(1,field.num_cols()), field.num_rows() - 2, MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
@@ -143,12 +144,69 @@ void Communication::communicate(Matrix<double> &field){
     //     // std::cout << "COMM UP" << std::endl;
     //     MPI_Sendrecv(&field(1,field.num_rows() - 2), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0, 
     //                  &field(1,field.num_rows() - 1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+=======
+        // std::cout << "COMM LEFT" << std::endl;
+        std::vector<double> rcv_buffer, send_buffer;
+
+        for(int j=0; j<field.num_rows(); j++){
+            send_buffer.push_back(field(1,j));
+            rcv_buffer.push_back(0);
+        }
+
+        int check = MPI_Sendrecv(send_buffer.data(), send_buffer.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+                     rcv_buffer.data(), rcv_buffer.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+
+        if (not(check)){
+            std::cout << "MPI_Sendrecv failed " << std::endl;
+        }
+
+        for(int j=0; j<field.num_rows(); j++){
+            std::cout << rcv_buffer.at(j) << " ";
+            field(0,j) = rcv_buffer.at(j);
+        }
+        std::cout << std::endl;
+
+        
+    }
+
+    // if(neighbours_ranks[RIGHT] != MPI_PROC_NULL){
+
+    //     std::vector<double> rcv_buffer, send_buffer;
+    //     int inner_index = field.num_cols() - 2;
+
+    //     for(int j=0; j<field.num_rows(); j++){
+    //         send_buffer.push_back(field(inner_index,j));
+    //         // std::cout << field(inner_index,j) << " ";
+    //         rcv_buffer.push_back(0);
+    //     }
+    //     // std::cout << "\n" << std::endl;
+
+    //     // std::cout << "COMM RIGHT" << std::endl;             
+    //     MPI_Sendrecv(send_buffer.data(), send_buffer.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+    //                  rcv_buffer.data(), rcv_buffer.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+
+    //     for(int j=0; j<field.num_rows(); j++){
+    //         // std::cout << rcv_buffer.at(j) << " ";
+    //         field(inner_index + 1,j) = rcv_buffer.at(j);
+    //     }
+    //     // std::cout << std::endl;
+    // }
+
+    // if(neighbours_ranks[UP]!= MPI_PROC_NULL){
+    //     // std::cout << "COMM UP" << std::endl;
+    //     MPI_Sendrecv(&field(1,field.num_rows() - 2), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0, 
+    //                  &field(1,field.num_rows() - 1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+>>>>>>> ws3
     // }
 
     // if(neighbours_ranks[DOWN] != MPI_PROC_NULL){
     //     // std::cout << "COMM DOWN" << std::endl;
     //     MPI_Sendrecv(&field(1,1), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
+<<<<<<< HEAD
     //                  &field(1,0), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+=======
+    //                  &field(1,0), field.num_cols() - 2, MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+>>>>>>> ws3
     // }
 
 }
