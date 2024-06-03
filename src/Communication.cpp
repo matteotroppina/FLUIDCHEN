@@ -87,63 +87,118 @@ void Communication::communicate(Matrix<double> &field){
     MPI_Status status;
 
     // TODO --> execution gets stuck, potenetial deadlocks
-    std::vector<double> buffer_left;
-    std::vector<double> buffer_right;
-    std::vector<double> buffer_up;
-    std::vector<double> buffer_down;
     int inner_index_cols = field.num_cols() - 2;
     int inner_index_rows = field.num_rows() - 2;
-    
-    for(int j=0; j<field.num_rows(); j++){
-            buffer_left.push_back(field(1,j));
-            buffer_right.push_back(field(inner_index_cols,j));
-    }
-    for(int i=0; i<field.num_cols(); i++){
-            buffer_up.push_back(field(i,1));
-            buffer_down.push_back(field(i,inner_index_rows));
-    }
+
+    int num_proc; // total number of processes
+    MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
+
+    std::vector<double> send1 (field.num_rows());
+    std::vector<double> rcv1 (field.num_rows());
+
 
     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
         if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
-        MPI_Sendrecv(buffer_right.data(), buffer_right.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
-                     buffer_left.data(), buffer_left.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
             for(int j=0; j<field.num_rows(); j++){
-                field(inner_index_cols+1,j) = buffer_left.at(j);
-            }        
+                send1[j] = field(inner_index_cols,j);
+            }
+            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,
+                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+
+            for(int j=0; j<field.num_rows(); j++){
+                field(inner_index_cols+1,j) = rcv1[j];
+            }
         }
     }
 
-    if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
-        if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        MPI_Sendrecv(buffer_left.data(), buffer_left.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
-                     buffer_right.data(), buffer_right.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
-            for(int j=0; j<field.num_rows(); j++){  
-                field(0,j) = buffer_right.at(j);
+    if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+        if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
+            for(int j=0; j<field.num_rows(); j++){
+                send1[j] = field(1,j);
             }
-        }
-    } 
+            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,
+                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
 
-    if(neighbours_ranks[UP]!= MPI_PROC_NULL){
-        if(neighbours_ranks[DOWN]= MPI_PROC_NULL){
-        MPI_Sendrecv(buffer_up.data(), buffer_up.size(), MPI_DOUBLE, neighbours_ranks[UP], 0, 
-                     buffer_down.data(), buffer_down.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
-            for(int i=0; i<field.num_cols(); i++){
-                field(i,0) = buffer_down.at(i);
-            }        
+            for(int j=0; j<field.num_rows(); j++){
+                field(0,j) = rcv1[j];
+            }
         }
     }
-
-    if(neighbours_ranks[UP]= MPI_PROC_NULL){
-        if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
-        MPI_Sendrecv(buffer_down.data(), buffer_down.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
-                     buffer_up.data(), buffer_up.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
-            for(int i=0; i<field.num_cols(); i++){  
-                field(i,inner_index_rows+1) = buffer_up.at(i);
-            }
-        }
-    }    
-
+    
 }
+
+//     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
+//         if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
+//         send[1] = 5;
+//         MPI_Sendrecv(&send[0], send.size(), MPI_INT, neighbours_ranks[RIGHT], 0,
+//                      &receive[0], receive.size(), MPI_INT, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+//         }
+//         std::cout << my_rank_global << ".rank" << " receive = " << receive[0] << " " << receive[1] << std::endl;
+//     }
+//     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+//         if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
+//         send[1] = 6;
+//         MPI_Sendrecv(&send[0], send.size(), MPI_INT, neighbours_ranks[LEFT], 0,
+//                      &receive[0], receive.size(), MPI_INT, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+//         }
+//         std::cout << my_rank_global << ".rank" << " receive = " << receive[0] << " " << receive[1] << std::endl;
+//     }
+
+    //TODO -- make also num proc global
+//     std::vector<std::vector<double>> all_left (num_proc);
+//     std::vector<std::vector<double>> all_right (num_proc);
+//     std::vector<std::vector<double>> all_up (num_proc);
+//     std::vector<std::vector<double>> all_down (num_proc);
+
+//     for(int j=0; j<field.num_rows(); j++){
+//             all_left[my_rank_global].push_back(field(1,j));
+//             all_right[my_rank_global].push_back(field(inner_index_cols,j));
+//     }
+//     for(int i=0; i<field.num_cols(); i++){
+//             all_up[my_rank_global].push_back(field(i,1));
+//             all_down[my_rank_global].push_back(field(i,inner_index_rows));
+//     }
+//     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
+//         if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
+//         MPI_Sendrecv(&all_right[my_rank_global], all_right[my_rank_global].size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+//                      &all_left[neighbours_ranks[RIGHT]], all_left[neighbours_ranks[RIGHT]].size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+//             for(int j=0; j<field.num_rows(); j++){
+//                 //field(inner_index_cols+1,j) = all_left[neighbours_ranks[RIGHT]].at(j);
+//                 field(inner_index_cols+1,j) = all_left[neighbours_ranks[RIGHT]][j];
+//             }        
+//         }
+//     }
+//     if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
+//         if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
+//         MPI_Sendrecv(&all_left[my_rank_global], all_left[my_rank_global].size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+//                      &all_right[neighbours_ranks[LEFT]], all_right[neighbours_ranks[LEFT]].size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+//             for(int j=0; j<field.num_rows(); j++){  
+//                 field(0,j) = all_right[neighbours_ranks[LEFT]][j];
+//             }
+//         }
+//     } 
+
+//     if(neighbours_ranks[UP]!= MPI_PROC_NULL){
+//         if(neighbours_ranks[DOWN]= MPI_PROC_NULL){
+//         MPI_Sendrecv(&all_up[my_rank_global], all_up[my_rank_global].size(), MPI_DOUBLE, neighbours_ranks[UP], 0, 
+//                      &all_down[neighbours_ranks[UP]], all_down[neighbours_ranks[UP]].size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+//             for(int i=0; i<field.num_cols(); i++){
+//                 field(i,0) = all_down[neighbours_ranks[UP]][i];
+//             }        
+//         }
+//     }
+
+//     if(neighbours_ranks[UP]= MPI_PROC_NULL){
+//         if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
+//         MPI_Sendrecv(&all_down[my_rank_global], all_down[my_rank_global].size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
+//                      &all_up[neighbours_ranks[DOWN]],  all_up[neighbours_ranks[DOWN]].size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+//             for(int i=0; i<field.num_cols(); i++){  
+//                 field(i,inner_index_rows+1) =  all_up[neighbours_ranks[DOWN]][i];
+//             }
+//         }
+//     }    
+
+// }
 
 
 //double reduce_min(){
