@@ -87,173 +87,63 @@ void Communication::communicate(Matrix<double> &field){
     MPI_Status status;
 
     // TODO --> execution gets stuck, potenetial deadlocks
+    std::vector<double> buffer_left;
+    std::vector<double> buffer_right;
+    std::vector<double> buffer_up;
+    std::vector<double> buffer_down;
+    int inner_index_cols = field.num_cols() - 2;
+    int inner_index_rows = field.num_rows() - 2;
+    
+    for(int j=0; j<field.num_rows(); j++){
+            buffer_left.push_back(field(1,j));
+            buffer_right.push_back(field(inner_index_cols,j));
+    }
+    for(int i=0; i<field.num_cols(); i++){
+            buffer_up.push_back(field(i,1));
+            buffer_down.push_back(field(i,inner_index_rows));
+    }
+
     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
         if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
-        // std::cout << "COMM LEFT" << std::endl;
-        std::vector<double> rcv_buffer3, send_buffer3;
-        int inner_index = field.num_cols() - 2;
-        for(int j=0; j<field.num_rows(); j++){
-            send_buffer3.push_back(field(inner_index,j));
-            rcv_buffer3.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer3.data(), send_buffer3.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
-                     rcv_buffer3.data(), rcv_buffer3.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
-
-        for(int j=0; j<field.num_rows(); j++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(inner_index+1,j) = rcv_buffer3.at(j);
-        }
+        MPI_Sendrecv(buffer_right.data(), buffer_right.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
+                     buffer_left.data(), buffer_left.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            for(int j=0; j<field.num_rows(); j++){
+                field(inner_index_cols+1,j) = buffer_left.at(j);
+            }        
         }
     }
 
     if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
         if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        std::vector<double> rcv_buffer4, send_buffer4;
-        for(int j=0; j<field.num_rows(); j++){
-            send_buffer4.push_back(field(1,j));
-            rcv_buffer4.push_back(0);
+        MPI_Sendrecv(buffer_left.data(), buffer_left.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
+                     buffer_right.data(), buffer_right.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+            for(int j=0; j<field.num_rows(); j++){  
+                field(0,j) = buffer_right.at(j);
+            }
         }
+    } 
 
-        MPI_Sendrecv(send_buffer4.data(), send_buffer4.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
-                     rcv_buffer4.data(), rcv_buffer4.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
-
-        // if (not(check)){
-        //     std::cout << "MPI_Sendrecv failed " << std::endl;
-        // }
-
-        for(int j=0; j<field.num_rows(); j++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(0,j) = rcv_buffer4.at(j);
-        }
-        }
-    }
-
-    if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
-        // std::cout << "COMM LEFT" << std::endl;
-        std::vector<double> rcv_buffer1, send_buffer1;
-        int inner_index = field.num_cols() - 2;
-        for(int j=0; j<field.num_rows(); j++){
-            send_buffer1.push_back(field(1,j));
-            rcv_buffer1.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer1.data(), send_buffer1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0, 
-                     rcv_buffer1.data(), rcv_buffer1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
-
-        // if (not(check)){
-        //     std::cout << "MPI_Sendrecv failed " << std::endl;
-        // }
-
-        for(int j=0; j<field.num_rows(); j++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(inner_index + 1,j) = rcv_buffer1.at(j);
-        }
-        //std::cout << std::endl;
-
-        std::vector<double> rcv_buffer2, send_buffer2;
-        
-
-        for(int j=0; j<field.num_rows(); j++){
-            send_buffer2.push_back(field(inner_index,j));
-            rcv_buffer2.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer2.data(), send_buffer2.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, 
-                     rcv_buffer2.data(), rcv_buffer2.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
-
-        // if (not(check)){
-        //     std::cout << "MPI_Sendrecv failed " << std::endl;
-        // }
-
-        for(int j=0; j<field.num_rows(); j++){
-            //std::cout << rcv_buffer2.at(j) << " ";
-            field(0,j) = rcv_buffer2.at(j);
-        }
-        //std::cout << std::endl;
-        }
-        
-    }
-
-        
     if(neighbours_ranks[UP]!= MPI_PROC_NULL){
         if(neighbours_ranks[DOWN]= MPI_PROC_NULL){
-        std::vector<double> rcv_buffer5, send_buffer5;
-        for(int i=0; i<field.num_cols(); i++){
-            send_buffer5.push_back(field(i,1));
-            rcv_buffer5.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer5.data(), send_buffer5.size(), MPI_DOUBLE, neighbours_ranks[UP], 0, 
-                     rcv_buffer5.data(), rcv_buffer5.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
-
-        for(int i=0; i<field.num_cols(); i++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(i,0) = rcv_buffer5.at(i);
-        }
+        MPI_Sendrecv(buffer_up.data(), buffer_up.size(), MPI_DOUBLE, neighbours_ranks[UP], 0, 
+                     buffer_down.data(), buffer_down.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+            for(int i=0; i<field.num_cols(); i++){
+                field(i,0) = buffer_down.at(i);
+            }        
         }
     }
 
     if(neighbours_ranks[UP]= MPI_PROC_NULL){
         if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
-        std::vector<double> rcv_buffer6, send_buffer6;
-        int inner_index = field.num_rows() -2;
-        for(int i=0; i<field.num_cols(); i++){
-            send_buffer6.push_back(field(i, inner_index));
-            rcv_buffer6.push_back(0);
+        MPI_Sendrecv(buffer_down.data(), buffer_down.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
+                     buffer_up.data(), buffer_up.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+            for(int i=0; i<field.num_cols(); i++){  
+                field(i,inner_index_rows+1) = buffer_up.at(i);
+            }
         }
+    }    
 
-        MPI_Sendrecv(send_buffer6.data(), send_buffer6.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
-                     rcv_buffer6.data(), rcv_buffer6.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
-
-        for(int i=0; i<field.num_cols(); i++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(i,inner_index+1) = rcv_buffer6.at(i);
-        }
-        }
-    }
-
-    if(neighbours_ranks[UP]!= MPI_PROC_NULL){
-        if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
-        std::vector<double> rcv_buffer7, send_buffer7;
-        int inner_index = field.num_rows() - 2;
-        for(int i=0; i<field.num_cols(); i++){
-            send_buffer7.push_back(field(i,1));
-            rcv_buffer7.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer7.data(), send_buffer7.size(), MPI_DOUBLE, neighbours_ranks[UP], 0, 
-                     rcv_buffer7.data(), rcv_buffer7.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
-
-
-        for(int i=0; i<field.num_cols(); i++){
-            //std::cout << rcv_buffer1.at(j) << " ";
-            field(i,inner_index+1) = rcv_buffer7.at(i);
-        }
-        //std::cout << std::endl;
-
-        std::vector<double> rcv_buffer8, send_buffer8;
-
-        for(int i=0; i<field.num_cols(); i++){
-            send_buffer8.push_back(field(i,inner_index));
-            rcv_buffer8.push_back(0);
-        }
-
-        MPI_Sendrecv(send_buffer8.data(), send_buffer8.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0, 
-                     rcv_buffer8.data(), rcv_buffer8.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
-
-        for(int i=0; i<field.num_cols(); i++){
-            //std::cout << rcv_buffer2.at(j) << " ";
-            field(i,0) = rcv_buffer8.at(i);
-        }
-        //std::cout << std::endl;
-        }
-        
-        }
 }
-
-
 
 
 //double reduce_min(){
