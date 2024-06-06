@@ -378,32 +378,77 @@ void Communication::communicate(Matrix<double> &field){
     std::vector<double> send1 (field.num_rows());
     std::vector<double> rcv1 (field.num_rows());
 
+    int check = 0;
+
     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
-        if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
+        if(neighbours_ranks[LEFT]== MPI_PROC_NULL){
+
+            // std::cout << "send" << std::endl;
+
             for(int j=0; j<field.num_rows(); j++){
                 send1[j] = field(inner_index_cols,j);
+                // std::cout << send1[j] << " ";
             }
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            // std::cout << std::endl;
 
+            // check1 = MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,
+            //              &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, MPI_STATUS_IGNORE);
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            check = MPI_Send(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, MPI_COMMUNICATOR);
+            std::cout << "check send: " << check << std::endl;
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            check = MPI_Recv(&rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            std::cout << "check rcv: " << check << std::endl;
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            // std::cout << "rcv" << std::endl; 
             for(int j=0; j<field.num_rows(); j++){
                 field(inner_index_cols+1,j) = rcv1[j];
+                // std::cout << field(inner_index_cols+1,j) << " ";
             }
+            // std::cout << std::endl;
         }
     }
+
     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
+        if(neighbours_ranks[RIGHT]== MPI_PROC_NULL){
+
+            // std::cout << "send" << std::endl;
             for(int j=0; j<field.num_rows(); j++){
                 send1[j] = field(1,j);
+                // std::cout << send1[j] << " ";
             }
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+            // std::cout << std::endl;
 
+            // MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,
+            //              &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, MPI_STATUS_IGNORE);
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            check = MPI_Send(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0, MPI_COMMUNICATOR);
+            std::cout << "check send: " << check << std::endl;
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            check = MPI_Recv(&rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            std::cout << "check rcv: " << check << std::endl;
+
+            MPI_Barrier(MPI_COMMUNICATOR);
+
+            // std::cout << "rcv" << std::endl;
             for(int j=0; j<field.num_rows(); j++){
                 field(0,j) = rcv1[j];
+                // std::cout << field(0,j) << " ";
             }
+            // std::cout << std::endl;
         }
     }
+
     
 }
 

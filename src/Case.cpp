@@ -260,13 +260,22 @@ void Case::simulate() {
         // TODO --> handle temperature
 
         _field.calculate_temperature(_grid);
-        Communication::communicateT(_field, _field.t_matrix());
+
+        std::cout << "Communication T" << std::endl;
+        Communication::communicate(_field.t_matrix());
+
+        // MPI_Barrier(MPI_COMMUNICATOR);
 
 
         _field.calculate_fluxes(_grid);
-        Communication::communicateF(_field, _field.f_matrix());
-        Communication::communicateG(_field, _field.g_matrix());
+
+        std::cout << "Communication F" << std::endl;
+        Communication::communicate(_field.f_matrix());
+
+        std::cout << "Communication G" << std::endl;
+        Communication::communicate(_field.g_matrix());
        
+        // MPI_Barrier(MPI_COMMUNICATOR);
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
@@ -278,7 +287,11 @@ void Case::simulate() {
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             residual = _pressure_solver->solve(_field, _grid, _boundaries);
-            Communication::communicateP(_field, _field.p_matrix());
+
+            std::cout << "Communication P" << std::endl;
+            Communication::communicate(_field.p_matrix());
+
+            // MPI_Barrier(MPI_COMMUNICATOR);
 
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
@@ -295,8 +308,14 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-        Communication::communicateU(_field, _field.u_matrix());
-        Communication::communicateV(_field, _field.v_matrix());
+        std::cout << "Communication U" << std::endl;
+        Communication::communicate(_field.u_matrix());
+
+        std::cout << "Communication V " << std::endl;
+        Communication::communicate(_field.v_matrix());
+
+
+        // MPI_Barrier(MPI_COMMUNICATOR);
         
         timestep += 1;
         output_counter += dt;
