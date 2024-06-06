@@ -259,13 +259,14 @@ void Case::simulate() {
 
         // TODO --> handle temperature
 
-        // _field.calculate_temperature(_grid);
-        // Communication::communicate(_field.t_matrix);
+        _field.calculate_temperature(_grid);
+        Communication::communicateT(_field, _field.t_matrix());
 
 
         _field.calculate_fluxes(_grid);
-        Communication::communicate(_field.f_matrix());
-        Communication::communicate(_field.g_matrix());
+        Communication::communicateF(_field, _field.f_matrix());
+        Communication::communicateG(_field, _field.g_matrix());
+       
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
@@ -277,12 +278,14 @@ void Case::simulate() {
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             residual = _pressure_solver->solve(_field, _grid, _boundaries);
-            Communication::communicate(_field.p_matrix());
+            Communication::communicateP(_field, _field.p_matrix());
 
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
             }
             iter += 1;
+
+            residual = Communication::reduce_sum(residual);
         }
 
         iter_vec.push_back(iter);
@@ -292,8 +295,8 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-        Communication::communicate(_field.u_matrix());
-        Communication::communicate(_field.v_matrix());
+        Communication::communicateU(_field, _field.u_matrix());
+        Communication::communicateV(_field, _field.v_matrix());
         
         timestep += 1;
         output_counter += dt;

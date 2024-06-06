@@ -170,6 +170,8 @@ void Fields::calculate_dt(Grid &grid) {
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
     _dt = _tau * _dt;
+
+    _dt = Communication::reduce_min(_dt);
 }
 
 double &Fields::p(int i, int j) { return _P(i, j); }
@@ -181,6 +183,7 @@ double &Fields::rs(int i, int j) { return _RS(i, j); }
 double &Fields::T(int i, int j) { return _T(i, j); }
 
 
+
 Matrix<double> &Fields::p_matrix() { return _P; }
 Matrix<double> &Fields::u_matrix() { return _U; }
 Matrix<double> &Fields::v_matrix() { return _V; }
@@ -190,6 +193,5 @@ Matrix<double> &Fields::rs_matrix() { return _RS; }
 Matrix<double> &Fields::t_matrix() { return _T; }
 
 
-
-
 double Fields::dt() const { return _dt; }
+

@@ -48,13 +48,21 @@ class Communication{
         */ 
         static void communicate(Matrix<double> &field);
 
+        
+        static void communicateU(Fields &field,  Matrix<double> &matrix);
+        static void communicateV(Fields &field,  Matrix<double> &matrix);
+        static void communicateP(Fields &field,  Matrix<double> &matrix);
+        static void communicateF(Fields &field,  Matrix<double> &matrix);
+        static void communicateG(Fields &field,  Matrix<double> &matrix);
+        static void communicateT(Fields &field,  Matrix<double> &matrix);
+
         /**
         * @brief find minimum value across all processes
         *
         * @param[in] value
         *
         */ 
-        static double reduce_min();
+        static double reduce_min(double value);
 
         /**
         * @brief find total sum across all processes
@@ -62,7 +70,7 @@ class Communication{
         * @param[in] value
         *
         */ 
-        static double reduce_sum();
+        static double reduce_sum(double residual);
 
         ~Communication() = default;
         
