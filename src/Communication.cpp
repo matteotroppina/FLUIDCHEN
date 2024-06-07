@@ -91,7 +91,6 @@ void Communication::communicate(Matrix<double> &matrix, std::vector<Cell *> ghos
     std::vector<double> rcv1 (matrix.num_rows(), 0);
 
     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
-        if(neighbours_ranks[LEFT]= MPI_PROC_NULL){
 
             for(int j=0; j< matrix.num_rows(); j++){
                 send1[j] = matrix(inner_index_cols,j);
@@ -103,11 +102,9 @@ void Communication::communicate(Matrix<double> &matrix, std::vector<Cell *> ghos
             for(int j=0; j< matrix.num_rows(); j++){
                 matrix(inner_index_cols+1,j) = rcv1[j];
             }
-        }
     }
 
     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
-        if(neighbours_ranks[RIGHT]= MPI_PROC_NULL){
 
             for(int j=0; j< matrix.num_rows(); j++){
                 send1[j] = matrix(1,j);
@@ -119,7 +116,6 @@ void Communication::communicate(Matrix<double> &matrix, std::vector<Cell *> ghos
             for(int j=0; j< matrix.num_rows(); j++){
                 matrix(0,j) = rcv1[j];
             }
-        }
     }
     
 }
@@ -143,5 +139,5 @@ double Communication::reduce_sum(double residual){
     double globalsum ; 
     MPI_Allreduce(&residual, &globalsum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMMUNICATOR);
     return globalsum;
-    }
+}
 

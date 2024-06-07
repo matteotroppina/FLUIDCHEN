@@ -131,8 +131,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (_geom_name.compare("NONE") == 0) { // Construct boundaries for lid driven cavity
         std::cerr << "No geometry file provided. Constructing default lid driven cavity" << std::endl;
         if (not _grid.moving_wall_cells().empty()) {
-            _boundaries.push_back(
-                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
         }
         if (not _grid.fixed_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
