@@ -41,20 +41,12 @@ class Communication{
         static void finalize();
 
         /**
-        * @brief communicate a field
+        * @brief communicate a matrix
         *
-        * @param[in] field 
+        * @param[in] matrix
         *
         */ 
-        static void communicate(Matrix<double> &field);
-
-        
-        static void communicateU(Fields &field,  Matrix<double> &matrix);
-        static void communicateV(Fields &field,  Matrix<double> &matrix);
-        static void communicateP(Fields &field,  Matrix<double> &matrix);
-        static void communicateF(Fields &field,  Matrix<double> &matrix);
-        static void communicateG(Fields &field,  Matrix<double> &matrix);
-        static void communicateT(Fields &field,  Matrix<double> &matrix);
+        static void communicate(Matrix<double> &matrix, std::vector<Cell *> ghost_cells);
 
         /**
         * @brief find minimum value across all processes

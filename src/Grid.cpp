@@ -55,14 +55,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 if ( not ((i == 0) or (i == _domain.size_x + 1) or (j == 0) or (j == _domain.size_y + 1)) ) {
                     _fluid_cells.push_back(&_cells(i, j));
-                } else {
-                    // assign communication cells
-                    _comm_cells.push_back(&_cells(i, j));
-                }
-
+                } // don't add ghost cells to fluid cells
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::moving_wall) {
-                _moving_wall_cells.push_back(&_cells(i, j));
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
+                _moving_wall_cells.push_back(&_cells(i, j));
             } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fixed_velocity) {
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_VELOCITY, geometry_data.at(i_geom).at(j_geom));
                 _fixed_velocity_cells.push_back(&_cells(i, j));
@@ -80,12 +76,23 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                 _temp_fixed_wall_cells.push_back(&_cells(i, j));
-//                _fixed_wall_cells.push_back(&_cells(i, j));
+                //                _fixed_wall_cells.push_back(&_cells(i, j));
             }
             ++i;
         }
         ++j;
     }
+
+    // Ghost cells
+    for (int i = 0; i < _domain.size_x + 2; ++i) {
+        _ghost_cells.push_back(&_cells(i, 0));
+        _ghost_cells.push_back(&_cells(i, _domain.size_y + 1));
+    }
+    for (int j = 0; j < _domain.size_y + 2; ++j) {
+        _ghost_cells.push_back(&_cells(0, j));
+        _ghost_cells.push_back(&_cells(_domain.size_x + 1, j));
+    }
+
 
     // Determine fixed walls and inner obstacles
 
@@ -356,4 +363,4 @@ const std::vector<Cell *> &Grid::hot_wall_cells() const { return _hot_wall_cells
 
 const std::vector<Cell *> &Grid::cold_wall_cells() const { return _cold_wall_cells; }
 
-const std::vector<Cell *> &Grid::comm_cells() const { return _comm_cells; }
+const std::vector<Cell *> &Grid::ghost_cells() const { return _ghost_cells; }
