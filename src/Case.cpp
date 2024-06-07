@@ -243,7 +243,6 @@ void Case::simulate() {
     // if (my_rank_global == 0){
     // _field.printBorders(_grid);
     // _field.printCellTypes(_grid);
-
     // }
 
     while (t < _t_end) {
@@ -259,13 +258,13 @@ void Case::simulate() {
         // TODO --> handle temperature
 
         _field.calculate_temperature(_grid);
-        Communication::communicate(_field.t_matrix(), _grid.ghost_cells());
+        Communication::communicate(_field.t_matrix());
 
 
         _field.calculate_fluxes(_grid);
-        Communication::communicate(_field.f_matrix(), _grid.ghost_cells());
-        Communication::communicate(_field.g_matrix(), _grid.ghost_cells());
-       
+        Communication::communicate(_field.f_matrix());
+        Communication::communicate(_field.g_matrix());
+
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
@@ -277,7 +276,7 @@ void Case::simulate() {
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             residual = _pressure_solver->solve(_field, _grid, _boundaries);
-            Communication::communicate(_field.p_matrix(), _grid.ghost_cells());
+            Communication::communicate(_field.p_matrix());
 
             for (auto &b : _boundaries) {
                 b->applyPressure(_field);
@@ -294,8 +293,8 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-        Communication::communicate(_field.u_matrix(), _grid.ghost_cells());
-        Communication::communicate(_field.v_matrix(), _grid.ghost_cells());
+        Communication::communicate(_field.u_matrix());
+        Communication::communicate(_field.v_matrix());
 
 //        return;
         
@@ -463,20 +462,29 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
     domain.size_x = size_x;
     domain.size_y = size_y;
 
-    // TODO --> why +2 sequential and +1 parallel?
+    domain.itermin_x = 1; // starts from 1 because of ghost cells
+    domain.itermax_x = size_x;
+    domain.itermin_y = 1;
+    domain.itermax_y = size_y;
 
     domain.iminb = i * size_x;
     domain.jminb = j * size_y;
     domain.imaxb = (i+1) * size_x + 2;
     domain.jmaxb = (j+1) * size_y + 2;
 
-    std::cout << "i : " << i << std::endl;
-    std::cout << "j : " << j << std::endl;
-    std::cout << "size_x : " << size_x << std::endl;
-    std::cout << "size_y : " << size_y << std::endl;
-    std::cout << "imin : " << domain.iminb << std::endl;
-    std::cout << "imax : " << domain.imaxb << std::endl;
-    std::cout << "jmin : " << domain.jminb << std::endl;
-    std::cout << "jmax : " << domain.jmaxb << std::endl;
-    
+    std::array<int, 4> neighbours = Communication::get_neighbours();
+
+    if (neighbours[LEFT] != MPI_PROC_NULL){
+        domain.itermin_x = 0;
+    }
+    if (neighbours[RIGHT] != MPI_PROC_NULL){
+        domain.itermax_x = size_x + 1;
+    }
+//    if (neighbours[UP] != MPI_PROC_NULL){
+//        domain.itermax_y = size_y + 1;
+//    }
+//    if (neighbours[DOWN] != MPI_PROC_NULL){
+//        domain.itermin_y = 0;
+//    }
+
 }

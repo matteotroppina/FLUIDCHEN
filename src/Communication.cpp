@@ -33,9 +33,9 @@ void Communication::init_parallel(int argn, char **args){
     MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
     if (num_proc != iproc * jproc) {
-        std::cerr << "Incompatible number of processors and domain decomposition!";
+        std::cerr << "Incompatible number of processors and domain decomposition!\n";
         MPI_Finalize();
-        return;
+        exit(1);
     }
 
     // Ask MPI to decompose our processes in a 2D cartesian grid for us
@@ -70,19 +70,23 @@ void Communication::finalize(){
     MPI_Finalize();
 }
 
+std::array<int, 4> Communication::get_neighbours() {
+    std::array<int, 4> neighbours_ranks;
 
-void Communication::communicate(Matrix<double> &matrix, std::vector<Cell *> ghost_cells){
+    // check if neighbours to communicate with
+    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &neighbours_ranks[LEFT], &neighbours_ranks[RIGHT]);
+    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &neighbours_ranks[DOWN], &neighbours_ranks[UP]);
+
+    return neighbours_ranks;
+}
+
+
+void Communication::communicate(Matrix<double> &matrix){
     // Get my coordinates in the new communicator
     int my_coords[2];
     MPI_Cart_coords(MPI_COMMUNICATOR, my_rank_global, 2, my_coords);
 
-    enum DIRECTIONS {DOWN, UP, LEFT, RIGHT};
-    char* neighbours_names[4] = {"down", "up", "left", "right"};
-    int neighbours_ranks[4];
- 
-    // check if neighbours to communicate with
-    MPI_Cart_shift(MPI_COMMUNICATOR, 0, 1, &neighbours_ranks[LEFT], &neighbours_ranks[RIGHT]);
-    MPI_Cart_shift(MPI_COMMUNICATOR, 1, 1, &neighbours_ranks[DOWN], &neighbours_ranks[UP]);
+    std::array<int,4> neighbours_ranks = get_neighbours();
 
     MPI_Status status;
     int inner_index_cols = matrix.num_cols() - 2;
@@ -117,16 +121,37 @@ void Communication::communicate(Matrix<double> &matrix, std::vector<Cell *> ghos
                 matrix(0,j) = rcv1[j];
             }
     }
+
+    if(neighbours_ranks[UP]!= MPI_PROC_NULL){
+
+            for(int i=0; i< matrix.num_cols(); i++){
+                send1[i] = matrix(i,inner_index_rows);
+            }
+
+            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,
+                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+
+            for(int i=0; i< matrix.num_cols(); i++){
+                matrix(i,inner_index_rows+1) = rcv1[i];
+            }
+    }
+
+    if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
+
+            for(int i=0; i< matrix.num_cols(); i++){
+                send1[i] = matrix(i,1);
+            }
+
+            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,
+                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+
+            for(int i=0; i< matrix.num_cols(); i++){
+                matrix(i,0) = rcv1[i];
+            }
+    }
     
 }
 
-//double reduce_min(){
-    // // Finding the global Minimum
-// // ...
-// double localMin = *std::min_element(myVector.begin(),myVector.end());
-// double globalMin;
-// MPI_Allreduce(&localMin, &globalMin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-//}
 
 double Communication::reduce_min(double value){
     double global_min ; 

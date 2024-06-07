@@ -32,9 +32,16 @@ class Grid {
     Cell cell(int i, int j) const;
 
     /// access number of cells in x direction
+    /// (excluding ghost cells)
     int size_x() const;
     /// access number of cells in y direction
     int size_y() const;
+
+    /// Iteration bounds for fields
+    int itermin_x() const;
+    int itermax_x() const;
+    int itermin_y() const;
+    int itermax_y() const;
 
     /// access number of cells in x direction excluding ghost cells
     const Domain &domain() const;

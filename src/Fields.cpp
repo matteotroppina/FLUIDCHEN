@@ -22,7 +22,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "P matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             std::cout << _P(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -32,7 +32,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "U matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             std::cout << _U(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -41,7 +41,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "V matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             std::cout << _V(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -50,7 +50,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "T matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             std::cout << _T(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -76,7 +76,7 @@ void Fields::printCellTypes(Grid &grid){
 
     std::cout <<std::endl << "Cell types" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             char cell_id = cellTypeToChar[grid.cell(i, j).type()];
             cell_id += '0';
             std::cout << cell_id  << ", ";
@@ -89,7 +89,7 @@ void Fields::printBorders(Grid &grid) {
     std::cout << std::endl << "Borders" << std::endl;
 
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
             if (grid.cell(i, j).is_border(border_position::LEFT)) {
                 std::cout << "L, ";
             } else if (grid.cell(i, j).is_border(border_position::RIGHT)) {
@@ -107,15 +107,15 @@ void Fields::printBorders(Grid &grid) {
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-    for (int i = 1; i <= grid.size_x() - 1; i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
+    for (int i = grid.itermin_x(); i <= grid.itermax_x() - 1; i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y(); j++) {
             _F(i, j) = _U(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
 
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y() - 1; j++) {
+    for (int i = grid.itermin_x(); i <= grid.itermax_x(); i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y() - 1; j++) {
             _G(i, j) = _V(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
         }
@@ -123,30 +123,30 @@ void Fields::calculate_fluxes(Grid &grid) {
 }
 
 void Fields::calculate_rs(Grid &grid) {
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
+    for (int i = grid.itermin_x(); i <= grid.itermax_x(); i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y(); j++) {
             _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
         }
     }
 }
 
 void Fields::calculate_velocities(Grid &grid) {
-    for (int i = 1; i <= grid.size_x() - 1; i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
+    for (int i = grid.itermin_x(); i <= grid.itermax_x() - 1; i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y(); j++) {
             _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
         }
     }
 
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y() - 1; j++) {
+    for (int i = grid.itermin_x(); i <= grid.itermax_x(); i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y() - 1; j++) {
             _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
         }
     }
 }
 
 void Fields::calculate_temperature(Grid &grid) {
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++){
+    for (int i = grid.itermin_x(); i <= grid.itermax_x(); i++) {
+        for (int j = grid.itermin_y(); j <= grid.itermax_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
                 _T(i, j) = _T(i,j) + _dt * ((_alpha * Discretization::laplacian(_T,i,j)) - Discretization::convection_t(_T,_U,_V,i,j));
             }

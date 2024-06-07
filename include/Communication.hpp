@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Fields.hpp"
 #include "Datastructures.hpp"
+#include <array>
 
 // stores the rank of the current process in the custom communicator
 inline int my_rank_global;
@@ -41,12 +42,42 @@ class Communication{
         static void finalize();
 
         /**
+                 * @brief get the rank of the current process
+        *
+        */
+        static int get_rank();
+
+        /**
+        * @brief get the number of processes
+        *
+        */
+        static int get_size();
+
+        /**
+        * @brief get the cartesian communicator
+        *
+        */
+        static MPI_Comm get_communicator();
+
+        /**
+        * @brief get the 2D coordinates of the current process
+        *
+        */
+        static std::array<int, 2> get_coords();
+
+        /**
+        * @brief get the neighbours of the current process
+        *
+        */
+        static std::array<int, 4> get_neighbours();
+
+        /**
         * @brief communicate a matrix
         *
         * @param[in] matrix
         *
         */ 
-        static void communicate(Matrix<double> &matrix, std::vector<Cell *> ghost_cells);
+        static void communicate(Matrix<double> &matrix);
 
         /**
         * @brief find minimum value across all processes
@@ -63,6 +94,7 @@ class Communication{
         *
         */ 
         static double reduce_sum(double residual);
+
 
         ~Communication() = default;
         
