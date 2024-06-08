@@ -38,9 +38,7 @@ class Grid {
     int size_y() const;
 
     /// Iteration bounds for fields
-    int itermin_x() const;
     int itermax_x() const;
-    int itermin_y() const;
     int itermax_y() const;
 
     /// access number of cells in x direction excluding ghost cells

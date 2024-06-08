@@ -339,9 +339,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 int Grid::size_x() const { return _domain.size_x; }
 int Grid::size_y() const { return _domain.size_y; }
 
-int Grid::itermin_x() const { return _domain.itermin_x; }
 int Grid::itermax_x() const { return _domain.itermax_x; }
-int Grid::itermin_y() const { return _domain.itermin_y; }
 int Grid::itermax_y() const { return _domain.itermax_y; }
 
 Cell Grid::cell(int i, int j) const { return _cells(i, j); }

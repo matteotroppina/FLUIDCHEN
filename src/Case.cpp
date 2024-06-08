@@ -462,9 +462,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
     domain.size_x = size_x;
     domain.size_y = size_y;
 
-    domain.itermin_x = 1; // starts from 1 because of ghost cells
     domain.itermax_x = size_x;
-    domain.itermin_y = 1;
     domain.itermax_y = size_y;
 
     domain.iminb = i * size_x;
@@ -474,12 +472,14 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     std::array<int, 4> neighbours = Communication::get_neighbours();
 
-    if (neighbours[RIGHT] != MPI_PROC_NULL){
+    if (neighbours[RIGHT] != MPI_PROC_NULL){ // if there is a right neighbour
         domain.itermax_x = size_x + 1;
+        std::cout << "rank: " << my_rank_global << " has right neighbour" << std::endl;
     }
 
-//    if (neighbours[UP] != MPI_PROC_NULL){
-//        domain.itermax_y = size_y + 1;
-//    }
+    if (neighbours[UP] != MPI_PROC_NULL){ // if there is an upper neighbour
+        domain.itermax_y = size_y + 1;
+        std::cout << "rank: " << my_rank_global << " has upper neighbour" << std::endl;
+    }
 
 }

@@ -30,9 +30,7 @@ struct Domain {
 
     /// Iteration variables for fields. Same size as size_x and size_y,
     /// except when domain is decomposed
-    int itermin_x{-1};
     int itermax_x{-1};
-    int itermin_y{-1};
     int itermax_y{-1};
 
     /// Number of cells in x direction, not-decomposed
