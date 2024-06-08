@@ -474,17 +474,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     std::array<int, 4> neighbours = Communication::get_neighbours();
 
-    if (neighbours[LEFT] != MPI_PROC_NULL){
-        domain.itermin_x = 0;
-    }
     if (neighbours[RIGHT] != MPI_PROC_NULL){
         domain.itermax_x = size_x + 1;
     }
+
 //    if (neighbours[UP] != MPI_PROC_NULL){
 //        domain.itermax_y = size_y + 1;
-//    }
-//    if (neighbours[DOWN] != MPI_PROC_NULL){
-//        domain.itermin_y = 0;
 //    }
 
 }
