@@ -17,7 +17,7 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
 }
 
 void Fields::printMatrix(Grid &grid) {
-    Communication::waitForTurn();
+    
     std::cout << std::fixed;
     std::cout << std::setprecision(1); // digits after decimal point
 
@@ -59,11 +59,11 @@ void Fields::printMatrix(Grid &grid) {
     std::cout << std::endl;
 
     std::cout << std::setprecision(4); // digits after decimal point
-    Communication::signalNext();
+    
 }
 
 void Fields::printCellTypes(Grid &grid){
-    Communication::waitForTurn();
+    
 
     std::map<cell_type, char> cellTypeToChar = {
         {cell_type::FLUID, GeometryIDs::fluid},
@@ -87,11 +87,11 @@ void Fields::printCellTypes(Grid &grid){
         std::cout << std::endl;
     }
 
-    Communication::signalNext();
+    
 }
 
 void Fields::printBorders(Grid &grid) {
-    Communication::waitForTurn();
+    
 
     std::cout << std::endl << "Borders" << std::endl;
 
@@ -112,7 +112,7 @@ void Fields::printBorders(Grid &grid) {
         std::cout << std::endl;
     }
 
-    Communication::signalNext();
+    
 }
 
 void Fields::calculate_fluxes(Grid &grid) {

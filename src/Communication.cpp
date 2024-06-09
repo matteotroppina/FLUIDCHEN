@@ -165,22 +165,3 @@ double Communication::reduce_sum(double residual){
     MPI_Allreduce(&residual, &globalsum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMMUNICATOR);
     return globalsum;
 }
-
-// will stop execution until all processes reach this point
-void Communication::waitForTurn() {
-    if (my_rank_global != 0) {
-        int dummy;
-        MPI_Recv(&dummy, 1, MPI_INT, my_rank_global - 1, 0, MPI_COMMUNICATOR, MPI_STATUS_IGNORE);
-        std::cout << std::endl << "rank: " << my_rank_global << std::endl;
-    }
-}
-
-void Communication::signalNext() {
-    int size;
-    MPI_Comm_size(MPI_COMMUNICATOR, &size);
-
-    if (my_rank_global != size - 1) {
-        int dummy = 0;
-        MPI_Send(&dummy, 1, MPI_INT, my_rank_global + 1, 0, MPI_COMMUNICATOR);
-    }
-}
