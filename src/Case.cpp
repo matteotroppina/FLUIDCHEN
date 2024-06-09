@@ -242,7 +242,7 @@ void Case::simulate() {
 
     // if (my_rank_global == 0){
     // _field.printBorders(_grid);
-    // _field.printCellTypes(_grid);
+     _field.printCellTypes(_grid);
     // }
 
     while (t < _t_end) {

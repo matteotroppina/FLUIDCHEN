@@ -17,12 +17,13 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
 }
 
 void Fields::printMatrix(Grid &grid) {
+    Communication::waitForTurn();
     std::cout << std::fixed;
     std::cout << std::setprecision(1); // digits after decimal point
 
     std::cout << "P matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _P(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -32,7 +33,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "U matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _U(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -41,7 +42,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "V matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _V(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -50,7 +51,7 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << "T matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             std::cout << _T(i, j) << ", ";
         }
         std::cout << std::endl;
@@ -58,9 +59,11 @@ void Fields::printMatrix(Grid &grid) {
     std::cout << std::endl;
 
     std::cout << std::setprecision(4); // digits after decimal point
+    Communication::signalNext();
 }
 
 void Fields::printCellTypes(Grid &grid){
+    Communication::waitForTurn();
 
     std::map<cell_type, char> cellTypeToChar = {
         {cell_type::FLUID, GeometryIDs::fluid},
@@ -76,20 +79,24 @@ void Fields::printCellTypes(Grid &grid){
 
     std::cout <<std::endl << "Cell types" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             char cell_id = cellTypeToChar[grid.cell(i, j).type()];
             cell_id += '0';
             std::cout << cell_id  << ", ";
         }
         std::cout << std::endl;
     }
+
+    Communication::signalNext();
 }
 
 void Fields::printBorders(Grid &grid) {
+    Communication::waitForTurn();
+
     std::cout << std::endl << "Borders" << std::endl;
 
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.itermax_x() + 1; i++) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
             if (grid.cell(i, j).is_border(border_position::LEFT)) {
                 std::cout << "L, ";
             } else if (grid.cell(i, j).is_border(border_position::RIGHT)) {
@@ -104,6 +111,8 @@ void Fields::printBorders(Grid &grid) {
         }
         std::cout << std::endl;
     }
+
+    Communication::signalNext();
 }
 
 void Fields::calculate_fluxes(Grid &grid) {

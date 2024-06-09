@@ -97,5 +97,12 @@ class Communication{
 
 
         ~Communication() = default;
-        
+
+        /**
+        * @brief wait for the current process to receive the turn
+        */
+        static void waitForTurn();
+
+        static void signalNext();
+
 };

@@ -132,14 +132,20 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
         // forbidden cells with two opposite borders or three boundaries
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::TOP)) {
             std::cerr << "there are forbidden cells with two opposite borders or three boundaries \n";
+            std::cerr << "i: " << i << " j: " << j << std::endl;
+            exit(1);
         }
         if (cell->is_border(border_position::LEFT) && cell->is_border(border_position::RIGHT)) {
             std::cerr << "there are forbidden cells with two opposite borders or three boundaries \n";
+            std::cerr << "i: " << i << " j: " << j << std::endl;
+            exit(1);
         }
         // forbidden cells with obstacles only consisting of 1 cell
         if (cell->is_border(border_position::LEFT) && cell->is_border(border_position::RIGHT) &&
             cell->is_border(border_position::TOP) && cell->is_border(border_position::BOTTOM)) {
             std::cerr << "there are forbidden cells with four boundaries \n";
+            std::cerr << "i: " << i << " j: " << j << std::endl;
+            exit(1);
         }
     }
 }
