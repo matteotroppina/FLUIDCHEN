@@ -6,8 +6,6 @@
 
 #include "Enums.hpp"
 #include "Grid.hpp"
-#include "Communication.hpp"
-#include "mpi.h"
 
 Grid::Grid(std::string geom_name, Domain &domain) {
 
@@ -304,58 +302,38 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     }
 }
 
-void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &entire_geometry_data) {
+void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
 
+    int num_cells_in_x, num_cells_in_y, depth;
 
-    if (my_rank_global == 0){
+    std::ifstream infile(filedoc);
+    std::stringstream ss;
+    std::string inputLine = "";
 
-        int num_cells_in_x, num_cells_in_y, depth;
-
-        std::ifstream infile(filedoc);
-        std::stringstream ss;
-        std::string inputLine = "";
-
-        // First line : version
-        getline(infile, inputLine);
-        if (inputLine.compare("P2") != 0) {
-            std::cerr << "First line of the PGM file should be P2" << std::endl;
-        }
-
-        // Second line : comment
-        getline(infile, inputLine);
-
-        // Continue with a stringstream
-        ss << infile.rdbuf();
-        // Third line : size
-        ss >> num_cells_in_x >> num_cells_in_y;
-        // Fourth line : depth
-        ss >> depth;
-
-        // Following lines : data (origin of x-y coordinate system in bottom-left corner)
-        for (int y = num_cells_in_y - 1; y > -1; --y) {
-            for (int x = 0; x < num_cells_in_x; ++x) {
-                ss >> entire_geometry_data[x][y];
-            }
-        }
-
-        infile.close();
-
-        int size;
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-        for(int i=1; i<size; i++){
-            MPI_Send(entire_geometry_data.data(), entire_geometry_data.size(), MPI_INT, i, 999999, MPI_COMM_WORLD);
-        }
-
-    }else{
-        
-        std::vector<int> geometry_data(entire_geometry_data.size(), 0);
-
-        MPI_Status status;
-        MPI_Recv(geometry_data.data(), geometry_data.size(), MPI_INT, 0, 999999, MPI_COMM_WORLD, &status);
-
+    // First line : version
+    getline(infile, inputLine);
+    if (inputLine.compare("P2") != 0) {
+        std::cerr << "First line of the PGM file should be P2" << std::endl;
     }
 
+    // Second line : comment
+    getline(infile, inputLine);
+
+    // Continue with a stringstream
+    ss << infile.rdbuf();
+    // Third line : size
+    ss >> num_cells_in_x >> num_cells_in_y;
+    // Fourth line : depth
+    ss >> depth;
+
+    // Following lines : data (origin of x-y coordinate system in bottom-left corner)
+    for (int y = num_cells_in_y - 1; y > -1; --y) {
+        for (int x = 0; x < num_cells_in_x; ++x) {
+            ss >> geometry_data[x][y];
+        }
+    }
+
+    infile.close();
 }
 
 int Grid::size_x() const { return _domain.size_x; }
