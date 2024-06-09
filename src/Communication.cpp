@@ -91,62 +91,66 @@ void Communication::communicate(Matrix<double> &matrix){
     MPI_Status status;
     int inner_index_cols = matrix.num_cols() - 2;
     int inner_index_rows = matrix.num_rows() - 2;
-    std::vector<double> send1 (matrix.num_rows(), 0);
-    std::vector<double> rcv1 (matrix.num_rows(), 0);
+
+    std::vector<double> send_x(matrix.num_rows(), 0);
+    std::vector<double> rcv_x(matrix.num_rows(), 0);
+
+    std::vector<double> send_y(matrix.num_cols(), 0);
+    std::vector<double> rcv_y(matrix.num_cols(), 0);
 
     if(neighbours_ranks[RIGHT]!= MPI_PROC_NULL){
 
             for(int j=0; j< matrix.num_rows(); j++){
-                send1[j] = matrix(inner_index_cols,j);
+                send_x[j] = matrix(inner_index_cols,j);
             }
 
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
+            MPI_Sendrecv(&send_x[0], send_x.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,
+                         &rcv_x[0], rcv_x.size(), MPI_DOUBLE, neighbours_ranks[RIGHT], 0,  MPI_COMMUNICATOR, &status);
 
             for(int j=0; j< matrix.num_rows(); j++){
-                matrix(inner_index_cols+1,j) = rcv1[j];
+                matrix(inner_index_cols+1,j) = rcv_x[j];
             }
     }
 
     if(neighbours_ranks[LEFT]!= MPI_PROC_NULL){
 
             for(int j=0; j< matrix.num_rows(); j++){
-                send1[j] = matrix(1,j);
+                send_x[j] = matrix(1,j);
             }
 
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
+            MPI_Sendrecv(&send_x[0], send_x.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,
+                         &rcv_x[0], rcv_x.size(), MPI_DOUBLE, neighbours_ranks[LEFT], 0,  MPI_COMMUNICATOR, &status);
 
             for(int j=0; j< matrix.num_rows(); j++){
-                matrix(0,j) = rcv1[j];
+                matrix(0,j) = rcv_x[j];
             }
     }
 
     if(neighbours_ranks[UP]!= MPI_PROC_NULL){
 
             for(int i=0; i< matrix.num_cols(); i++){
-                send1[i] = matrix(i,inner_index_rows);
+                send_y[i] = matrix(i,inner_index_rows);
             }
 
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
+            MPI_Sendrecv(&send_y[0], send_y.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,
+                         &rcv_y[0], rcv_y.size(), MPI_DOUBLE, neighbours_ranks[UP], 0,  MPI_COMMUNICATOR, &status);
 
             for(int i=0; i< matrix.num_cols(); i++){
-                matrix(i,inner_index_rows+1) = rcv1[i];
+                matrix(i,inner_index_rows+1) = rcv_y[i];
             }
     }
 
     if(neighbours_ranks[DOWN]!= MPI_PROC_NULL){
 
             for(int i=0; i< matrix.num_cols(); i++){
-                send1[i] = matrix(i,1);
+                send_y[i] = matrix(i,1);
             }
 
-            MPI_Sendrecv(&send1[0], send1.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,
-                         &rcv1[0], rcv1.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
+            MPI_Sendrecv(&send_y[0], send_y.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,
+                         &rcv_y[0], rcv_y.size(), MPI_DOUBLE, neighbours_ranks[DOWN], 0,  MPI_COMMUNICATOR, &status);
 
             for(int i=0; i< matrix.num_cols(); i++){
-                matrix(i,0) = rcv1[i];
+                matrix(i,0) = rcv_y[i];
             }
     }
     
@@ -154,14 +158,14 @@ void Communication::communicate(Matrix<double> &matrix){
 
 
 double Communication::reduce_min(double value){
-    double global_min ; 
+    double global_min ;
     MPI_Allreduce(&value, &global_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMMUNICATOR);
     return global_min;
 }
 
 
 double Communication::reduce_sum(double residual){
-    double globalsum ; 
+    double globalsum ;
     MPI_Allreduce(&residual, &globalsum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMMUNICATOR);
     return globalsum;
 }
