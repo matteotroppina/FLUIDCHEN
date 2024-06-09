@@ -125,7 +125,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     }
 //    std::cout << my_rank_global << "Calculating flux F" << std::endl;
 
-    for (int i = 1; i <= grid.itermax_x(); i++) {
+    for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _G(i, j) = _V(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
@@ -136,8 +136,8 @@ void Fields::calculate_fluxes(Grid &grid) {
 
 void Fields::calculate_rs(Grid &grid) {
 
-    for (int i = 1; i <= grid.itermax_x(); i++) {
-        for (int j = 1; j <= grid.itermax_y(); j++) {
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
             _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
         }
     }
@@ -147,14 +147,14 @@ void Fields::calculate_rs(Grid &grid) {
 void Fields::calculate_velocities(Grid &grid) {
 
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
-        for (int j = 1; j <= grid.itermax_y(); j++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
             _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
         }
     }
 //    std::cout << my_rank_global << "Calculating velocity U" << std::endl;
     
 
-    for (int i = 1; i <= grid.itermax_x(); i++) {
+    for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
         }
