@@ -179,7 +179,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.hot_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_wall_cells(), wall_temp_4));
         }
-        if (not _grid.hot_wall_cells().empty()) {
+        if (not _grid.cold_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
         }
     }
@@ -257,7 +257,7 @@ void Case::simulate() {
     MPI_Barrier(MPI_COMM_WORLD);
 
     if(my_rank_global == 0){
-        std::cout << "\n(4/4) FLUIDHCEN SIMULATION...\n" << std::endl;
+        std::cout << "\n(4/4) FLUIDCHEN SIMULATION...\n" << std::endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -348,8 +348,15 @@ void Case::simulate() {
 
         }
 
+        // output for performance analysis - comment the output above
+        
+        // if (output_counter >= _output_freq && my_rank_global == 0) {
+        //     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%" << " completed] " << std::endl; 
+        //     output_counter = 0;
+        // }
+
     }
-    output_csv(iter_vec);
+    // output_csv(iter_vec);
 
     if (my_rank_global == 0) {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
