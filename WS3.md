@@ -60,30 +60,37 @@ where `iproc` and `jproc` stand for the number of processors along `x` and `y` d
 
 `--oversubscribe` allows the oversubscription of processor cores. This means you can start more MPI processes than the number of physical CPU cores available on the machine.
 
+For sequential execution:
+
+```
+mpirun --oversubscribe -np 1 [path to file] 1 1
+```
+
 ## Results Validation
 
 ### Lid-driven cavity
 
+When running the simulation with a domain size of imax = 300 and jmax = 300, the time step size becomes too small, causing the SOR method to struggle with convergence. This results in the maximum number of iterations being exceeded at each time step.
+
+To address this issue, we carried out the simulation with a reduced domain size of `imax` = 150 and `jmax` = 150.
+
+| Configuration        | Runtime  | Speedup S(p) | Efficiency E(p) |
+| -------------------- | -------- | ------------ | --------------- |
+| **Sequential (1,1)** | 647 s    | -            | -               |
+| **(2,2)**            | 301 s    | 2.15         | 0.54            |
+| **(1,4)**            | (broken) |              |                 |
+| **(3,2)**            | 255 s    | 2.54         | 0.42            |
+
 ### Fluidtrap
 
-Simulation (1,1) Runtime: 19s
-
-Simulation (2,3) Runtime: 4s
-
-Speedup S(p) = 4.75
-
-Efficiency E(p) = 0.8
-
-Simulation (3,2) Runtime: 5s
-
-Speedup S(p) = 3.8
-
-Efficiency E(p) = 0.63
+| Configuration        | Runtime | Speedup S(p) | Efficiency E(p) |
+| -------------------- | ------- | ------------ | --------------- |
+| **Sequential (1,1)** | 19s     | -            | -               |
+| **(2,3)**            | 4s      | 4.75         | 0.8             |
+| **(3,2)**            | 5s      | 3.8          | 0.63            |
 
 ## Performance Analysis
 
 ### Strong Scaling with Rayleigh Benard case
-
-maximum speedup, parallel efficiency
 
 ### Weak Scaling with Lid-driven cavity case
