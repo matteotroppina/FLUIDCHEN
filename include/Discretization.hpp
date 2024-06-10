@@ -79,6 +79,8 @@ class Discretization {
      */
     static double interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset);
 
+    static double convection_t(const Matrix<double> &T, const Matrix<double> &U, const Matrix<double> &V, int i, int j);
+
   private:
     static double _dx;
     static double _dy;

@@ -40,6 +40,16 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau{};     /* safety factor for time step*/
     int itermax{};    /* max. number of iterations for pressure per time step */
     double eps{};     /* accuracy bound for pressure*/
+    double UIN{};     /*inlet velocity*/
+    double VIN{};
+    double TI{};    /*initial temperature*/
+    double alpha{}; /*thermal diffusivity*/
+    double beta{};  /*coefficient of thermal expansion*/
+    double wall_temp_3{};
+    double wall_temp_4{};
+    double wall_temp_5{};
+
+    int num_of_walls{};
 
     if (file.is_open()) {
 
@@ -67,13 +77,24 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                if (var == "UIN") file >> UIN;
+                if (var == "VIN") file >> VIN;
+                if (var == "TI") file >> TI;
+                if (var == "alpha") file >> alpha;
+                if (var == "beta") file >> beta;
+                // read geometry file name from .dat file and directly assign it to private member fo Case
+                if (var == "geo_file") file >> _geom_name;
+                if (var == "num_of_walls") file >> num_of_walls;
+                if (var == "wall_temp_3") file >> wall_temp_3;
+                if (var == "wall_temp_4") file >> wall_temp_4;
+                if (var == "wall_temp_5") file >> wall_temp_5;
             }
         }
     }
     file.close();
 
-    std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
+        std::map<int, double> wall_vel;
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
 
@@ -89,24 +110,46 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
 
-    // std::cout << domain.dx << " " << imax << " "
-    //           << " " << domain.imaxb << domain.size_x << std::endl;
-
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
 
-    // Construct boundaries
-    if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    if (_geom_name.compare("NONE") == 0) { // Construct boundaries for lid driven cavity
+        std::cerr << "No geometry file provided. Constructing default lid driven cavity" << std::endl;
+        if (not _grid.moving_wall_cells().empty()) {
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+    } else { // general case
+        if (not _grid.inner_obstacle_cells().empty()) {
+            _boundaries.push_back(std::make_unique<InnerObstacle>(_grid.inner_obstacle_cells()));
+        }
+        if (not _grid.moving_wall_cells().empty()) {
+            //            _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), ??)); //
+            //            TODO: set wall velocity according to input file
+        }
+        if (not _grid.fixed_velocity_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedVelocityBoundary>(_grid.fixed_velocity_cells(), UIN, VIN));
+        }
+        if (not _grid.zero_gradient_cells().empty()) {
+            _boundaries.push_back(std::make_unique<ZeroGradientBoundary>(_grid.zero_gradient_cells()));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(), wall_temp_3));
+        }
+        if (not _grid.hot_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_wall_cells(), wall_temp_4));
+        }
+        if (not _grid.hot_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
+        }
     }
 }
 
@@ -188,6 +231,9 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
+    // _field.printCellTypes(_grid);
+    // _field.printBorders(_grid);
+
     while (t < _t_end) {
 
         _field.calculate_dt(_grid);
@@ -195,11 +241,16 @@ void Case::simulate() {
 
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
+            b->applyTemperature(_field);
+        }
+
+        _field.calculate_temperature(_grid);
+        _field.calculate_fluxes(_grid);
+
+        for (auto &b : _boundaries) {
             b->applyFlux(_field);
         }
-        // _field.printMatrix(_grid);
 
-        _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
 
         residual = 1;
@@ -220,31 +271,36 @@ void Case::simulate() {
 
         _field.calculate_velocities(_grid);
 
-        if (output_counter > _output_freq or timestep == 1) {
-            std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
-            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
-                      << std::endl;
-            if (_field.p_matrix().max_abs_value() > 1e6) {
-                std::cerr << "Divergence detected" << std::endl;
-                break;
-            }
-            output_vtk(timestep, 0);
-            output_counter = 0;
-        }
-
         timestep += 1;
         output_counter += dt;
         t += dt;
 
-    }
-    std::string filename;
-    std::cout << "Save file as .../case/iterations_[filename].csv, filename: " << std::endl;
-    std::cin >> filename;
+        if (output_counter + dt / 2 >= _output_freq or timestep == 1) {
+            for (auto &b : _boundaries) {
+                b->applyVelocity(_field); // apply boundary conditions for debug
+            }
 
-    output_csv(iter_vec, _dict_name + "/iterations_" + filename + ".csv");
+            std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
+            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
+                      << std::endl;
+
+            double max_p = _field.p_matrix().max_abs_value();
+            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+                std::cerr << "Divergence detected" << std::endl;
+                break;
+            }
+            output_vtk(timestep, 0);
+            output_counter = output_counter - _output_freq;
+
+            // _field.printMatrix(_grid); // remove this line to run normally
+        }
+    }
+    output_csv(iter_vec);
 }
 
-void Case::output_csv(const std::vector<int> &vec, const std::string &filename) {
+void Case::output_csv(const std::vector<int> &vec) {
+    std::string filename = _dict_name + "/iterations.csv";
+
     std::ofstream file(filename);
     if (file.is_open()) {
         for (size_t i = 0; i < vec.size(); ++i) {
@@ -290,10 +346,25 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
 
+    // Set blank cells
+    for (int col = 0; col < _grid.domain().size_y; col++) {
+        for (int row = 0; row < _grid.domain().size_x; row++) {
+            if (_grid.cell(row + 1, col + 1).type() == cell_type::FLUID) {
+                continue;
+            }
+            structuredGrid->BlankCell(row + col * (_grid.domain().size_x));
+        }
+    }
+
     // Pressure Array
     vtkSmartPointer<vtkDoubleArray> Pressure = vtkSmartPointer<vtkDoubleArray>::New();
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
+
+    // Temperature Array
+    vtkSmartPointer<vtkDoubleArray> Temperature = vtkSmartPointer<vtkDoubleArray>::New();
+    Temperature->SetName("Temperature");
+    Temperature->SetNumberOfComponents(1);
 
     // Velocity Array for cell data
     vtkSmartPointer<vtkDoubleArray> Velocity = vtkSmartPointer<vtkDoubleArray>::New();
@@ -308,7 +379,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
+            double temperature = _field.T(i, j);
             Pressure->InsertNextTuple(&pressure);
+            Temperature->InsertNextTuple(&temperature);
             vel[0] = (_field.u(i - 1, j) + _field.u(i, j)) * 0.5;
             vel[1] = (_field.v(i, j - 1) + _field.v(i, j)) * 0.5;
             Velocity->InsertNextTuple(vel);
@@ -331,6 +404,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
+    structuredGrid->GetCellData()->AddArray(Temperature);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetCellData()->AddArray(Velocity);

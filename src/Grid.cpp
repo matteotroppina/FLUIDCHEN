@@ -46,25 +46,107 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int i = 0;
     int j = 0;
 
+    std::vector<Cell *> _temp_fixed_wall_cells;
+
     for (int j_geom = _domain.jminb; j_geom < _domain.jmaxb; ++j_geom) {
         { i = 0; }
         for (int i_geom = _domain.iminb; i_geom < _domain.imaxb; ++i_geom) {
-            if (geometry_data.at(i_geom).at(j_geom) == 0) {
+            if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fluid) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 _fluid_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::moving_wall) {
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                 _moving_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fixed_velocity) {
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_VELOCITY, geometry_data.at(i_geom).at(j_geom));
+                _fixed_velocity_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::zero_gradient) {
+                _cells(i, j) = Cell(i, j, cell_type::ZERO_GRADIENT, geometry_data.at(i_geom).at(j_geom));
+                _zero_gradient_cells.push_back(&_cells(i, j));
+                // determine fixed walls in the next sections by checking if neighbour is fluid
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::hot_wall) {
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _hot_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::cold_wall) {
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _cold_wall_cells.push_back(&_cells(i, j));
             } else {
                 // Outer walls and inner obstacles
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _fixed_wall_cells.push_back(&_cells(i, j));
+                _temp_fixed_wall_cells.push_back(&_cells(i, j));
+//                _fixed_wall_cells.push_back(&_cells(i, j));
             }
-
             ++i;
         }
         ++j;
     }
+
+    // Determine fixed walls and inner obstacles
+
+    for (auto cell : _temp_fixed_wall_cells) {
+        i = cell->i();
+        j = cell->j();
+
+
+        if (i == 0) {
+            if (_cells(i + 1, j).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        } else if (i == _domain.size_x + 1) {
+            if (_cells(i - 1, j).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+
+        } else if (j == 0) {
+            if (_cells(i, j + 1).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        } else if (j == _domain.size_y + 1) {
+            if (_cells(i, j - 1).type() == cell_type::FIXED_WALL) {
+                _inner_obstacle_cells.push_back(cell);
+                _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+                continue;
+            } else {
+                _fixed_wall_cells.push_back(cell);
+                continue;
+            }
+        }
+
+        if (_cells(i + 1, j).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i - 1, j).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i, j + 1).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        if (_cells(i, j - 1).type() == cell_type::FLUID) {
+            _fixed_wall_cells.push_back(cell);
+            continue;
+        }
+        _inner_obstacle_cells.push_back(cell);
+        _cells(i, j) = Cell(i, j, cell_type::INNER_OBSTACLE);
+    }
+
 
     // Corner cell neighbour assigment
     // Bottom-Left Corner
@@ -257,3 +339,13 @@ const std::vector<Cell *> &Grid::fluid_cells() const { return _fluid_cells; }
 const std::vector<Cell *> &Grid::fixed_wall_cells() const { return _fixed_wall_cells; }
 
 const std::vector<Cell *> &Grid::moving_wall_cells() const { return _moving_wall_cells; }
+
+const std::vector<Cell *> &Grid::fixed_velocity_cells() const { return _fixed_velocity_cells; }
+
+const std::vector<Cell *> &Grid::zero_gradient_cells() const { return _zero_gradient_cells; }
+
+const std::vector<Cell *> &Grid::inner_obstacle_cells() const { return _inner_obstacle_cells; }
+
+const std::vector<Cell *> &Grid::hot_wall_cells() const { return _hot_wall_cells; }
+
+const std::vector<Cell *> &Grid::cold_wall_cells() const { return _cold_wall_cells; }

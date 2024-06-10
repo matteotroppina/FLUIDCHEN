@@ -35,6 +35,8 @@ class Boundary {
      */
     virtual void applyFlux(Fields &field);
 
+    virtual void applyTemperature(Fields &field);
+
     virtual ~Boundary() = default;
 
   protected:
@@ -50,12 +52,24 @@ class FixedWallBoundary : public Boundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    FixedWallBoundary(std::vector<Cell *> cells, double wall_temperature);
     virtual ~FixedWallBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
+    void applyTemperature(Fields &field);
 
   private:
-    std::map<int, double> _wall_temperature;
+        double _wall_temperature;
+
+};
+
+class InnerObstacle : public Boundary {
+  public:
+    InnerObstacle(std::vector<Cell *> cells);
+    virtual ~InnerObstacle() = default;
+    virtual void applyVelocity(Fields &field); // do nothing
+    virtual void applyPressure(Fields &field); // do nothing
+    virtual void applyFlux(Fields &field); // do nothing
 };
 
 /**
@@ -76,3 +90,32 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+
+class FixedVelocityBoundary : public Boundary {
+  public:
+    FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity, double inflow_v_velocity);
+    FixedVelocityBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity, std::map<int, double> inflow_v_velocity,
+                       std::map<int, double> wall_temperature);
+    virtual ~FixedVelocityBoundary() = default;
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
+
+  private:
+    std::map<int, double> _inflow_u_velocity;
+    std::map<int, double> _inflow_v_velocity;
+    std::map<int, double> _wall_temperature;
+};
+
+class ZeroGradientBoundary : public Boundary {
+  public:
+    ZeroGradientBoundary(std::vector<Cell *> cells);
+    ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    virtual ~ZeroGradientBoundary() = default;
+    virtual void applyVelocity(Fields &field);
+    virtual void applyPressure(Fields &field);
+
+
+  private:
+    std::map<int, double> _wall_temperature;
+};
+
