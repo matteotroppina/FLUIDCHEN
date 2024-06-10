@@ -20,6 +20,7 @@ Communication::Communication(int argn, char **args){
 void Communication::init_parallel(int argn, char **args){
     MPI_Init(&argn, &args);
 
+
     // initialized to sequential execution
     int iproc{1};
     int jproc{1};
@@ -62,8 +63,18 @@ void Communication::init_parallel(int argn, char **args){
     my_coords_global[0] = my_coords[0];
     my_coords_global[1] = my_coords[1];
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(my_rank_global == 0){
+        std::cout << "\n(1/4) INITIALIZING PARALLEL COMMUNICATION...\n" << std::endl;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // Print my location in the 2D torus.
     printf("[MPI process %d] I am located at (%d, %d).\n", my_rank, my_coords[0],my_coords[1]);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Communication::finalize(){

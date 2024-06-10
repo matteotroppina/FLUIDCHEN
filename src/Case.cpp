@@ -118,7 +118,16 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_imax = imax;
     domain.domain_jmax = jmax;
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(my_rank_global == 0){
+        std::cout << "\n(2/4) BUILDING DOMAINS...\n " << std::endl;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
     build_domain(domain, imax, jmax, iproc, jproc);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
@@ -128,8 +137,21 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(my_rank_global == 0){
+        std::cout << "\n(3/4) READING GEOMETRY...\n" << std::endl;
+        if(_geom_name.compare("NONE") != 0){
+            std::cout << "Reading geometry file: " << _geom_name << std::endl;
+        }else{
+            std::cout << "No geometry file provided. Constructing boundaries for lid driven cavity" << std::endl;
+        }
+    }
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+
     if (_geom_name.compare("NONE") == 0) { // Construct boundaries for lid driven cavity
-        std::cerr << "No geometry file provided. Constructing default lid driven cavity" << std::endl;
+
         if (not _grid.moving_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
         }
@@ -137,6 +159,7 @@ Case::Case(std::string file_name, int argn, char **args) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
     } else { // general case
+
         if (not _grid.inner_obstacle_cells().empty()) {
             _boundaries.push_back(std::make_unique<InnerObstacle>(_grid.inner_obstacle_cells()));
         }
@@ -231,6 +254,14 @@ void Case::set_file_names(std::string file_name) {
  */
 void Case::simulate() {
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(my_rank_global == 0){
+        std::cout << "\n(4/4) FLUIDHCEN SIMULATION...\n" << std::endl;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
@@ -239,11 +270,6 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
-
-    // if (my_rank_global == 0){
-    // _field.printBorders(_grid);
-     _field.printCellTypes(_grid);
-    // }
 
     while (t < _t_end) {
 
@@ -255,7 +281,6 @@ void Case::simulate() {
             b->applyTemperature(_field);
         }
 
-        // TODO --> handle temperature
 
         _field.calculate_temperature(_grid);
         Communication::communicate(_field.t_matrix());
@@ -288,10 +313,6 @@ void Case::simulate() {
 
         iter_vec.push_back(iter);
 
-        if (iter == _max_iter) {
-            std::cerr << "Exceeded max iterations" << std::endl;
-        }
-
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
@@ -302,27 +323,37 @@ void Case::simulate() {
         output_counter += dt;
         t += dt;
 
-        if (output_counter + dt / 2 >= _output_freq or timestep == 1) {
-            for (auto &b : _boundaries) {
-                b->applyVelocity(_field); // apply boundary conditions for debug
-            }
+        if (output_counter >= _output_freq or timestep == 1) {
 
-            std::cout << "time: " << t << " timestep: " << timestep << " residual: " << residual << std::endl;
-            std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
-                      << std::endl;
+            output_counter = 0;
 
             double max_p = _field.p_matrix().max_abs_value();
             if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
-            output_vtk(timestep, my_rank_global);
-            output_counter = output_counter - _output_freq;
 
-            // _field.printMatrix(_grid); // remove this line to run normally
+            output_vtk(timestep, my_rank_global);
+            if (my_rank_global == 0) {
+                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                          << " completed] " << "Writing Output at t = " << t << "s" << std::endl;
+                std::cout << std::left << "[ " << "Timestep: " << timestep << "\t\tSOR Iterations: " << iter << "\tSOR Residual: " << residual << " ]"<< std::flush;
+                if (iter == _max_iter) {
+                    std::cout << "\t\t ---> Exceeded max iterations";
+                }
+                std::cout << "\n------------------------------------------------------------------------------------" << std::flush;
+                // std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
+                //           << std::endl;
+            }
+
         }
+
     }
     output_csv(iter_vec);
+
+    if (my_rank_global == 0) {
+        std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
+    }
 }
 
 void Case::output_csv(const std::vector<int> &vec) {
@@ -453,6 +484,9 @@ void Case::output_vtk(int timestep, int my_rank) {
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int iproc, int jproc) {
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    std::cout << "Building domain for process: " << my_rank_global << std::endl;
+
     int i = my_coords_global[0];
     int j = my_coords_global[1];
 
@@ -474,12 +508,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     if (neighbours[RIGHT] != MPI_PROC_NULL){ // if there is a right neighbour
         domain.itermax_x = size_x + 1;
-        std::cout << "rank: " << my_rank_global << " has right neighbour" << std::endl;
+        // std::cout << "rank: " << my_rank_global << " has right neighbour" << std::endl;
     }
 
     if (neighbours[UP] != MPI_PROC_NULL){ // if there is an upper neighbour
         domain.itermax_y = size_y + 1;
-        std::cout << "rank: " << my_rank_global << " has upper neighbour" << std::endl;
+        // std::cout << "rank: " << my_rank_global << " has upper neighbour" << std::endl;
     }
 
 }

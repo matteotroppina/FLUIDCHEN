@@ -3,18 +3,16 @@
 
 #include "Case.hpp"
 #include "Communication.hpp"
+#include <chrono>
 
 int main(int argn, char **args) {
+
+    auto start = std::chrono::steady_clock::now();
 
     if (argn > 1) {
         std::string file_name{args[1]}; // input file name
 
-        // save logs to file for each process
         Communication::init_parallel(argn, args);
-        std::string outputlogs = "output_" + std::to_string(my_rank_global);
-        std::freopen(outputlogs.c_str(), "w", stdout);
-
-
         Case problem(file_name, argn, args);
         problem.simulate();
 
@@ -23,4 +21,9 @@ int main(int argn, char **args) {
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
     Communication::finalize();
+
+    if(my_rank_global == 0){
+        auto end = std::chrono::steady_clock::now();
+        std::cout << "Simulation Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
+    }
 }

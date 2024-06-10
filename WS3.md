@@ -1,63 +1,89 @@
 # Worksheet 3 - Parallelization
 
-Build instructions.
+Build instructions:
 
-```
+```shell
 mkdir build && cd build
 cmake ..
-make
 ```
-Run different cases: iproc and jproc can be varied in the respective sh files 
 
-with the format: -np [number of all processors] [path to file] [iproc] [jproc]
-
+Run different cases:
 
 - **Lid-driven cavity**
+  ```shell
+  ../mpi_liddriven.sh
   ```
-  ./mpi_liddriven.sh
+- **Fluid Trap**
+  ```shell
+  ../mpi_fluidtrap.sh
   ```
-- **Fluidtrap**
+  **Plane Shear Flow**
+  ```shell
+  ../mpi_shearflow.sh
   ```
-  ./mpi_fluidtrap.sh
+- **Karman Vortex Street**
+  ```shell
+  ../mpi_obstacle.sh
   ```
+- **Flow over a step**
+  ```shell
+  ../mpi_BFS.sh
+  ```
+- **Natural Convection**
+  - Case (a) - high $\nu$
+    ```shell
+    ../mpi_convectionA.sh
+    ```
+  - Case (b) - low $\nu$
+    ```shell
+    ../mpi_convectionB.sh
+    ```
+- **Rayleigh Benard Convection**
+  ```shell
+  ../mpi_rayleighBenard.sh
+  ```
+  If you encounter permission issues when running the `.sh` files, run the following command:
 
-## Lid-driven cavity 
-compare resuls at final time , convergence behavior (number of iterations)
+```
+chmode +x [path to file]
+```
 
-#### (iproc, jproc) = (1,1)
+then run again the file as above.
 
-![Liddriven11]()
+The number of processors involved and the consequent domain decomposition can be modified in the `.sh` according to the following format:
 
-#### (iproc, jproc) = (2,2)
+```
+mpirun --oversubscribe -np [number of all processors] [path to file] [iproc] [jproc]
+```
 
-![Liddriven22]()
+where `iproc` and `jproc` stand for the number of processors along `x` and `y` direction respectively.
 
-#### (iproc, jproc) = (1,4)
+`--oversubscribe` allows the oversubscription of processor cores. This means you can start more MPI processes than the number of physical CPU cores available on the machine.
 
-![Liddriven14]()
+## Results Validation
 
-#### (iproc, jproc) = (3,2)
+### Lid-driven cavity
 
-![Liddriven32]()
+### Fluidtrap
 
+Simulation (1,1) Runtime: 19s
 
-## Fluidtrap
+Simulation (2,3) Runtime: 4s
 
-#### (iproc, jproc) = (1,1)
+Speedup S(p) = 4.75
 
-![Fluidtrap11](imgs/fluidtrap11.png)
+Efficiency E(p) = 0.8
 
-#### (iproc, jproc) = (2,3)
+Simulation (3,2) Runtime: 5s
 
-![Fluidtrap23]()
+Speedup S(p) = 3.8
 
-#### (iproc, jproc) = (3,2)
-
-![Fluidtrap32]()
+Efficiency E(p) = 0.63
 
 ## Performance Analysis
 
-#### Strong Scaling with Rayleigh Benard case
+### Strong Scaling with Rayleigh Benard case
+
 maximum speedup, parallel efficiency
 
-#### Weak Scaling with Lid-driven cavity case
+### Weak Scaling with Lid-driven cavity case
