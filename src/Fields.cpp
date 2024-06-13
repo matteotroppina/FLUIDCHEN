@@ -5,7 +5,7 @@
 #include "Communication.hpp"
 #include "Fields.hpp"
 
-Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI)
+Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double epsilonI)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
     _U = Matrix<double>(size_x + 2, size_y + 2, UI);
     _V = Matrix<double>(size_x + 2, size_y + 2, VI);
@@ -14,6 +14,8 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _F = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _G = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _K = Matrix<double>(size_x + 2, size_y + 2, KI);
+    _E = Matrix<double>(size_x + 2, size_y + 2, epsilonI);
 }
 
 void Fields::printMatrix(Grid &grid) {
@@ -199,6 +201,8 @@ double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
 double &Fields::T(int i, int j) { return _T(i, j); }
+double &Fields::K(int i, int j) {return _K(i,j);}
+double &Fields::E(int i, int j) {return _E(i,j);}
 
 
 
@@ -209,6 +213,8 @@ Matrix<double> &Fields::f_matrix() { return _F; }
 Matrix<double> &Fields::g_matrix() { return _G; }
 Matrix<double> &Fields::rs_matrix() { return _RS; }
 Matrix<double> &Fields::t_matrix() { return _T; }
+Matrix<double> &Fields::k_matrix() { return _K; }
+Matrix<double> &Fields::e_matrix() { return _E; }
 
 
 double Fields::dt() const { return _dt; }

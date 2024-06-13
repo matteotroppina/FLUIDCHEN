@@ -48,6 +48,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
+    double KI{}; /*initial value for turbulent kinetic energy*/
+    double epsilonI{}; /*initial value for the dissipation rate*/
+
 
     int num_of_walls{};
 
@@ -91,6 +94,8 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
+                if (var == "KI") file >> KI;
+                if (var == "epsilonI") file >> epsilonI;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
@@ -130,7 +135,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, epsilonI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -318,6 +323,7 @@ void Case::simulate() {
         Communication::communicate(_field.v_matrix());
 
 //        return;
+// TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
         timestep += 1;
         output_counter += dt;

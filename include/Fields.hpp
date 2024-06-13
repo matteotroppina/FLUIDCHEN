@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI);
+    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double epsilonI);
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);
@@ -97,6 +97,12 @@ class Fields {
     /// temperature index based access and modify
     double &T(int i, int j);
 
+    // turbulent kinetic energy index based access and modify
+    double &K(int i, int j);
+
+    /// dissipation rate index based access and modify
+    double &E(int i, int j);
+
     /// get timestep size
     double dt() const;
 
@@ -121,6 +127,12 @@ class Fields {
     /// temperature matrix access and modify
     Matrix<double> &t_matrix();
 
+    /// turbulent kinetic energy matrix access and modify
+    Matrix<double> &k_matrix();
+
+    /// dissipation rate matrix access and modify 
+    Matrix<double> &e_matrix();
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;
@@ -136,6 +148,10 @@ class Fields {
     Matrix<double> _RS;
     /// temperature matrix
     Matrix<double> _T;
+    /// turbulent kinetic energy matrix
+    Matrix<double> _K;
+    /// dissipation rate matrix
+    Matrix<double> _E;
 
     /// kinematic viscosity
     double _nu;
