@@ -51,7 +51,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     double KI{}; /*initial value for turbulent kinetic energy*/
     double epsilonI{}; /*initial value for the dissipation rate*/
 
-
     int num_of_walls{};
 
     // initialized to sequential execution
@@ -237,26 +236,6 @@ void Case::set_file_names(std::string file_name) {
     }
 }
 
-/**
- * This function is the main simulation loop. In the simulation loop, following steps are required
- * Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
- * using applyVelocity() member function of Boundary class
- * Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- * Flux consists of diffusion and convection part, which are located in Discretization class
- * Apply Flux boundary conditions using applyFlux()
- * Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
- *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
- * - Update pressure boundary conditions after each iteration of the SOR solver
- * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
- * - Write vtk files using output_vtk() function
- *
- * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface and/or common functions. You need to define functions with individual functionalities in inherited
- * classes such as MovingWallBoundary class.
- * For information about the classes and functions, you can check the header files.
- */
 void Case::simulate() {
 
     MPI_Barrier(MPI_COMM_WORLD);

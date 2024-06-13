@@ -47,7 +47,9 @@ void Boundary::applyFlux(Fields &field) {
 }
 void Boundary::applyTemperature(Fields &field) {}
 
+
 InnerObstacle::InnerObstacle(std::vector<Cell *> cells) : Boundary(cells) {}
+
 void InnerObstacle::applyVelocity(Fields &field) {
     for (auto cell: _cells) {
         int i = cell->i();
@@ -59,9 +61,11 @@ void InnerObstacle::applyVelocity(Fields &field) {
 } // do nothing
 void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
+void InnerObstacle::applyK(Fields &field) {}
+void InnerObstacle::applyEpsilon(Fields &field) {}
+
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
-
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, double wall_temperature)
     : Boundary(cells), _wall_temperature(wall_temperature) {}
@@ -236,6 +240,11 @@ void FixedWallBoundary::applyPressure(Fields &field) {
         }
     }
 }
+
+void FixedWallBoundary::applyK(Fields &field) {}
+void FixedWallBoundary::applyEpsilon(Fields &field) {}
+
+
 FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
                                              double inflow_v_velocity)
     : Boundary(cells) {
@@ -275,6 +284,7 @@ void FixedVelocityBoundary::applyVelocity(Fields &field) {
         }
     }
 }
+
 void FixedVelocityBoundary::applyPressure(Fields &field) {
     // Neumann condition
     for (auto cell : _cells) {
@@ -298,9 +308,16 @@ void FixedVelocityBoundary::applyPressure(Fields &field) {
         }
     }
 }
+
+void FixedVelocityBoundary::applyK(Fields &field) {}
+void FixedVelocityBoundary::applyEpsilon(Fields &field) {}
+
+
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
+
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
     : Boundary(cells), _wall_temperature(wall_temperature) {}
+
 void ZeroGradientBoundary::applyVelocity(Fields &field) {
     // Neumann condition !!! CHange needed
     for (auto cell : _cells) {
@@ -330,6 +347,7 @@ void ZeroGradientBoundary::applyVelocity(Fields &field) {
         }
     }
 }
+
 void ZeroGradientBoundary::applyPressure(Fields &field) {
     // Dirichlet condition pressure on boundary = 0
     for (auto cell : _cells) {
@@ -354,12 +372,17 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
     }
 }
 
+void ZeroGradientBoundary::applyK(Fields &field) {}
+void ZeroGradientBoundary::applyEpsilon(Fields &field) {}
+
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
+
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                                        std::map<int, double> wall_temperature)
     : Boundary(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
+
 void MovingWallBoundary::applyVelocity(Fields &field) {
 
     for (auto cell : _cells) {
@@ -387,6 +410,7 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
         }
     }
 }
+
 void MovingWallBoundary::applyPressure(Fields &field) {
     for (auto cell : _cells) {
         int i = cell->i();
@@ -409,3 +433,6 @@ void MovingWallBoundary::applyPressure(Fields &field) {
         }
     }
 }
+
+void MovingWallBoundary::applyK(Fields &field) {}
+void MovingWallBoundary::applyEpsilon(Fields &field) {}

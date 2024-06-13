@@ -37,6 +37,20 @@ class Boundary {
 
     virtual void applyTemperature(Fields &field);
 
+    /**
+     * @brief Method to patch the K boundary conditions to the given field (K-epsilon turbulence model).
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void applyK(Fields &field);
+
+    /**
+     * @brief Method to patch the Epsilon boundary conditions to the given field (K-eosilon turbulence model).
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void applyEpsilon(Fields &field);
+
     virtual ~Boundary() = default;
 
   protected:
@@ -58,6 +72,9 @@ class FixedWallBoundary : public Boundary {
     virtual void applyPressure(Fields &field);
     void applyTemperature(Fields &field);
 
+    void applyK(Fields &field);
+    void applyEpsilon(Fields &field);
+
   private:
         double _wall_temperature;
 
@@ -70,6 +87,9 @@ class InnerObstacle : public Boundary {
     virtual void applyVelocity(Fields &field); // do nothing
     virtual void applyPressure(Fields &field); // do nothing
     virtual void applyFlux(Fields &field); // do nothing
+
+    virtual void applyK(Fields &field);
+    virtual void applyEpsilon(Fields &field);
 };
 
 /**
@@ -86,6 +106,9 @@ class MovingWallBoundary : public Boundary {
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
+    virtual void applyK(Fields &field);
+    virtual void applyEpsilon(Fields &field);
+    
   private:
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
@@ -99,6 +122,9 @@ class FixedVelocityBoundary : public Boundary {
     virtual ~FixedVelocityBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
+
+    virtual void applyK(Fields &field);
+    virtual void applyEpsilon(Fields &field);
 
   private:
     std::map<int, double> _inflow_u_velocity;
@@ -114,6 +140,8 @@ class ZeroGradientBoundary : public Boundary {
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
+    virtual void applyK(Fields &field);
+    virtual void applyEpsilon(Fields &field);
 
   private:
     std::map<int, double> _wall_temperature;
