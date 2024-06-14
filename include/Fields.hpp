@@ -74,6 +74,14 @@ class Fields {
      *
      */
     void calculate_dt(Grid &grid);
+    
+    /**
+     * @brief turbulent kinetic energy and dissipation rate calculation
+     *
+     * @param[in] grid in which the calculations are done
+     *
+     */
+    void calculate_nuT(Grid &grid, const double &C0);
 
     /// x-velocity index based access and modify
     double &u(int i, int j);
@@ -102,6 +110,8 @@ class Fields {
 
     /// dissipation rate index based access and modify
     double &E(int i, int j);
+
+    double &nuT(int i, int j);
 
     /// get timestep size
     double dt() const;
@@ -133,6 +143,9 @@ class Fields {
     /// dissipation rate matrix access and modify 
     Matrix<double> &e_matrix();
 
+    /// turbulent viscosity matrix access and modify
+    Matrix<double> &nuT_matrix();
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;
@@ -152,6 +165,8 @@ class Fields {
     Matrix<double> _K;
     /// dissipation rate matrix
     Matrix<double> _E;
+    /// turbulent viscosity matrix
+    Matrix<double> _nuT;
 
     /// kinematic viscosity
     double _nu;

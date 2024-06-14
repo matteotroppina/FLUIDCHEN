@@ -301,8 +301,16 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-//        return;
-// TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
+        //turbulence model
+        residual = 1;
+        iter = 0;
+        while (iter < _max_iter and residual > _tolerance) {
+            // call the solver and update nuT
+            // TODO --> implement boundaries and apply
+        }
+
+
+        // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
         timestep += 1;
         output_counter += dt;

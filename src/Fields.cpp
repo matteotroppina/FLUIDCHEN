@@ -14,8 +14,11 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _F = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _G = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+
+    //turbulence model
     _K = Matrix<double>(size_x + 2, size_y + 2, KI);
     _E = Matrix<double>(size_x + 2, size_y + 2, epsilonI);
+    _nuT = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 }
 
 void Fields::printMatrix(Grid &grid) {
@@ -174,6 +177,16 @@ void Fields::calculate_temperature(Grid &grid) {
     }
 }
 
+void Fields::calculate_nuT(Grid &grid, const double &C0) {
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y(); j++){
+            if (grid.cell(i,j).type() == cell_type::FLUID){
+                _nuT(i, j) = C0 * (_K(i,j)*_K(i,j))/_E(i,j);
+            }
+        }
+    }
+}
+
 void Fields::calculate_dt(Grid &grid) {
     double dx_2 = grid.dx() * grid.dx();
     double dy_2 = grid.dy() * grid.dy();
@@ -203,6 +216,7 @@ double &Fields::rs(int i, int j) { return _RS(i, j); }
 double &Fields::T(int i, int j) { return _T(i, j); }
 double &Fields::K(int i, int j) {return _K(i,j);}
 double &Fields::E(int i, int j) {return _E(i,j);}
+double &Fields::nuT(int i, int j) {return _nuT(i,j);}
 
 
 
@@ -215,6 +229,7 @@ Matrix<double> &Fields::rs_matrix() { return _RS; }
 Matrix<double> &Fields::t_matrix() { return _T; }
 Matrix<double> &Fields::k_matrix() { return _K; }
 Matrix<double> &Fields::e_matrix() { return _E; }
+Matrix<double> &Fields::nuT_matrix() { return _nuT; }
 
 
 double Fields::dt() const { return _dt; }
