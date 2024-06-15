@@ -7,6 +7,10 @@ project(CFDLAB VERSION 1.0)
 # Define all configuration options
 #option(option1 "compile using this option" ON)
 
+## Set the C++ compiler to nvc++ GPU compiler
+#set(CMAKE_CXX_COMPILER nvc++)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc")
+
 # Definition of the C++ Standard 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -31,8 +35,13 @@ include(${VTK_USE_FILE})
 # Add include directory
 target_include_directories(fluidchen PUBLIC include)
 
-# Add Compiler warnings (Try to write clean code!)
-target_compile_options(fluidchen PRIVATE -Wall -Wextra -O3)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+if(${CMAKE_BUILD_TYPE} STREQUAL "GPU")
+    set(CMAKE_CXX_COMPILER nvc++)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc")
+endif()
 
 # if you use external libraries you have to link them like
 target_link_libraries(fluidchen PRIVATE MPI::MPI_CXX)

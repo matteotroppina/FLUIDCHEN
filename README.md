@@ -49,12 +49,6 @@ By default, **fluidchen** is installed in `DEBUG` mode. To obtain full performan
 cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 ```
 
-or
-
-```shell
-cmake -DCMAKE_CXX_FLAGS="-O3" ..
-```
-
 You can see and modify all CMake options with, e.g., `ccmake .` inside `build/` (Ubuntu package `cmake-curses-gui`).
 
 A good idea would be that you setup your computers as runners for [GitLab CI](https://docs.gitlab.com/ee/ci/)
