@@ -55,7 +55,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     int iproc{1};
     int jproc{1};
 
-    if (argn > 2){
+    if (argn > 2){ // arguments for parallel execution
         iproc = *args[2] - 48;  //convert to ASCII
         jproc = *args[3] - 48;
     }
@@ -317,7 +317,6 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-//        return;
         
         timestep += 1;
         output_counter += dt;
@@ -342,18 +341,9 @@ void Case::simulate() {
                     std::cout << "\t\t ---> Exceeded max iterations";
                 }
                 std::cout << "\n------------------------------------------------------------------------------------" << std::flush;
-                // std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
-                //           << std::endl;
             }
 
         }
-
-        // output for performance analysis - comment the output above
-        
-        // if (output_counter >= _output_freq && my_rank_global == 0) {
-        //     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%" << " completed] " << std::endl; 
-        //     output_counter = 0;
-        // }
 
     }
     // output_csv(iter_vec);
@@ -515,12 +505,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     if (neighbours[RIGHT] != MPI_PROC_NULL){ // if there is a right neighbour
         domain.itermax_x = size_x + 1;
-        // std::cout << "rank: " << my_rank_global << " has right neighbour" << std::endl;
     }
 
     if (neighbours[UP] != MPI_PROC_NULL){ // if there is an upper neighbour
         domain.itermax_y = size_y + 1;
-        // std::cout << "rank: " << my_rank_global << " has upper neighbour" << std::endl;
     }
 
 }

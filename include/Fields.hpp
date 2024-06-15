@@ -27,11 +27,6 @@ class Fields {
      */
     Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI);
 
-    void printMatrix(Grid &grid);
-    void printCellTypes(Grid &grid);
-    void printBorders(Grid &grid);
-
-
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
      * direction based on explicit discretization of the momentum equations
