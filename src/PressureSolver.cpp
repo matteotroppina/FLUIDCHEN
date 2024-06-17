@@ -35,5 +35,9 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         res = std::sqrt(res);
     }
 
+    for (auto &b : boundaries) {
+        b->applyPressure(field);
+    }
+
     return res;
 }

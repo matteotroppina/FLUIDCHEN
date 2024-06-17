@@ -302,10 +302,6 @@ void Case::simulate() {
         while (iter < _max_iter and residual > _tolerance) {
             residual = _pressure_solver->solve(_field, _grid, _boundaries);
             Communication::communicate(_field.p_matrix());
-
-            for (auto &b : _boundaries) {
-                b->applyPressure(_field);
-            }
             iter += 1;
 
             residual = Communication::reduce_sum(residual);

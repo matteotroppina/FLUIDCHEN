@@ -55,3 +55,15 @@ class SOR : public PressureSolver {
   private:
     double _omega;
 };
+
+// Jacobi for GPU
+class JAC_GPU : public PressureSolver {
+  public:
+    JAC_GPU() = default;
+
+    virtual ~JAC_GPU() = default;
+
+    //TODO : Implement an enum for different type of boundary conditions
+    virtual double solve(std::vector<double> p_matrix, const std::vector<std::tuple<int, int>> &fluid_cell_indices,
+                         const std::vector<std::tuple<int, int>> &boundary_indices, const std::vector<int> &boundary_type);
+};
