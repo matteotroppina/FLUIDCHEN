@@ -1,7 +1,4 @@
 #include <algorithm>
-#include <iostream>
-#include <iomanip>
-
 #include "Communication.hpp"
 #include "Fields.hpp"
 
@@ -25,15 +22,12 @@ void Fields::calculate_fluxes(Grid &grid) {
                        _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
-//    std::cout << my_rank_global << "Calculating flux F" << std::endl;
-
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _G(i, j) = _V(i, j) +
                        _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
         }
     }
-//    std::cout << my_rank_global <<" Calculating flux G" << std::endl;
 }
 
 void Fields::calculate_rs(Grid &grid) {
@@ -43,7 +37,6 @@ void Fields::calculate_rs(Grid &grid) {
             _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
         }
     }
-//    std::cout << my_rank_global << "Calculating rs" << std::endl;
 }
 
 void Fields::calculate_velocities(Grid &grid) {
@@ -53,15 +46,12 @@ void Fields::calculate_velocities(Grid &grid) {
             _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
         }
     }
-//    std::cout << my_rank_global << "Calculating velocity U" << std::endl;
-    
 
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
         }
     }
-//    std::cout << my_rank_global << "Calculating velocity V" << std::endl;
 }
 
 void Fields::calculate_temperature(Grid &grid) {

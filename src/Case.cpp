@@ -1,10 +1,10 @@
 #include <algorithm>
-#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
+
 
 namespace filesystem = std::filesystem;
 
@@ -271,6 +271,50 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
+    // Initialize GPU memory and variables
+    // the GPU cannot use any classes, so we need to pass the data to the GPU as simple arrays
+    // TODO : place into a function like init_gpu() or create a class for GPU functions
+
+    int gpu_num_iterations = 32; // number of iterations for the GPU solver before returning the residual
+
+    gridParams _gridParams = {
+        _grid.domain().size_x,
+        _grid.domain().size_y,
+        _grid.dx(),
+        _grid.dy()
+    };
+    int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
+
+    bool* fluid_mask = new bool[size_linear];
+    uint8_t* boundary_type = new uint8_t[size_linear];
+
+    for (int i = 0; i <= _grid.domain().size_x + 1; i++) {
+        for (int j = 0; j <= _grid.domain().size_y + 1; j++) {
+            int idx = i + j * (_grid.domain().size_x + 2);
+            if (_grid.cell(i, j).type() == cell_type::FLUID) {
+                fluid_mask[idx] = 1;
+                boundary_type[idx] = 0;
+            } else {
+                fluid_mask[idx] = 0;
+                boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
+            }
+        }
+    }
+
+    // Allocating and copying data to GPU
+    // GPU has a different memory space
+    double* d_p_matrix = new double[size_linear];
+    double* d_p_matrix_old = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
+    double* d_rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
+
+    // create arrays directly on GPU with create directive
+    // copy data from CPU to GPU with copyin directive
+    #pragma acc enter data create(d_p_matrix[0:size_linear]) \
+    copyin(d_p_matrix_old[0:size_linear], \
+           d_rs_matrix[0:size_linear], \
+           fluid_mask[0:size_linear], \
+            boundary_type[0:size_linear])
+
     while (t < _t_end) {
 
         _field.calculate_dt(_grid);
@@ -281,28 +325,31 @@ void Case::simulate() {
             b->applyTemperature(_field);
         }
 
-
-        _field.calculate_temperature(_grid);
-        Communication::communicate(_field.t_matrix());
-
+//        _field.calculate_temperature(_grid);
+//        Communication::communicate(_field.t_matrix());
 
         _field.calculate_fluxes(_grid);
         Communication::communicate(_field.f_matrix());
         Communication::communicate(_field.g_matrix());
 
-
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
         }
 
-        _field.calculate_rs(_grid);
+        _field.calculate_rs(_grid); // calculate rs on CPU and copy to GPU
+        #pragma acc update device(d_rs_matrix[0:size_linear])
 
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = _pressure_solver->solve(_field, _grid, _boundaries);
+            residual = gpu_solve(d_p_matrix, d_p_matrix_old, d_rs_matrix, fluid_mask, boundary_type, _gridParams, gpu_num_iterations);
+            iter += gpu_num_iterations;
+
+            // update the field with the new pointer
+            #pragma acc update self(d_p_matrix[0:size_linear])
+            _field.p_matrix().set_raw_pointer(d_p_matrix);
+
             Communication::communicate(_field.p_matrix());
-            iter += 1;
 
             residual = Communication::reduce_sum(residual);
         }
@@ -313,7 +360,6 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-        
         timestep += 1;
         output_counter += dt;
         t += dt;
@@ -332,8 +378,8 @@ void Case::simulate() {
             if (my_rank_global == 0) {
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] " << "Writing Output at t = " << t << "s" << std::endl;
-                std::cout << std::left << "[ " << "Timestep: " << timestep << "\t\tSOR Iterations: " << iter << "\tSOR Residual: " << residual << " ]"<< std::flush;
-                if (iter == _max_iter) {
+                std::cout << std::left << "[ " << "Timestep: " << timestep << "\t\t Iterations: " << iter << "\tResidual: " << residual << " ]"<< std::flush;
+                if (iter >= _max_iter) {
                     std::cout << "\t\t ---> Exceeded max iterations";
                 }
                 std::cout << "\n------------------------------------------------------------------------------------" << std::flush;
@@ -347,6 +393,11 @@ void Case::simulate() {
     if (my_rank_global == 0) {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
+
+    delete[] fluid_mask;
+    delete[] boundary_type;
+    #pragma acc exit data delete(d_p_matrix[0:size_linear], d_p_matrix_old[0:size_linear], fluid_mask[0:size_linear], boundary_type[0:size_linear])
+
 }
 
 void Case::output_csv(const std::vector<int> &vec) {

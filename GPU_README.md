@@ -34,4 +34,30 @@ To compile the code with NVC++ compiler and OpenACC support, use the following c
 cmake -DCMAKE_BUILD_TYPE=GPU ..
 ```
 
+# Debugging
+For debugging, read the following reply from an Nvidia forum ([@MatColgrove](https://forums.developer.nvidia.com/t/how-to-debug-illegal-address-during-kernel-execution-q/135831)):
+> You can use cuda-gdb to debug the device code. Just compile with “-g” and you’ll be able to step into the generated CUDA kernels. [...]
+> 
+> 1. Compile the OpenACC regions to target the CPUs (-ta=multicore). You can then run this code in pgdbg to track down any issues with the parallel code.
+> 2. Compile with CUDA Unified Memory (-ta=tesla:managed). This will put all dynamic memory allocations in an address space accessible from both the host and device. If the program works, then it’s an indication that the code is accessing a host address.
+> 3. Set the environment variable PGI_ACC_NOTIFY=1 (or the more verbose PGI_ACC_DEBUG=1). This will print out all the kernel calls made to the device and help track down which one is failing.
+
+If the cuda-gdb is not working, try exporting the following environment variable:
+```Shell
+export CUDBG_USE_LEGACY_DEBUGGER=1
+```
+for timing information, you can use the following environment variable:
+```Shell
+export NV_ACC_TIME=1
+```
+
+In my case I couldn't run without mpirun, so even the cuda debugger needs to be run with mpirun:
+```Shell
+mpirun -np 1 cuda-gdb fluidchen
+````
+Then, inside the cuda-gdb, you can run the program with the input file:
+```Shell
+(cuda-gdb) r ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
+```
+
 

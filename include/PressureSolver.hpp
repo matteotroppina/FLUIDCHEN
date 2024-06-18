@@ -6,6 +6,13 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 
+typedef struct gridParams {
+    int imax;
+    int jmax;
+    double dx;
+    double dy;
+} gridParams;
+
 /**
  * @brief Abstract class for pressure Poisson equation solver
  *
@@ -56,14 +63,5 @@ class SOR : public PressureSolver {
     double _omega;
 };
 
-// Jacobi for GPU
-class JAC_GPU : public PressureSolver {
-  public:
-    JAC_GPU() = default;
-
-    virtual ~JAC_GPU() = default;
-
-    //TODO : Implement an enum for different type of boundary conditions
-    virtual double solve(std::vector<double> p_matrix, const std::vector<std::tuple<int, int>> &fluid_cell_indices,
-                         const std::vector<std::tuple<int, int>> &boundary_indices, const std::vector<int> &boundary_type);
-};
+double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix, const bool *fluid_mask,
+                 const uint8_t *boundary_type, const gridParams grid, const int num_iterations);

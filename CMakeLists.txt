@@ -40,7 +40,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "GPU")
     set(CMAKE_CXX_COMPILER nvc++)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -acc=gpu -Minfo=accel -fast -gpu=cc75")
 endif()
 
 # if you use external libraries you have to link them like
