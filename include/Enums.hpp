@@ -46,3 +46,5 @@ enum class cell_type {
     HOT_WALL,
     COLD_WALL
 };
+
+enum DIRECTIONS {DOWN, UP, LEFT, RIGHT };

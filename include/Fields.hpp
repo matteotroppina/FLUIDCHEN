@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI);
+    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI);
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);
@@ -102,6 +102,24 @@ class Fields {
 
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
+
+    /// velocity u matrix access and modify
+    Matrix<double> &u_matrix();
+
+    /// velocity v matrix access and modify
+    Matrix<double> &v_matrix();
+
+    /// f matrix access and modify
+    Matrix<double> &f_matrix();
+
+    /// g pressure matrix access and modify
+    Matrix<double> &g_matrix();
+
+    /// RHS matrix access and modify
+    Matrix<double> &rs_matrix();
+
+    /// temperature matrix access and modify
+    Matrix<double> &t_matrix();
 
   private:
     /// x-velocity matrix

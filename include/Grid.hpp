@@ -32,9 +32,14 @@ class Grid {
     Cell cell(int i, int j) const;
 
     /// access number of cells in x direction
+    /// (excluding ghost cells)
     int size_x() const;
     /// access number of cells in y direction
     int size_y() const;
+
+    /// Iteration bounds for fields
+    int itermax_x() const;
+    int itermax_y() const;
 
     /// access number of cells in x direction excluding ghost cells
     const Domain &domain() const;
@@ -75,6 +80,8 @@ class Grid {
 
     const std::vector<Cell *> &cold_wall_cells() const;
 
+    const std::vector<Cell *> &ghost_cells() const;
+
   private:
     /**@brief Default lid driven cavity case generator
      *
@@ -103,6 +110,7 @@ class Grid {
 
     std::vector<Cell *> _cold_wall_cells;
     std::vector<Cell *> _hot_wall_cells;
+    std::vector<Cell *> _ghost_cells;
 
     /// Domain object holding geometrical information
     Domain _domain;

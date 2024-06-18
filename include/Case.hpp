@@ -11,6 +11,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 
 /**
@@ -101,6 +102,6 @@ class Case {
      * @param[in] Number of cells in x-direction for this MPI rank
      * @param[in] Number of cells in y-direction for this MPI rank
      */
-    void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+    void build_domain(Domain &domain, int imax_domain, int jmax_domain, int iproc, int jproc);
     void output_csv(const std::vector<int> &vec);
 };
