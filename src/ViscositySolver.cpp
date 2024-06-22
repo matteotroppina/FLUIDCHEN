@@ -17,10 +17,10 @@ double K_EPS_model::solve(Fields &field, Grid &grid, const std::vector<std::uniq
         int i = currentCell->i();
         int j = currentCell->j();
 
-
+        //_decouple = field.E(i,j) / field.K(i,j);
         double k1 = (field.nuT(i,j) / 2) * Discretization::strain_rate(field.u_matrix(), field.v_matrix(), i, j);
-        double k2 = field.nuT(i,j) / _sk *  Discretization::laplacian(field.K_matrix(), i, j);
-        double k3 = Discretization::convection_KEPS(field.k_matrix(), field.u_matrix(), field.v_matrix(), i, j)
+        double k2 = field.nuT(i,j) / _sk *  Discretization::laplacian(field.k_matrix(), i, j);
+        double k3 = Discretization::convection_KEPS(field.k_matrix(), field.u_matrix(), field.v_matrix(), i, j);
         double k4 = _decouple * field.K(i, j);
         
 
@@ -35,5 +35,7 @@ double K_EPS_model::solve(Fields &field, Grid &grid, const std::vector<std::uniq
 
         // TODO --> implement stopping criteria
         //      --> update gamma
+
+        field.nuT(i,j) = _C0 * field.K(i,j) * field.K(i,j) / field.E(i,j);
     }
 }
