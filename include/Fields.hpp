@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double epsilonI);
+    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double k0, double eps0);
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);

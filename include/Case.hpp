@@ -52,6 +52,8 @@ class Case {
     /// Relative input file path
     std::string _prefix;
 
+    double _C0{0.09}; // in paper reffered as C_nu
+
     /// Simulation time
     double _t_end;
     /// Solution file outputting frequency
@@ -61,6 +63,7 @@ class Case {
     Grid _grid;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
+    std::unique_ptr<ViscositySolver> _viscosity_solver;
     /// Collection of all boundaries for the simulated case
     std::vector<std::unique_ptr<Boundary>> _boundaries;
 

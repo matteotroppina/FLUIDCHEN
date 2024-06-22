@@ -30,12 +30,12 @@ class K_EPS_model : public ViscositySolver {
   public:
     K_EPS_model() = default;
 
-    /**
-     * @brief Constructor of K-Epsilon model
-     *
-     * @param[in] 
-     */
-    K_EPS_model();
+    // /**
+    //  * @brief Constructor of K-Epsilon model
+    //  *
+    //  * @param[in] 
+    //  */
+    // K_EPS_model();
 
     virtual ~K_EPS_model() = default;
 

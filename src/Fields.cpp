@@ -5,7 +5,7 @@
 #include "Communication.hpp"
 #include "Fields.hpp"
 
-Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double epsilonI)
+Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double k0, double eps0)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
     _U = Matrix<double>(size_x + 2, size_y + 2, UI);
     _V = Matrix<double>(size_x + 2, size_y + 2, VI);
@@ -16,8 +16,8 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 
     //turbulence model
-    _K = Matrix<double>(size_x + 2, size_y + 2, KI);
-    _E = Matrix<double>(size_x + 2, size_y + 2, epsilonI);
+    _K = Matrix<double>(size_x + 2, size_y + 2, k0);
+    _E = Matrix<double>(size_x + 2, size_y + 2, eps0);
     _nuT = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 }
 

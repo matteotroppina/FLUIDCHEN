@@ -93,8 +93,8 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
-                if (var == "KI") file >> KI;
-                if (var == "epsilonI") file >> epsilonI;
+                // if (var == "KI") file >> KI;
+                // if (var == "epsilonI") file >> epsilonI;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
@@ -133,11 +133,16 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    double l0 = 0.1;
+    double k0 = std::pow(nu / l0, 2);
+    double eps0 = _C0 * std::pow(k0, 1.5) / l0;
+
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, epsilonI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, k0, eps0);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
+    _viscosity_solver = std::make_unique<K_EPS_model>();
     _max_iter = itermax;
     _tolerance = eps;
 
@@ -263,6 +268,7 @@ void Case::simulate() {
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
             b->applyTemperature(_field);
+            b->applyK(_field);
         }
 
 
@@ -301,14 +307,8 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-        //turbulence model
-        residual = 1;
-        iter = 0;
-        while (iter < _max_iter and residual > _tolerance) {
-            // call the solver and update nuT
-            // TODO --> implement boundaries and apply
-        }
-
+        _viscosity_solver->solve(_field, _grid, _boundaries);
+        _field.calculate_nuT(_grid, _C0);
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         

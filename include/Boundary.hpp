@@ -56,6 +56,8 @@ class Boundary {
   protected:
     Boundary(std::vector<Cell *> cells);
     std::vector<Cell *> _cells;
+    double C0{0.09}; // in paper reffered as C_nu
+    double l0{0.1};
 };
 
 /**

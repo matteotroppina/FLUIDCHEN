@@ -1,5 +1,7 @@
 #include "Boundary.hpp"
 
+#include <cmath>
+
 Boundary::Boundary(std::vector<Cell *> cells) : _cells(cells) {}
 void Boundary::applyFlux(Fields &field) {
     for (auto cell : _cells) {
@@ -61,6 +63,8 @@ void InnerObstacle::applyVelocity(Fields &field) {
 } // do nothing
 void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
+
+// do we have to prescribe something for k and eps?
 void InnerObstacle::applyK(Fields &field) {}
 void InnerObstacle::applyEpsilon(Fields &field) {}
 
@@ -241,10 +245,12 @@ void FixedWallBoundary::applyPressure(Fields &field) {
     }
 }
 
+// do we have to prescribe something for k and eps?
 void FixedWallBoundary::applyK(Fields &field) {}
 void FixedWallBoundary::applyEpsilon(Fields &field) {}
 
 
+// INFLOW
 FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
                                              double inflow_v_velocity)
     : Boundary(cells) {
@@ -309,10 +315,59 @@ void FixedVelocityBoundary::applyPressure(Fields &field) {
     }
 }
 
-void FixedVelocityBoundary::applyK(Fields &field) {}
+// do we have to prescribe something for k and eps?
+void FixedVelocityBoundary::applyK(Fields &field) {
+
+    double c_bc = 0.01; // c_bc [0.003, 0.01]
+
+    for (auto cell : _cells) {
+
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            double u = (field.u(i, j - 1) + field.u(i, j)) / 2;
+            double v = field.v(i, j - 1);
+            
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            field.K(i, j) = 2*k_boundary - field.K(i, j - 1);
+            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i, j-1);
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            double u = (field.u(i, j) + field.u(i, j + 1)) / 2;
+            double v = field.v(i, j);
+
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            field.K(i, j) = 2*k_boundary - field.K(i, j + 1);
+            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i, j+1);
+            
+        }
+
+        if (cell->is_border(border_position::RIGHT)) {
+            double u = field.u(i, j);
+            double v = (field.v(i, j) + field.v(i + 1, j)) / 2;
+
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            field.K(i, j) = 2*k_boundary - field.K(i + 1, j);
+            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            double u = field.u(i - 1, j);
+            double v = (field.v(i, j) + field.v(i - 1, j)) / 2;
+
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            field.K(i, j) = 2*k_boundary - field.K(i - 1, j);
+            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i - 1, j);
+             
+        }
+    }
+}
+
 void FixedVelocityBoundary::applyEpsilon(Fields &field) {}
 
-
+//OUTFLOW
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
 
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
@@ -372,7 +427,45 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
     }
 }
 
-void ZeroGradientBoundary::applyK(Fields &field) {}
+/*
+    TODO --> 
+    do we want to make the code more general and handle inflow/outflow for all possible combinations? (change the code above)
+
+    INFLOW
+    K = c_bc * |u|^2   (euclidean norm)    c_bc [0.003, 0.01]
+    eps = Cµ * k^(3/2) / l0   
+
+    OUTFLOW
+    grad(k) = 0
+    grad(eps) = 0
+    do we have to change the boundaries conditions for velocity   n*[grad(u) + grad(u)^T] = 0
+*/
+void ZeroGradientBoundary::applyK(Fields &field) {
+        for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.K(i, j) = field.K(i + 1, j);
+            field.E(i, j) = field.E(i + 1, j);
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.K(i, j) = field.K(i - 1, j);
+            field.E(i, j) = field.E(i - 1, j);
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            field.K(i, j) = field.K(i, j + 1);
+            field.E(i, j) = field.E(i, j + 1);
+        }
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.K(i, j) = field.K(i, j - 1);
+            field.E(i, j) = field.E(i, j - 1);
+        }
+    }
+}
 void ZeroGradientBoundary::applyEpsilon(Fields &field) {}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
