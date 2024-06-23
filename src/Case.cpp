@@ -133,9 +133,12 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double l0 = 0.1;
+    double l0 = 0.01;
     double k0 = std::pow(nu / l0, 2);
     double eps0 = _C0 * std::pow(k0, 1.5) / l0;
+
+    std::cout << "k0 = " << k0 << std::endl;
+    std::cout << "eps0 = " << eps0 << std::endl;
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, k0, eps0);
@@ -248,6 +251,8 @@ void Case::simulate() {
     if(my_rank_global == 0){
         std::cout << "\n(4/4) FLUIDCHEN SIMULATION...\n" << std::endl;
     }
+    
+
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -264,11 +269,13 @@ void Case::simulate() {
 
         _field.calculate_dt(_grid);
         dt = _field.dt();
-
+        
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
             b->applyTemperature(_field);
+            
             b->applyK(_field);
+            b->applyEpsilon(_field);
         }
 
 
@@ -307,14 +314,19 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
+        
+
         _viscosity_solver->solve(_field, _grid, _boundaries);
         _field.calculate_nuT(_grid, _C0);
+
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
         timestep += 1;
         output_counter += dt;
         t += dt;
+
+        _field.printMatrix(_grid);
 
         if (output_counter >= _output_freq or timestep == 1) {
 

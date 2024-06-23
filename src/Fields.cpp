@@ -26,6 +26,26 @@ void Fields::printMatrix(Grid &grid) {
     std::cout << std::fixed;
     std::cout << std::setprecision(1); // digits after decimal point
 
+    std::cout << "K matrix" << std::endl;
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            std::cout << _K(i, j) << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "E matrix" << std::endl;
+    for (auto j = grid.size_y() + 1; j >= 0; j--) {
+        for (auto i = 0; i <= grid.size_x() + 1; i++) {
+            std::cout << _E(i, j) << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
     std::cout << "P matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
         for (auto i = 0; i <= grid.size_x() + 1; i++) {
@@ -125,7 +145,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
             _F(i, j) = _U(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+                       _dt * ((_nu) * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
 //    std::cout << my_rank_global << "Calculating flux F" << std::endl;
@@ -133,7 +153,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _G(i, j) = _V(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+                       _dt * ((_nu) * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
         }
     }
 //    std::cout << my_rank_global <<" Calculating flux G" << std::endl;
