@@ -1,6 +1,7 @@
 #include <cmath>
 #include "Communication.hpp"
 #include "PressureSolver.hpp"
+#include "UtilsGPU.h"
 
 SOR::SOR(double omega) : _omega(omega) {}
 
@@ -41,8 +42,42 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return res;
 }
 
-double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix, const bool *fluid_mask,
-                 const uint8_t *boundary_type, const gridParams grid, const int num_iterations) {
+__global__ void jacobiKernel(double *d_p_matrix_new, double *d_p_matrix, const double *d_rs_matrix, const bool *d_fluid_mask,
+                             const double coeff, const int imax, const int jmax, const double dx, const double dy) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x + 1;
+    int j = blockIdx.y * blockDim.y + threadIdx.y + 1;
+    int idx = i + j * (imax + 2);
+    int idx_left = idx - 1;
+    int idx_right = idx + 1;
+    int idx_top = idx + (imax + 2);
+    int idx_bottom = idx - (imax + 2);
+
+    if (i <= imax && j <= jmax && d_fluid_mask[idx]) {
+
+        d_p_matrix_new[idx] =
+            coeff * ((d_p_matrix[idx_left] + d_p_matrix[idx_right]) / (dx * dx) +
+                     (d_p_matrix[idx_top] + d_p_matrix[idx_bottom]) / (dy * dy) - d_rs_matrix[idx]);
+    }
+}
+
+
+////call with <<<1, 1>>> to swap pointers
+//__global__ void swapPointers(double *d_p_matrix, double *d_p_matrix_new) {
+//    __syncthreads();
+//    double *temp = d_p_matrix;
+//    d_p_matrix = d_p_matrix_new;
+//    d_p_matrix_new = temp;
+//}
+
+#pragma acc routine seq
+void swapPointers(double *&d_p_matrix, double *&d_p_matrix_new) {
+    double *temp = d_p_matrix;
+    d_p_matrix = d_p_matrix_new;
+    d_p_matrix_new = temp;
+}
+
+double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
+                  const uint8_t *d_boundary_type, const gridParams grid, const int num_iterations) {
 
     double dx = grid.dx;
     double dy = grid.dy;
@@ -50,12 +85,14 @@ double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix
     int jmax = grid.jmax;
     int size_linear = (imax + 2) * (jmax + 2);
     double coeff = 1.0 / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
+    double res = 0;
 
     //present means data present on GPU
     // JACOBI ITERATION
 
     for (int iter = 0; iter < num_iterations; iter++) {
-        #pragma acc parallel loop collapse(2) present(p_matrix[0 : size_linear], p_matrix_old[0 : size_linear], rs_matrix[0 : size_linear], fluid_mask[0 : size_linear], boundary_type[0 : size_linear])
+        #pragma acc parallel loop collapse(2) vector_length(128) \
+        present(d_p_matrix[0 : size_linear], d_p_matrix_new[0 : size_linear], d_rs_matrix[0 : size_linear], d_fluid_mask[0 : size_linear], d_boundary_type[0 : size_linear])
         for (int i = 1; i <= imax; i++) {
             for (int j = 1; j <= jmax; j++) {
                 int idx = i + j * (imax + 2);
@@ -64,28 +101,21 @@ double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix
                 int idx_top = idx + (imax + 2);
                 int idx_bottom = idx - (imax + 2);
 
-                p_matrix[idx] =
-                    coeff * ((p_matrix_old[idx_left] + p_matrix_old[idx_right]) / (dx * dx) +
-                             (p_matrix_old[idx_top] + p_matrix_old[idx_bottom]) / (dy * dy) - rs_matrix[idx]);
-                p_matrix[idx] *= fluid_mask[idx]; // set to zero if not fluid cell
+                d_p_matrix_new[idx] =
+                    coeff * ((d_p_matrix[idx_left] + d_p_matrix[idx_right]) / (dx * dx) +
+                             (d_p_matrix[idx_top] + d_p_matrix[idx_bottom]) / (dy * dy) - d_rs_matrix[idx]);
+                d_p_matrix_new[idx] *= d_fluid_mask[idx]; // set to zero if not fluid cell
             }
         }
 
-        // swap p_matrix and p_matrix_old pointers
-        double *temp = p_matrix;
-        p_matrix = p_matrix_old;
-        p_matrix_old = temp;
+        swapPointers(d_p_matrix, d_p_matrix_new);
 
-        // Update GPU with new pointer values
-        #pragma acc update device(p_matrix, p_matrix_old)
     }
 
-
-    double res = 0.0;
-    int size_fluid_cells = 0;
+    //TODO apply boundary conditions
 
     // CALCULATE RESIDUAL
-    #pragma acc parallel loop collapse(2) reduction(+:res,size_fluid_cells) present(p_matrix[0:size_linear], p_matrix_old[0:size_linear], rs_matrix[0:size_linear], fluid_mask[0:size_linear], boundary_type[0:size_linear])
+    #pragma acc parallel loop collapse(2) reduction(+:res) present(d_p_matrix[0:size_linear], d_rs_matrix[0:size_linear], d_fluid_mask[0:size_linear])
     for (int i = 1; i <= imax; i++) {
         for (int j = 1; j <= jmax; j++) {
             int idx = i + j * (imax + 2);
@@ -94,20 +124,13 @@ double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix
             int idx_top = idx + (imax + 2);
             int idx_bottom = idx - (imax + 2);
 
-            double val = (p_matrix[idx_left] - 2.0 * p_matrix[idx] + p_matrix[idx_right]) / (dx * dx) +
-                         (p_matrix[idx_bottom] - 2.0 * p_matrix[idx] + p_matrix[idx_top]) / (dy * dy) -
-                         rs_matrix[idx];
-            res += val * val * fluid_mask[idx];
-            size_fluid_cells += fluid_mask[idx];
+            double val = (d_p_matrix[idx_left] - 2.0 * d_p_matrix[idx] + d_p_matrix[idx_right]) / (dx * dx) +
+                         (d_p_matrix[idx_bottom] - 2.0 * d_p_matrix[idx] + d_p_matrix[idx_top]) / (dy * dy) -
+                         d_rs_matrix[idx];
+            res += val * val * d_fluid_mask[idx];
         }
     }
-
-    res = std::sqrt(res / size_fluid_cells);
-
-    //TODO apply boundary conditions
-
 
     return res;
 
 }
-

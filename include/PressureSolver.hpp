@@ -5,13 +5,8 @@
 #include "Boundary.hpp"
 #include "Fields.hpp"
 #include "Grid.hpp"
+#include "UtilsGPU.h"
 
-typedef struct gridParams {
-    int imax;
-    int jmax;
-    double dx;
-    double dy;
-} gridParams;
 
 /**
  * @brief Abstract class for pressure Poisson equation solver
@@ -63,5 +58,5 @@ class SOR : public PressureSolver {
     double _omega;
 };
 
-double gpu_solve(double *p_matrix, double *p_matrix_old, const double *rs_matrix, const bool *fluid_mask,
-                 const uint8_t *boundary_type, const gridParams grid, const int num_iterations);
+double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
+                  const uint8_t *d_boundary_type, const gridParams grid, const int num_iterations);

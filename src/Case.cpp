@@ -4,8 +4,6 @@
 #include <iostream>
 #include <map>
 #include <vector>
-
-
 namespace filesystem = std::filesystem;
 
 #include <vtkCellData.h>
@@ -19,6 +17,8 @@ namespace filesystem = std::filesystem;
 
 #include "Case.hpp"
 #include "Enums.hpp"
+
+#include "UtilsGPU.h"
 
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
@@ -274,46 +274,54 @@ void Case::simulate() {
     // Initialize GPU memory and variables
     // the GPU cannot use any classes, so we need to pass the data to the GPU as simple arrays
     // TODO : place into a function like init_gpu() or create a class for GPU functions
+    // Place into UtilsGPU.h
 
-    int gpu_num_iterations = 32; // number of iterations for the GPU solver before returning the residual
+    int gpu_num_iterations = 32; // iterations before returning residual
 
     gridParams _gridParams = {
         _grid.domain().size_x,
         _grid.domain().size_y,
         _grid.dx(),
-        _grid.dy()
+        _grid.dy(),
+        _grid.fluid_cells().size(),
     };
-    int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
 
-    bool* fluid_mask = new bool[size_linear];
-    uint8_t* boundary_type = new uint8_t[size_linear];
+    int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
+    bool* d_fluid_mask = new bool[size_linear];
+    uint8_t* d_boundary_type = new uint8_t[size_linear];
 
     for (int i = 0; i <= _grid.domain().size_x + 1; i++) {
         for (int j = 0; j <= _grid.domain().size_y + 1; j++) {
             int idx = i + j * (_grid.domain().size_x + 2);
             if (_grid.cell(i, j).type() == cell_type::FLUID) {
-                fluid_mask[idx] = 1;
-                boundary_type[idx] = 0;
+                d_fluid_mask[idx] = 1;
+                d_boundary_type[idx] = 0;
             } else {
-                fluid_mask[idx] = 0;
-                boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
+                d_fluid_mask[idx] = 0;
+                d_boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
             }
         }
     }
 
     // Allocating and copying data to GPU
     // GPU has a different memory space
-    double* d_p_matrix = new double[size_linear];
-    double* d_p_matrix_old = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
+//    #ifdef __CUDACC__
+//        double* d_p_matrix_new;
+//        cudaMalloc(&d_p_matrix_new, size_linear * sizeof(double));
+//    #else
+//        double* d_p_matrix_new = new double[size_linear];
+//    #endif
+    double* d_p_matrix_new = new double[size_linear];
+    double* d_p_matrix = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
     double* d_rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
 
     // create arrays directly on GPU with create directive
     // copy data from CPU to GPU with copyin directive
-    #pragma acc enter data create(d_p_matrix[0:size_linear]) \
-    copyin(d_p_matrix_old[0:size_linear], \
+    #pragma acc enter data create(d_p_matrix_new[0:size_linear]) \
+    copyin(d_p_matrix[0:size_linear], \
            d_rs_matrix[0:size_linear], \
-           fluid_mask[0:size_linear], \
-            boundary_type[0:size_linear])
+           d_fluid_mask[0:size_linear], \
+           d_boundary_type[0:size_linear])
 
     while (t < _t_end) {
 
@@ -342,17 +350,16 @@ void Case::simulate() {
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = gpu_solve(d_p_matrix, d_p_matrix_old, d_rs_matrix, fluid_mask, boundary_type, _gridParams, gpu_num_iterations);
+            residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, _gridParams, gpu_num_iterations);
+            residual = std::sqrt(residual / _grid.fluid_cells().size());
             iter += gpu_num_iterations;
 
-            // update the field with the new pointer
-            #pragma acc update self(d_p_matrix[0:size_linear])
-            _field.p_matrix().set_raw_pointer(d_p_matrix);
-
-            Communication::communicate(_field.p_matrix());
-
-            residual = Communication::reduce_sum(residual);
+            // disabled communication for now
+//            Communication::communicate(_field.p_matrix());
+//            residual = Communication::reduce_sum(residual);
         }
+
+        #pragma acc update self(d_p_matrix[0:size_linear])
 
         iter_vec.push_back(iter);
 
@@ -364,7 +371,7 @@ void Case::simulate() {
         output_counter += dt;
         t += dt;
 
-        if (output_counter >= _output_freq or timestep == 1) {
+        if (output_counter >= _output_freq or (timestep == 1 or t >= _t_end)) {
 
             output_counter = 0;
 
@@ -394,9 +401,10 @@ void Case::simulate() {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
 
-    delete[] fluid_mask;
-    delete[] boundary_type;
-    #pragma acc exit data delete(d_p_matrix[0:size_linear], d_p_matrix_old[0:size_linear], fluid_mask[0:size_linear], boundary_type[0:size_linear])
+    delete[] d_fluid_mask;
+    delete[] d_boundary_type;
+    delete[] d_p_matrix_new;
+    #pragma acc exit data delete(d_p_matrix_new[0:size_linear], d_p_matrix[0:size_linear], fluid_mask[0:size_linear], boundary_type[0:size_linear])
 
 }
 

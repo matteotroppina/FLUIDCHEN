@@ -60,4 +60,24 @@ Then, inside the cuda-gdb, you can run the program with the input file:
 (cuda-gdb) r ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
 ```
 
+# Profiling
+
+I'm using NSight Systems or Nvprof for profiling. It comes with the Nvidia HPC SDK.
+
+To profile the code using Nvprof, you can use the following command:
+```Shell
+nvprof --profile-child-processes mpirun -np 1 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
+```
+
+With NSight Systems, you can use the following command:
+
+```Shell
+nsys profile -o profile_report mpirun -n 1 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
+```
+
+Then launch the NSight Systems GUI with the following command:
+```Shell
+nsys-ui
+```
+
 

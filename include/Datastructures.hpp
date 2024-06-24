@@ -64,10 +64,6 @@ template <typename T> class Matrix {
 
     T *raw_pointer() { return _container.data(); }
 
-    void set_raw_pointer(T *ptr) {
-        _container.assign(ptr, ptr + _num_cols * _num_rows);
-    }
-
     /**
      * @brief Access of the size of the structure
      *
