@@ -86,13 +86,15 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
     int size_linear = (imax + 2) * (jmax + 2);
     double coeff = 1.0 / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
     double res = 0;
+    int size_fluid_cells = grid.size_fluid_cells;
 
     //present means data present on GPU
     // JACOBI ITERATION
-
+    #pragma acc loop seq
     for (int iter = 0; iter < num_iterations; iter++) {
         #pragma acc parallel loop collapse(2) vector_length(128) \
-        present(d_p_matrix[0 : size_linear], d_p_matrix_new[0 : size_linear], d_rs_matrix[0 : size_linear], d_fluid_mask[0 : size_linear], d_boundary_type[0 : size_linear])
+        present(d_rs_matrix[0 : size_linear], d_fluid_mask[0 : size_linear], d_boundary_type[0 : size_linear]) \
+        deviceptr(d_p_matrix_new, d_p_matrix)
         for (int i = 1; i <= imax; i++) {
             for (int j = 1; j <= jmax; j++) {
                 int idx = i + j * (imax + 2);
@@ -131,6 +133,6 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
         }
     }
 
-    return res;
+    return res / size_fluid_cells;
 
 }
