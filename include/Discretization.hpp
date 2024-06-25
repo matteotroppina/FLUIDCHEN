@@ -105,6 +105,8 @@ class Discretization {
      */
     static double convection_KEPS(const Matrix<double> &K, const Matrix<double> &U, const Matrix<double> &V, int i, int j);
 
+    static double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT, const double nu, const double _sk, int i,int j);
+
     /**
      * @brief Strain rate tensor
      *

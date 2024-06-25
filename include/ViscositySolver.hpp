@@ -56,6 +56,5 @@ class K_EPS_model : public ViscositySolver {
     double _C2{1.92};
     double _sk{1.0}; // in paper reffered as sigma k
     double _se{1.3}; // in paper reffered as sigma e
-    double _decouple{0.0}; //decouple turbulent equations
 
 };

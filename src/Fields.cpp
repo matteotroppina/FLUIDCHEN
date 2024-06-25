@@ -237,7 +237,7 @@ double &Fields::T(int i, int j) { return _T(i, j); }
 double &Fields::K(int i, int j) {return _K(i,j);}
 double &Fields::E(int i, int j) {return _E(i,j);}
 double &Fields::nuT(int i, int j) {return _nuT(i,j);}
-
+double &Fields::nu(){return _nu;}
 
 
 Matrix<double> &Fields::p_matrix() { return _P; }
