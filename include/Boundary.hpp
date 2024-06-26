@@ -90,8 +90,8 @@ class InnerObstacle : public Boundary {
     virtual void applyPressure(Fields &field); // do nothing
     virtual void applyFlux(Fields &field); // do nothing
 
-    virtual void applyK(Fields &field);
-    virtual void applyEpsilon(Fields &field);
+    // virtual void applyK(Fields &field);
+    // virtual void applyEpsilon(Fields &field);
 };
 
 /**
@@ -108,8 +108,8 @@ class MovingWallBoundary : public Boundary {
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
-    virtual void applyK(Fields &field);
-    virtual void applyEpsilon(Fields &field);
+    // virtual void applyK(Fields &field);
+    // virtual void applyEpsilon(Fields &field);
     
   private:
     std::map<int, double> _wall_velocity;
@@ -126,7 +126,7 @@ class FixedVelocityBoundary : public Boundary {
     virtual void applyPressure(Fields &field);
 
     virtual void applyK(Fields &field);
-    virtual void applyEpsilon(Fields &field);
+    // virtual void applyEpsilon(Fields &field);
 
   private:
     std::map<int, double> _inflow_u_velocity;
@@ -143,7 +143,7 @@ class ZeroGradientBoundary : public Boundary {
     virtual void applyPressure(Fields &field);
 
     virtual void applyK(Fields &field);
-    virtual void applyEpsilon(Fields &field);
+    // virtual void applyEpsilon(Fields &field);
 
   private:
     std::map<int, double> _wall_temperature;

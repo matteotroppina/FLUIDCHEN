@@ -67,8 +67,8 @@ void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
 
 // do we have to prescribe something for k and eps?
-void InnerObstacle::applyK(Fields &field) {}
-void InnerObstacle::applyEpsilon(Fields &field) {}
+// void InnerObstacle::applyK(Fields &field) {}
+// void InnerObstacle::applyEpsilon(Fields &field) {}
 
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -443,7 +443,7 @@ void FixedVelocityBoundary::applyK(Fields &field) {
     }
 }
 
-void FixedVelocityBoundary::applyEpsilon(Fields &field) {}
+//void FixedVelocityBoundary::applyEpsilon(Fields &field) {}
 
 //OUTFLOW
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -544,7 +544,7 @@ void ZeroGradientBoundary::applyK(Fields &field) {
         }
     }
 }
-void ZeroGradientBoundary::applyEpsilon(Fields &field) {}
+//void ZeroGradientBoundary::applyEpsilon(Fields &field) {}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
@@ -605,5 +605,5 @@ void MovingWallBoundary::applyPressure(Fields &field) {
     }
 }
 
-void MovingWallBoundary::applyK(Fields &field) {}
-void MovingWallBoundary::applyEpsilon(Fields &field) {}
+// void MovingWallBoundary::applyK(Fields &field) {}
+// void MovingWallBoundary::applyEpsilon(Fields &field) {}

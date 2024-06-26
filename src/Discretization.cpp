@@ -48,9 +48,9 @@ double Discretization::convection_t(const Matrix<double> &T, const Matrix<double
 
 double Discretization::convection_KEPS(const Matrix<double> &K, const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
     double duK_dx = 1/_dx * (U(i,j)* interpolate(K,i,j,1,0) - U(i-1,j)* interpolate(K,i,j,-1,0));
-                    //+ _gamma/_dx * (std::abs(U(i,j))* (K(i,j)-K(i+1,j))/2 - std::abs(U(i-1,j))*(K(i-1,j)-K(i,j))/2);
+                    + _gamma/_dx * (std::abs(U(i,j))* (K(i,j)-K(i+1,j))/2 - std::abs(U(i-1,j))*(K(i-1,j)-K(i,j))/2);
     double dvK_dy = 1/_dy * (V(i,j) * interpolate(K,i,j,0,1) - V(i,j-1)* interpolate(K,i,j,0,-1));
-                    //+ _gamma/_dy * (std::abs(V(i,j))* (K(i,j)-K(i,j+1))/2 - std::abs(V(i,j-1))*(K(i,j-1)-K(i,j))/2);
+                    + _gamma/_dy * (std::abs(V(i,j))* (K(i,j)-K(i,j+1))/2 - std::abs(V(i,j-1))*(K(i,j-1)-K(i,j))/2);
     return duK_dx + dvK_dy;
 }
 

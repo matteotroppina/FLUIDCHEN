@@ -146,6 +146,8 @@ class Fields {
     /// turbulent viscosity matrix access and modify
     Matrix<double> &nuT_matrix();
 
+    double &nu();
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;
