@@ -250,7 +250,7 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
     }
 }
 
-void Fields::calculate_dt(Grid &grid) {
+void Fields::calculate_dt(Grid &grid, bool turbulence) {
     double dx_2 = grid.dx() * grid.dx();
     double dy_2 = grid.dy() * grid.dy();
 
@@ -263,9 +263,19 @@ void Fields::calculate_dt(Grid &grid) {
     double cfl_y = grid.dy() / v_max;
     double new_cond = (1 / (2 * _alpha)) * (1/ (1/ dx_2 + 1/dy_2));
 
+    double k_max = _K.max_abs_value();
+    double eps_max = _E.max_abs_value();
+
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
-    _dt = _tau * _dt/10.0;
+    if (turbulence){
+        double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
+        double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
+        _dt = std::min(_dt, k_cond);
+        _dt = std::min(_dt, eps_cond);
+    }
+
+    _dt = _tau * _dt;
 
     _dt = Communication::reduce_min(_dt);
 }

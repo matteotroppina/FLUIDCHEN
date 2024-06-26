@@ -270,7 +270,7 @@ void Case::simulate() {
 
     while (t < _t_end) {
 
-        _field.calculate_dt(_grid);
+        _field.calculate_dt(_grid, turbulence);
         dt = _field.dt();
         
         for (auto &b : _boundaries) {

@@ -73,7 +73,7 @@ class Fields {
      * @param[in] grid in which the calculations are done
      *
      */
-    void calculate_dt(Grid &grid);
+    void calculate_dt(Grid &grid, bool turbulence);
     
     /**
      * @brief turbulent kinetic energy and dissipation rate calculation
