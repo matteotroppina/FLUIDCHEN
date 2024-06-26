@@ -41,55 +41,80 @@ void Fields::calculate_rs(Grid &grid) {
     }
 }
 
+void Fields::calculate_velocities(Grid &grid) {
+
+    int itermax_x = grid.itermax_x();
+    int itermax_y = grid.itermax_y();
+    int size_y = grid.size_y();
+    int size_x = grid.size_x();
+    double dx = grid.dx();
+    double dy = grid.dy();
+    double dt = this->dt();
+
+    double * u_matrix = _U.raw_pointer();
+    double * v_matrix = _V.raw_pointer();
+    double * p_matrix = _P.raw_pointer();
+    double * F_matrix = _F.raw_pointer();
+    double * G_matrix = _G.raw_pointer();
+
+    double * d_u_matrix;
+    cudaMalloc(&d_u_matrix, sizeof(double) * (size_x + 2) * (size_y + 2));
+    cudaMemcpy(d_u_matrix, u_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyHostToDevice);
+    double * d_v_matrix;
+    cudaMalloc(&d_v_matrix, sizeof(double) * (size_x + 2) * (size_y + 2));
+    cudaMemcpy(d_v_matrix, v_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyHostToDevice);
+    double * d_p_matrix;
+    cudaMalloc(&d_p_matrix, sizeof(double) * (size_x + 2) * (size_y + 2));
+    cudaMemcpy(d_p_matrix, p_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyHostToDevice);
+    double * d_F_matrix;
+    cudaMalloc(&d_F_matrix, sizeof(double) * (size_x + 2) * (size_y + 2));
+    cudaMemcpy(d_F_matrix, F_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyHostToDevice);
+    double * d_G_matrix;
+    cudaMalloc(&d_G_matrix, sizeof(double) * (size_x + 2) * (size_y + 2));
+    cudaMemcpy(d_G_matrix, G_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyHostToDevice);
+
+
+    #pragma acc parallel loop collapse(2) deviceptr(d_u_matrix, d_p_matrix, d_F_matrix)
+    for (int i = 1; i <= itermax_x - 1; i++) {
+        for (int j = 1; j <= size_y; j++) {
+            int idx = i + j * (size_x + 2);
+            int idx_right = idx + 1;
+            d_u_matrix[idx] = d_F_matrix[idx] - dt / dx * (d_p_matrix[idx_right] - d_p_matrix[idx]);
+        }
+    }
+
+    #pragma acc parallel loop collapse(2) deviceptr(d_v_matrix, d_p_matrix, d_G_matrix)
+    for (int i = 1; i <= size_x; i++) {
+        for (int j = 1; j <= itermax_y - 1; j++) {
+            int idx = i + j * (size_x + 2);
+            int idx_top = idx + (size_x + 2);
+            d_v_matrix[idx] = d_G_matrix[idx] - dt / dy * (d_p_matrix[idx_top] - d_p_matrix[idx]);
+        }
+    }
+
+    cudaMemcpy(u_matrix, d_u_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyDeviceToHost);
+    cudaMemcpy(v_matrix, d_v_matrix, sizeof(double) * (size_x + 2) * (size_y + 2), cudaMemcpyDeviceToHost);
+    cudaFree(d_u_matrix);
+    cudaFree(d_v_matrix);
+    cudaFree(d_p_matrix);
+    cudaFree(d_F_matrix);
+    cudaFree(d_G_matrix);
+}
+
 //void Fields::calculate_velocities(Grid &grid) {
 //
-//    int itermax_x = grid.itermax_x();
-//    int itermax_y = grid.itermax_y();
-//    int size_y = grid.size_y();
-//    int size_x = grid.size_x();
-//    double dx = grid.dx();
-//    double dy = grid.dy();
-//    double dt = this->dt();
-//
-//    double * u_matrix = _U.raw_pointer();
-//    double * v_matrix = _V.raw_pointer();
-//    double * p_matrix = _P.raw_pointer();
-//    double * F_matrix = _F.raw_pointer();
-//    double * G_matrix = _G.raw_pointer();
-//
-//    #pragma acc parallel loop collapse(2)
-//    for (int i = 1; i <= itermax_x - 1; i++) {
-//        for (int j = 1; j <= size_y; j++) {
-//            int idx = i + j * (size_x + 2);
-//            int idx_right = idx + 1;
-//            u_matrix[idx] = F_matrix[idx] - dt / dx * (p_matrix[idx_right] - p_matrix[idx]);
+//    for (int i = 1; i <= grid.itermax_x() - 1; i++) {
+//        for (int j = 1; j <= grid.size_y(); j++) {
+//            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
 //        }
 //    }
 //
-//    #pragma acc parallel loop collapse(2)
-//    for (int i = 1; i <= size_x; i++) {
-//        for (int j = 1; j <= itermax_y - 1; j++) {
-//            int idx = i + j * (size_x + 2);
-//            int idx_top = idx + (size_x + 2);
-//            v_matrix[idx] = G_matrix[idx] - dt / dy * (p_matrix[idx_top] - p_matrix[idx]);
+//    for (int i = 1; i <= grid.size_x(); i++) {
+//        for (int j = 1; j <= grid.itermax_y() - 1; j++) {
+//            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
 //        }
 //    }
 //}
-
-void Fields::calculate_velocities(Grid &grid) {
-
-    for (int i = 1; i <= grid.itermax_x() - 1; i++) {
-        for (int j = 1; j <= grid.size_y(); j++) {
-            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
-        }
-    }
-
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.itermax_y() - 1; j++) {
-            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
-        }
-    }
-}
 
 void Fields::calculate_temperature(Grid &grid) {
     for (int i = 1; i <= grid.size_x(); i++) {
