@@ -31,9 +31,9 @@ void K_EPS_model::solve(Fields &field, Grid &grid, const std::vector<std::unique
         field.K(i, j) = field.K(i, j) + dt * (-k1 + k2 + k3 - k4);
         field.E(i, j) = field.E(i, j) + dt * (-e1 + e2 + e3 - e4);
 
-        double R_T = std::pow(field.K(i,j),2) / (field.E(i,j) * nu);
-        _C0 = 0.09 * std::exp(-2.50/(1 + (R_T/50.0)));
-        _C2 = 1.92 * ( 1 - 0.3 * std::exp(-std::pow(R_T, 2)) );     //updates for next iteration?
+        // double R_T = std::pow(field.K(i,j),2) / (field.E(i,j) * nu);
+        // _C0 = 0.09 * std::exp(-2.50/(1 + (R_T/50.0)));
+        // _C2 = 1.92 * ( 1 - 0.3 * std::exp(-std::pow(R_T, 2)) );     //updates for next iteration?
 
         // field.nuT(i,j) = _C0 * field.K(i,j) * field.K(i,j) / field.E(i,j);
 
