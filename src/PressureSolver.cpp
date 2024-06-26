@@ -42,11 +42,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return res;
 }
 
-__global__ void jacobiKernel(double **d_p_matrix_new_dev, double **d_p_matrix_dev, const double *d_rs_matrix, const bool *d_fluid_mask,
+__global__ void jacobiKernel(double *d_p_matrix_new, double *d_p_matrix, const double *d_rs_matrix, const bool *d_fluid_mask,
                              const double coeff, const int imax, const int jmax, const double dx, const double dy) {
 
-    double* d_p_matrix_new = *d_p_matrix_new_dev;
-    double* d_p_matrix = *d_p_matrix_dev;
+
     int i = blockIdx.x * blockDim.x + threadIdx.x + 1;
     int j = blockIdx.y * blockDim.y + threadIdx.y + 1;
     int idx = i + j * (imax + 2);
@@ -60,15 +59,9 @@ __global__ void jacobiKernel(double **d_p_matrix_new_dev, double **d_p_matrix_de
         d_p_matrix_new[idx] =
             coeff * ((d_p_matrix[idx_left] + d_p_matrix[idx_right]) / (dx * dx) +
                      (d_p_matrix[idx_top] + d_p_matrix[idx_bottom]) / (dy * dy) - d_rs_matrix[idx]);
+
+        d_p_matrix[idx] = d_p_matrix_new[idx];
     }
-}
-
-
-//call with <<<1, 1>>> to swap pointers
-__global__ void swapPointers(double **d_p_matrix, double **d_p_matrix_new) {
-    double *temp = *d_p_matrix;
-    *d_p_matrix = *d_p_matrix_new;
-    *d_p_matrix_new = temp;
 }
 
 
@@ -84,19 +77,11 @@ double gpu_psolve(double *p_matrix, double *p_matrix_new, const double *rs_matri
     double res = 0;
     int size_fluid_cells = grid.size_fluid_cells;
 
-    double **d_p_matrix, **d_p_matrix_new;
-    cudaMalloc(&d_p_matrix, sizeof(double *));
-    cudaMalloc(&d_p_matrix_new, sizeof(double *));
-
-    cudaMemcpy(d_p_matrix, &p_matrix, sizeof(double *), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_p_matrix_new, &p_matrix_new, sizeof(double *), cudaMemcpyHostToDevice);
-
     dim3 threadsPerBlock(8, 8);
     dim3 numBlocks((imax + 2 + threadsPerBlock.x - 1) / threadsPerBlock.x, (jmax + 2 + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
     for (int iter = 0; iter < num_iterations; iter++) {
-        jacobiKernel<<<numBlocks, threadsPerBlock>>>(d_p_matrix_new, d_p_matrix, rs_matrix, fluid_mask, coeff, imax, jmax, dx, dy);
-        swapPointers<<<1, 1>>>(d_p_matrix, d_p_matrix_new);
+        jacobiKernel<<<numBlocks, threadsPerBlock>>>(p_matrix_new, p_matrix, rs_matrix, fluid_mask, coeff, imax, jmax, dx, dy);
     }
 
     //TODO apply boundary conditions
@@ -116,9 +101,6 @@ double gpu_psolve(double *p_matrix, double *p_matrix_new, const double *rs_matri
             res += val * val * fluid_mask[idx];
         }
     }
-
-    cudaFree(d_p_matrix);
-    cudaFree(d_p_matrix_new);
 
     return res / size_fluid_cells;
 

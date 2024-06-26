@@ -276,7 +276,8 @@ void Case::simulate() {
     // TODO : place into a function like init_gpu() or create a class for GPU functions
     // Place into UtilsGPU.h
 
-    int gpu_num_iterations = 32; // iterations before returning residual
+    int gpu_num_iterations = 64; // iterations before returning residual
+    // it is faster to calculate more iterations on GPU than to calculate if residual < tolerance in while loop
 
     gridParams _gridParams = {
         _grid.domain().size_x,
@@ -308,6 +309,7 @@ void Case::simulate() {
     #ifdef __CUDACC__
         double* d_p_matrix_new;
         cudaMalloc(&d_p_matrix_new, size_linear * sizeof(double));
+        std::cout << *d_p_matrix_new << std::endl;
     #else
         double* d_p_matrix_new = new double[size_linear];
     #endif
@@ -354,9 +356,8 @@ void Case::simulate() {
             residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, _gridParams, gpu_num_iterations);
             iter += gpu_num_iterations;
 
-            // disabled communication for now
-//            Communication::communicate(_field.p_matrix());
-//            residual = Communication::reduce_sum(residual);
+            Communication::communicate(_field.p_matrix());
+            residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
         }
 
