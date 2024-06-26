@@ -3,6 +3,8 @@
 #include "Datastructures.hpp"
 #include "Discretization.hpp"
 #include "Grid.hpp"
+#include <assert.h>
+#include <math.h>
 
 /**
  * @brief Class of container and modifier for the physical fields
@@ -25,7 +27,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double k0, double eps0);
+    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double K0, double E0);
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);
@@ -111,7 +113,14 @@ class Fields {
     /// dissipation rate index based access and modify
     double &E(int i, int j);
 
+    /// turbulent viscosity index based access and modify
     double &nuT(int i, int j);
+
+    /// turbulent viscosity index based access and modify
+    double &nuT_i(int i, int j);
+
+    /// turbulent viscosity index based access and modify
+    double &nuT_j(int i, int j);
 
     /// get timestep size
     double dt() const;
@@ -146,6 +155,13 @@ class Fields {
     /// turbulent viscosity matrix access and modify
     Matrix<double> &nuT_matrix();
 
+    /// turbulent viscosity i matrix access and modify
+    Matrix<double> &nuT_i_matrix();
+
+    /// turbulent viscosity j matrix access and modify
+    Matrix<double> &nuT_j_matrix();
+
+    /// get kinematic viscosity
     double &nu();
 
   private:
@@ -169,6 +185,10 @@ class Fields {
     Matrix<double> _E;
     /// turbulent viscosity matrix
     Matrix<double> _nuT;
+    /// turbulent viscosity matrix i
+    Matrix<double> _nuT_i;
+    /// turbulent viscosity matrix j
+    Matrix<double> _nuT_j;
 
     /// kinematic viscosity
     double _nu;

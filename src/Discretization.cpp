@@ -54,10 +54,10 @@ double Discretization::convection_KEPS(const Matrix<double> &K, const Matrix<dou
     return duK_dx + dvK_dy;
 }
 
-double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT, const double nu, const double _sk,int i,int j){
+double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT_i, const Matrix<double> &nuT_j, const double nu, const double _sk,int i,int j){
 
-    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + interpolate (nuT,i,j,1,0)/_sk) - (nu + interpolate (nuT,i,j,-1,0)/_sk) * (K(i,j)+ K(i-1,j)) ) / std::pow(_dx, 2);
-    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + interpolate (nuT,i,j,0,1)/_sk) - (nu + interpolate (nuT,i,j,0,-1)/_sk) * (K(i,j)+ K(i,j-1)) ) / std::pow(_dy, 2); 
+    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + nuT_i(i,j)/_sk) - (nu + nuT_i(i-1,j)/_sk) * (K(i,j)+ K(i-1,j)) ) / std::pow(_dx, 2);
+    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + nuT_j(i,j)/_sk) - (nu + nuT_j(i, j-1)/_sk) * (K(i,j)+ K(i,j-1)) ) / std::pow(_dy, 2); 
     return laplacian_x + laplacian_y;
 }
 

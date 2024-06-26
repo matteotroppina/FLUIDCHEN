@@ -20,6 +20,7 @@ namespace filesystem = std::filesystem;
 #include "Case.hpp"
 #include "Enums.hpp"
 
+
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
@@ -48,8 +49,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
+    bool turbulence = false; /*turbulence ON-OFF*/
     double KI{}; /*initial value for turbulent kinetic energy*/
-    double epsilonI{}; /*initial value for the dissipation rate*/
+    double EI{}; /*initial value for the dissipation rate*/
+    double t_init{}; /*start turbulent simulation*/
 
     int num_of_walls{};
 
@@ -93,8 +96,10 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
-                // if (var == "KI") file >> KI;
-                // if (var == "epsilonI") file >> epsilonI;
+                if (var == "turbulence") file >> _turbulence;
+                if (var == "t_init") file >> _t_init; 
+                if (var == "KI") file >> KI;
+                if (var == "EI") file >> EI;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
@@ -133,15 +138,18 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double l0 = 1;
-    double k0 = std::pow(nu / l0, 2);
-    double eps0 = _C0 * std::pow(k0, 1.5) / l0;
+    // double l0 = 1;
+    // double k0 = std::pow(nu / l0, 2);
+    // double eps0 = _C0 * std::pow(k0, 1.5) / l0;
 
-    std::cout << "k0 = " << k0 << std::endl;
-    std::cout << "eps0 = " << eps0 << std::endl;
+    // k0 = 0.1;
+    // eps0 = 0.1;
+
+    // std::cout << "k0 = " << k0 << std::endl;
+    // std::cout << "eps0 = " << eps0 << std::endl;
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, k0, eps0);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, EI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -252,8 +260,6 @@ void Case::simulate() {
         std::cout << "\n(4/4) FLUIDCHEN SIMULATION...\n" << std::endl;
     }
     
-
-
     MPI_Barrier(MPI_COMM_WORLD);
 
     double t = 0.0;
@@ -265,20 +271,17 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
-    bool turbulence = false;
     int cc = 0;
 
     while (t < _t_end) {
 
-        _field.calculate_dt(_grid, turbulence);
+        _field.calculate_dt(_grid, _turbulence);
         dt = _field.dt();
         
         for (auto &b : _boundaries) {
             b->applyVelocity(_field);
             b->applyTemperature(_field);
             
-            b->applyK(_field);
-            b->applyEpsilon(_field);
         }
 
 
@@ -286,11 +289,7 @@ void Case::simulate() {
         Communication::communicate(_field.t_matrix());
 
 
-        if (t > dt * 20) {
-            turbulence = true;
-        }
-
-        _field.calculate_fluxes(_grid, turbulence);
+        _field.calculate_fluxes(_grid, _turbulence);
         Communication::communicate(_field.f_matrix());
         Communication::communicate(_field.g_matrix());
 
@@ -321,19 +320,34 @@ void Case::simulate() {
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-        if(turbulence){
+        if(_turbulence && t > _t_init){
             _viscosity_solver->solve(_field, _grid, _boundaries);
             _field.calculate_nuT(_grid, _C0);
+
+
+            for(auto &b : _boundaries){
+
+                b->applyTurbulence(_field);
+                // TODO --> aget rid of pplyK and applyEpsilon
+                b->applyK(_field);
+                b->applyEpsilon(_field);
+            }
+
+            Communication::communicate(_field.k_matrix());
+            Communication::communicate(_field.e_matrix());
+            Communication::communicate(_field.nuT_matrix());
+            Communication::communicate(_field.nuT_i_matrix());
+            Communication::communicate(_field.nuT_j_matrix());
+            
         }
+
 
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
-        if(turbulence){
-            if(cc < 5){
+        if(_turbulence && timestep % 10 < 1e-1){
                 _field.printMatrix(_grid);
                 cc++;
-            }
         }
         
 
@@ -345,11 +359,11 @@ void Case::simulate() {
 
             output_counter = 0;
 
-            double max_p = _field.p_matrix().max_abs_value();
-            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
-                std::cerr << "Divergence detected" << std::endl;
-                break;
-            }
+            // double max_p = _field.p_matrix().max_abs_value();
+            // if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+            //     std::cerr << "Divergence detected" << std::endl;
+            //     break;
+            // }
 
             output_vtk(timestep, my_rank_global);
             if (my_rank_global == 0) {

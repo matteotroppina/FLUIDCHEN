@@ -76,3 +76,11 @@ VIN          0.0
 # num_of_walls:     number of walls
 #--------------------------------------------
 num_of_walls 1
+
+#--------------------------------------------
+#       turbulence parameters
+#--------------------------------------------
+turbulence  0           // 0 ON - 1 OFF
+t_init      0.0
+KI          0.003
+EPSI        0.0005

@@ -51,12 +51,20 @@ class Boundary {
      */
     virtual void applyEpsilon(Fields &field);
 
+    /**
+     * @brief Method to patch the NuT boundary conditions to the given field (K-eosilon turbulence model).
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void applyTurbulence(Fields &field);
+
     virtual ~Boundary() = default;
 
   protected:
     Boundary(std::vector<Cell *> cells);
     std::vector<Cell *> _cells;
-    double C0{0.09}; // in paper reffered as C_nu
+    /// C_nu
+    double C0{0.09};
     double l0{0.1};
 };
 

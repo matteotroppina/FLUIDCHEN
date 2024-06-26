@@ -73,6 +73,9 @@ class Case {
     /// Maximum number of iterations for the solver
     int _max_iter;
 
+    bool _turbulence = false;
+    double _t_init{};
+
     /**
      * @brief Creating file names from given input data file
      *
