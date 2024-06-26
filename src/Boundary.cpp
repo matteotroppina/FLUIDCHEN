@@ -402,19 +402,23 @@ void FixedVelocityBoundary::applyK(Fields &field) {
         if (cell->is_border(border_position::BOTTOM)) {
             double u = (field.u(i, j - 1) + field.u(i, j)) / 2;
             double v = field.v(i, j - 1);
-            
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
+            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+
             field.K(i, j) = 2*k_boundary - field.K(i, j - 1);
-            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i, j-1);
+            field.E(i, j) = 2*eps_boundary - field.E(i, j-1);
         }
 
         if (cell->is_border(border_position::TOP)) {
             double u = (field.u(i, j) + field.u(i, j + 1)) / 2;
             double v = field.v(i, j);
 
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
+            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+
             field.K(i, j) = 2*k_boundary - field.K(i, j + 1);
-            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i, j+1);
+            field.E(i, j) = 2*eps_boundary - field.E(i, j+1);
             
         }
 
@@ -422,18 +426,22 @@ void FixedVelocityBoundary::applyK(Fields &field) {
             double u = field.u(i, j);
             double v = (field.v(i, j) + field.v(i + 1, j)) / 2;
 
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
+            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+
             field.K(i, j) = 2*k_boundary - field.K(i + 1, j);
-            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i + 1, j);
+            field.E(i, j) = 2*eps_boundary - field.E(i + 1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
             double u = field.u(i - 1, j);
             double v = (field.v(i, j) + field.v(i - 1, j)) / 2;
 
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2); 
+            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
+            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+
             field.K(i, j) = 2*k_boundary - field.K(i - 1, j);
-            field.E(i, j) = 2*(C0 * std::pow(k_boundary, 1.5) / l0) - field.E(i - 1, j);
+            field.E(i, j) = 2*eps_boundary - field.E(i - 1, j);
              
         }
     }
