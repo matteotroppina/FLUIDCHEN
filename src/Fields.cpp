@@ -1,6 +1,8 @@
 #include <algorithm>
 #include "Communication.hpp"
 #include "Fields.hpp"
+#include <execution>
+#include <numeric>
 
 Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
@@ -38,6 +40,41 @@ void Fields::calculate_rs(Grid &grid) {
         }
     }
 }
+
+//void Fields::calculate_velocities(Grid &grid) {
+//
+//    int itermax_x = grid.itermax_x();
+//    int itermax_y = grid.itermax_y();
+//    int size_y = grid.size_y();
+//    int size_x = grid.size_x();
+//    double dx = grid.dx();
+//    double dy = grid.dy();
+//    double dt = this->dt();
+//
+//    double * u_matrix = _U.raw_pointer();
+//    double * v_matrix = _V.raw_pointer();
+//    double * p_matrix = _P.raw_pointer();
+//    double * F_matrix = _F.raw_pointer();
+//    double * G_matrix = _G.raw_pointer();
+//
+//    #pragma acc parallel loop collapse(2)
+//    for (int i = 1; i <= itermax_x - 1; i++) {
+//        for (int j = 1; j <= size_y; j++) {
+//            int idx = i + j * (size_x + 2);
+//            int idx_right = idx + 1;
+//            u_matrix[idx] = F_matrix[idx] - dt / dx * (p_matrix[idx_right] - p_matrix[idx]);
+//        }
+//    }
+//
+//    #pragma acc parallel loop collapse(2)
+//    for (int i = 1; i <= size_x; i++) {
+//        for (int j = 1; j <= itermax_y - 1; j++) {
+//            int idx = i + j * (size_x + 2);
+//            int idx_top = idx + (size_x + 2);
+//            v_matrix[idx] = G_matrix[idx] - dt / dy * (p_matrix[idx_top] - p_matrix[idx]);
+//        }
+//    }
+//}
 
 void Fields::calculate_velocities(Grid &grid) {
 

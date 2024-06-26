@@ -288,43 +288,42 @@ void Case::simulate() {
     };
 
     int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
-    bool* d_fluid_mask = new bool[size_linear];
-    uint8_t* d_boundary_type = new uint8_t[size_linear];
+    bool* fluid_mask = new bool[size_linear];
+    uint8_t* boundary_type = new uint8_t[size_linear];
 
     for (int i = 0; i <= _grid.domain().size_x + 1; i++) {
         for (int j = 0; j <= _grid.domain().size_y + 1; j++) {
             int idx = i + j * (_grid.domain().size_x + 2);
             if (_grid.cell(i, j).type() == cell_type::FLUID) {
-                d_fluid_mask[idx] = 1;
-                d_boundary_type[idx] = 0;
+                fluid_mask[idx] = 1;
+                boundary_type[idx] = 0;
             } else {
-                d_fluid_mask[idx] = 0;
-                d_boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
+                fluid_mask[idx] = 0;
+                boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
             }
         }
     }
 
     // Allocating and copying data to GPU
     // GPU has a different memory space
-    #ifdef __CUDACC__
+    #ifdef __CUDACC__ // TODO wrap all CUDA functions
         double* d_p_matrix_new;
         cudaMalloc(&d_p_matrix_new, size_linear * sizeof(double));
-        std::cout << *d_p_matrix_new << std::endl;
-    #else
-        double* d_p_matrix_new = new double[size_linear];
+        double * d_p_matrix;
+        cudaMalloc(&d_p_matrix, size_linear * sizeof(double));
+        double * d_rs_matrix;
+        cudaMalloc(&d_rs_matrix, size_linear * sizeof(double));
+        bool * d_fluid_mask;
+        cudaMalloc(&d_fluid_mask, size_linear * sizeof(bool));
+        cudaMemcpy(d_fluid_mask, fluid_mask, size_linear * sizeof(bool), cudaMemcpyHostToDevice);
+        uint8_t * d_boundary_type;
+        cudaMalloc(&d_boundary_type, size_linear * sizeof(uint8_t));
+        cudaMemcpy(d_boundary_type, boundary_type, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
     #endif
 
+    double* p_matrix = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
+    double* rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
 
-    double* d_p_matrix = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
-    double* d_rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
-
-    // create arrays directly on GPU with create directive
-    // copy data from CPU to GPU with copyin directive
-    #pragma acc enter data \
-    copyin(d_p_matrix[0:size_linear], \
-           d_rs_matrix[0:size_linear], \
-           d_fluid_mask[0:size_linear], \
-           d_boundary_type[0:size_linear])
 
     while (t < _t_end) {
 
@@ -348,7 +347,8 @@ void Case::simulate() {
         }
 
         _field.calculate_rs(_grid); // calculate rs on CPU and copy to GPU
-        #pragma acc update device(d_rs_matrix[0:size_linear])
+        cudaMemcpy(d_rs_matrix, rs_matrix, size_linear * sizeof(double), cudaMemcpyHostToDevice);
+
 
         residual = 1;
         iter = 0;
@@ -356,14 +356,15 @@ void Case::simulate() {
             residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, _gridParams, gpu_num_iterations);
             iter += gpu_num_iterations;
 
+            // TODO : CUDA aware MPI
             Communication::communicate(_field.p_matrix());
             residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
         }
 
-        #pragma acc update self(d_p_matrix[0:size_linear])
+        cudaMemcpy(p_matrix, d_p_matrix, size_linear * sizeof(double), cudaMemcpyDeviceToHost);
         iter_vec.push_back(iter);
-
+        
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
@@ -401,15 +402,15 @@ void Case::simulate() {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
 
-    delete[] d_fluid_mask;
-    delete[] d_boundary_type;
+    delete[] fluid_mask;
+    delete[] boundary_type;
     #ifdef __CUDACC__
         cudaFree(d_p_matrix_new);
-    #else
-        delete[] d_p_matrix_new;
+        cudaFree(d_p_matrix);
+        cudaFree(d_rs_matrix);
+        cudaFree(d_fluid_mask);
+        cudaFree(d_boundary_type);
     #endif
-    #pragma acc exit data delete(d_p_matrix[0:size_linear], d_rs_matrix[0:size_linear], d_fluid_mask[0:size_linear], d_boundary_type[0:size_linear])
-
 }
 
 void Case::output_csv(const std::vector<int> &vec) {

@@ -58,5 +58,5 @@ class SOR : public PressureSolver {
     double _omega;
 };
 
-double gpu_psolve(double *p_matrix, double *p_matrix_new, const double *rs_matrix, const bool *fluid_mask,
-                  const uint8_t *boundary_type, const gridParams grid, const int num_iterations);
+double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
+                  const uint8_t *d_boundary_type, const gridParams grid, const int num_iterations);
