@@ -18,7 +18,9 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     //turbulence model
     _K = Matrix<double>(size_x + 2, size_y + 2, k0);
     _E = Matrix<double>(size_x + 2, size_y + 2, eps0);
-    _nuT = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+
+    double nut_0 = _Cmu * k0 * k0 / eps0;
+    _nuT = Matrix<double>(size_x + 2, size_y + 2, nut_0);
 }
 
 void Fields::printMatrix(Grid &grid) {
@@ -46,42 +48,42 @@ void Fields::printMatrix(Grid &grid) {
 
     std::cout << std::endl;
 
-    std::cout << "P matrix" << std::endl;
-    for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
-            std::cout << _P(i, j) << ", ";
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "P matrix" << std::endl;
+    // for (auto j = grid.size_y() + 1; j >= 0; j--) {
+    //     for (auto i = 0; i <= grid.size_x() + 1; i++) {
+    //         std::cout << _P(i, j) << ", ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
-    std::cout << "U matrix" << std::endl;
-    for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
-            std::cout << _U(i, j) << ", ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
+    // std::cout << "U matrix" << std::endl;
+    // for (auto j = grid.size_y() + 1; j >= 0; j--) {
+    //     for (auto i = 0; i <= grid.size_x() + 1; i++) {
+    //         std::cout << _U(i, j) << ", ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
 
-    std::cout << "V matrix" << std::endl;
-    for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
-            std::cout << _V(i, j) << ", ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
+    // std::cout << "V matrix" << std::endl;
+    // for (auto j = grid.size_y() + 1; j >= 0; j--) {
+    //     for (auto i = 0; i <= grid.size_x() + 1; i++) {
+    //         std::cout << _V(i, j) << ", ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
 
-    std::cout << "T matrix" << std::endl;
-    for (auto j = grid.size_y() + 1; j >= 0; j--) {
-        for (auto i = 0; i <= grid.size_x() + 1; i++) {
-            std::cout << _T(i, j) << ", ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
+    // std::cout << "T matrix" << std::endl;
+    // for (auto j = grid.size_y() + 1; j >= 0; j--) {
+    //     for (auto i = 0; i <= grid.size_x() + 1; i++) {
+    //         std::cout << _T(i, j) << ", ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
 
     std::cout << std::setprecision(4); // digits after decimal point
     
@@ -140,20 +142,61 @@ void Fields::printBorders(Grid &grid) {
     
 }
 
-void Fields::calculate_fluxes(Grid &grid) {
+void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
 
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
-            _F(i, j) = _U(i, j) +
-                       _dt * ((_nu) * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+
+            if(turbulence){
+
+                double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
+                double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
+
+                double fac1 = 2 * (_nu + nuT_x) * Discretization::laplacian_x(_U, i, j);
+                double fac2 = 2 * ( (_nuT(i+1,j) - _nuT(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
+                double fac3 = (_nu + nuT_y) * (Discretization::laplacian_y(_U, i, j) + Discretization::mixed_derivative(_V, i, j));
+                double fac4 = ( (_nuT(i,j+1) - _nuT(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j) - _U(i,j-1))/grid.dy() + (_V(i,j) - _V(i-1,j))/grid.dx());
+
+                double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
+
+                _F(i, j) = _U(i, j) +
+                           _dt * (turbulence_diffusion - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+
+            } else {
+
+                _F(i, j) = _U(i, j) +
+                           _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+
+            }
         }
     }
 //    std::cout << my_rank_global << "Calculating flux F" << std::endl;
 
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
-            _G(i, j) = _V(i, j) +
-                       _dt * ((_nu) * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+
+            if(turbulence){
+
+                double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
+                double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
+
+                double fac1 = 2 * (_nu + nuT_y) * Discretization::laplacian_y(_V, i, j);
+                double fac2 = 2 * ( (_nuT(i,j+1) - _nuT(i,j-1)) / (2*grid.dy()) ) * (_V(i,j) - _V(i,j-1))/grid.dy();
+                double fac3 = (_nu + nuT_x) * (Discretization::laplacian_x(_V, i, j) + Discretization::mixed_derivative(_U, i, j));
+                double fac4 = ( (_nuT(i+1,j) - _nuT(i-1,j)) / (2*grid.dx()) ) *  ((_U(i,j) - _U(i,j-1))/grid.dy() + (_V(i,j) - _V(i-1,j))/grid.dx());
+
+                double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
+
+                _G(i, j) = _V(i, j) +
+                           _dt * (turbulence_diffusion - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+
+            }else{
+                
+                _G(i, j) = _V(i, j) +
+                           _dt * ((_nu) * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+
+            }
+
         }
     }
 //    std::cout << my_rank_global <<" Calculating flux G" << std::endl;
@@ -222,7 +265,7 @@ void Fields::calculate_dt(Grid &grid) {
 
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
-    _dt = _tau * _dt;
+    _dt = _tau * _dt/10.0;
 
     _dt = Communication::reduce_min(_dt);
 }

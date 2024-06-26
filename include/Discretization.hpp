@@ -54,6 +54,39 @@ class Discretization {
      */
     static double laplacian(const Matrix<double> &A, int i, int j);
 
+        /**
+     * @brief Laplacian term discretization using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double laplacian_x(const Matrix<double> &A, int i, int j);
+
+        /**
+     * @brief Laplacian term discretization using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double laplacian_y(const Matrix<double> &A, int i, int j);
+
+    /**
+     * @brief First derivative in x direction using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double mixed_derivative(const Matrix<double> &A, int i, int j);
+
     /**
      * @brief Terms of laplacian needed for SOR, i.e. excluding unknown value at
      * (i,j)

@@ -39,7 +39,7 @@ class Fields {
      * @param[in] grid in which the fluxes are calculated
      *
      */
-    void calculate_fluxes(Grid &grid);
+    void calculate_fluxes(Grid &grid, bool turbulence);
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure
@@ -183,4 +183,6 @@ class Fields {
     /// thermal diffusivity
     double _alpha;
     double _beta;
+
+    double _Cmu{0.09};
 };
