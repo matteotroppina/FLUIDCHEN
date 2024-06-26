@@ -66,10 +66,6 @@ void InnerObstacle::applyVelocity(Fields &field) {
 void InnerObstacle::applyFlux(Fields &field) {}
 void InnerObstacle::applyPressure(Fields &field) {}
 
-// do we have to prescribe something for k and eps?
-// void InnerObstacle::applyK(Fields &field) {}
-// void InnerObstacle::applyEpsilon(Fields &field) {}
-
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
 
@@ -118,26 +114,26 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
             continue;
         }
 
-         // B_E cell
-         if (cell->is_border(border_position::RIGHT)) {
-             field.v(i, j) = -field.v(i + 1, j);
-             field.u(i, j) = 0;
-         }
-         // B_W cell
-         if (cell->is_border(border_position::LEFT)) {
-             field.v(i, j) = -field.v(i - 1, j);
-             field.u(i - 1, j) = 0;
-         }
-         // B_N cell
-         if (cell->is_border(border_position::TOP)) {
-             field.u(i, j) = -field.u(i, j + 1);
-             field.v(i, j) = 0;
-         }
-         // B_S cell
-         if (cell->is_border(border_position::BOTTOM)) {
-             field.u(i, j) = -field.u(i, j - 1);
-             field.v(i, j - 1) = 0;
-         }
+        // B_E cell
+        if (cell->is_border(border_position::RIGHT)) {
+            field.v(i, j) = -field.v(i + 1, j);
+            field.u(i, j) = 0;
+        }
+        // B_W cell
+        if (cell->is_border(border_position::LEFT)) {
+            field.v(i, j) = -field.v(i - 1, j);
+            field.u(i - 1, j) = 0;
+        }
+        // B_N cell
+        if (cell->is_border(border_position::TOP)) {
+            field.u(i, j) = -field.u(i, j + 1);
+            field.v(i, j) = 0;
+        }
+        // B_S cell
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.u(i, j) = -field.u(i, j - 1);
+            field.v(i, j - 1) = 0;
+        }
 
         // forbidden cells with two opposite borders or three boundaries
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::TOP)) {
