@@ -308,7 +308,6 @@ void Fields::calculate_delta_y(Grid &grid) {
             } else {
                 _delta_y(i, j) = 0;
             }
-
         }
     }
 }
@@ -335,7 +334,7 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
-                _nuT(i, j) = dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j);
+                _nuT(i, j) = dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j) + _nu;
 
                 // assert(!isnan(_nuT(i, j)));
                 // assert(!isinf(_nuT(i, j)));
@@ -351,9 +350,11 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
                 double k_j = (_K(i,j) + _K(i,j+1))/2;
                 double eps_i = (_E(i,j) + _E(i+1,j))/2;
                 double eps_j = (_E(i,j) + _E(i,j+1))/2;
+                double dampmu_i = (_dampmu(i,j) + _dampmu(i+1,j))/2;
+                double dampmu_j = (_dampmu(i,j) + _dampmu(i,j+1))/2;
 
-                _nuT_i(i, j) = C0 * (k_i*k_i)/(eps_i);
-                _nuT_j(i, j) = C0 * (k_j*k_j)/(eps_j);
+                _nuT_i(i, j) = dampmu_i * C0 * (k_i*k_i)/(eps_i);
+                _nuT_j(i, j) = dampmu_j * C0 * (k_j*k_j)/(eps_j);
 
                 // assert(!isnan(_nuT_i(i, j)));
                 // assert(!isnan(_nuT_j(i, j)));

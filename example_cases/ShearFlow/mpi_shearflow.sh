@@ -1,3 +1,3 @@
 clear  # clear terminal
 rm -rf ShearFlow_Output/* #remove old output files
-make && mpirun -np 5 ./fluidchen ShearFlow.dat 5 1
+make && mpirun -np 1 ./fluidchen ../example_cases/ShearFlow/ShearFlow.dat 1 1

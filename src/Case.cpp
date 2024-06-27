@@ -348,7 +348,7 @@ void Case::simulate() {
             Communication::communicate(_field.nuT_i_matrix());
             Communication::communicate(_field.nuT_j_matrix());
 
-            output_vtk(timestep, my_rank_global);
+            // output_vtk(timestep, my_rank_global);
         }
 
 
