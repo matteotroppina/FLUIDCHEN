@@ -85,6 +85,9 @@ class Fields {
      */
     void calculate_nuT(Grid &grid, const double &C0);
 
+    void calculate_yplus(Grid &grid);
+    void calculate_delta_y(Grid &grid);
+
     /**
      * @brief damping factors calculation for Low-Reynolds formulation
      *
@@ -129,6 +132,9 @@ class Fields {
 
     /// turbulent viscosity index based access and modify
     double &nuT_j(int i, int j);
+
+    double &yplus(int i, int j);
+    double &delta_y(int i, int j);
 
     /// turbulent reynolds index based access and modify
     double &ReT(int i, int j);
@@ -181,6 +187,9 @@ class Fields {
     /// turbulent viscosity j matrix access and modify
     Matrix<double> &nuT_j_matrix();
 
+    Matrix<double> &yplus_matrix();
+    Matrix<double> &delta_y_matrix();
+
     /// get kinematic viscosity
     double &nu();
 
@@ -211,10 +220,13 @@ class Fields {
     Matrix<double> _nuT_j;
     /// turbulent reynolds
     Matrix<double> _ReT;
-    
+
     Matrix<double> _damp1;
     Matrix<double> _damp2;
     Matrix<double> _dampmu;
+
+    Matrix<double> _yplus;
+    Matrix<double> _delta_y;
 
     /// kinematic viscosity
     double _nu;
