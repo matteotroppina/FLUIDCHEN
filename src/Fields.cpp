@@ -166,7 +166,7 @@ void Fields::printBorders(Grid &grid) {
     
 // }
 
-void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
+void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
 
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
@@ -195,7 +195,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
 
     
             double nu_Tx;
-            if(turbulence){ nu_Tx = Discretization::interpolate(_nuT, i, j, 1, 0); }
+            if(turbulence_started){ nu_Tx = Discretization::interpolate(_nuT, i, j, 1, 0); }
             else{ nu_Tx = _nu; }
  
             _F(i, j) =  _U(i, j) + 
@@ -230,7 +230,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
             // }
 
             double nu_Ty;
-            if(turbulence){ nu_Ty = Discretization::interpolate(_nuT, i, j, 0, 1); }
+            if(turbulence_started){ nu_Ty = Discretization::interpolate(_nuT, i, j, 0, 1); }
             else{ nu_Ty = _nu; }
 
             _G(i, j) =  _V(i, j) +
@@ -313,7 +313,7 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
     }
 }
 
-void Fields::calculate_dt(Grid &grid, bool turbulence) {
+void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
     double dx_2 = grid.dx() * grid.dx();
     double dy_2 = grid.dy() * grid.dy();
 
@@ -331,7 +331,7 @@ void Fields::calculate_dt(Grid &grid, bool turbulence) {
 
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
-    if (turbulence){
+    if (turbulence_started){
         double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
         _dt = std::min(_dt, k_cond);

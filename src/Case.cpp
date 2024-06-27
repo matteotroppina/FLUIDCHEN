@@ -272,10 +272,11 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
+    bool turbulence_started = false;
 
     while (t < _t_end) {
 
-        _field.calculate_dt(_grid, _turbulence);
+        _field.calculate_dt(_grid, turbulence_started);
         dt = _field.dt();
         
         for (auto &b : _boundaries) {
@@ -289,7 +290,7 @@ void Case::simulate() {
         Communication::communicate(_field.t_matrix());
 
 
-        _field.calculate_fluxes(_grid, _turbulence);
+        _field.calculate_fluxes(_grid, turbulence_started);
         Communication::communicate(_field.f_matrix());
         Communication::communicate(_field.g_matrix());
 
@@ -321,6 +322,9 @@ void Case::simulate() {
         Communication::communicate(_field.v_matrix());
 
         if(_turbulence && t > _t_init){
+
+            turbulence_started = true;
+
             _viscosity_solver->solve(_field, _grid);
             _field.calculate_nuT(_grid, _C0);
 
@@ -341,9 +345,9 @@ void Case::simulate() {
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
-        if(_turbulence && timestep % 10 < 1e-1){
-                _field.printMatrix(_grid);
-        }
+        // if(_turbulence && timestep % 10 < 1e-1){
+        //         _field.printMatrix(_grid);
+        // }
         
 
         timestep += 1;

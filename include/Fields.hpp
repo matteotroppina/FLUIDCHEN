@@ -41,7 +41,7 @@ class Fields {
      * @param[in] grid in which the fluxes are calculated
      *
      */
-    void calculate_fluxes(Grid &grid, bool turbulence);
+    void calculate_fluxes(Grid &grid, bool turbulence_started);
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure
@@ -75,8 +75,8 @@ class Fields {
      * @param[in] grid in which the calculations are done
      *
      */
-    void calculate_dt(Grid &grid, bool turbulence);
-    
+    void calculate_dt(Grid &grid, bool turbulence_started);
+
     /**
      * @brief turbulent kinetic energy and dissipation rate calculation
      *
