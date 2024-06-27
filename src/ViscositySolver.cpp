@@ -23,8 +23,8 @@ void K_EPS_model::solve(Fields &field, Grid &grid) {
         
         double e1 = Discretization::convection_KEPS(field.e_matrix(),field.u_matrix(),field.v_matrix(),i,j);
         double e2 = Discretization::laplacian_KEPS(field.k_matrix(), field.nuT_i_matrix(), field.nuT_j_matrix(), nu, _se, i ,j);
-        double e3 = _C1 * (field.E(i, j) * k3) / field.K(i,j);
-        double e4 = _C2 * std::pow(field.E(i, j),2)/field.K(i,j);
+        double e3 = field.damp1(i,j) * _C1 * (field.E(i, j) * k3) / field.K(i,j);
+        double e4 = field.damp2(i,j) * _C2 * std::pow(field.E(i, j),2)/field.K(i,j);
 
         field.K(i, j) = field.K(i, j) + dt * (-k1 + k2 + k3 - k4);
         field.E(i, j) = field.E(i, j) + dt * (-e1 + e2 + e3 - e4);

@@ -325,6 +325,7 @@ void Case::simulate() {
 
             turbulence_started = true;
 
+            _field.calculate_damping(_grid);
             _viscosity_solver->solve(_field, _grid);
             _field.calculate_nuT(_grid, _C0);
 
