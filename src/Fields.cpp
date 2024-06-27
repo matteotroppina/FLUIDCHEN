@@ -23,6 +23,8 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _nuT   = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _nuT_i = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _nuT_j = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _yplus = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _delta_y = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 }
 
 void Fields::printMatrix(Grid &grid) {
@@ -282,6 +284,49 @@ void Fields::calculate_temperature(Grid &grid) {
     }
 }
 
+void Fields::calculate_delta_y(Grid &grid) {
+
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y(); j++){
+            double least_distance = 1e10;
+            if (grid.cell(i,j).type() == cell_type::FLUID){
+                for (int k = 0; k <= grid.size_x()+1; k++) {
+                    for (int l = 0; l <= grid.size_y()+1; l++) {
+                        if ( not (k == i && l == j) and grid.cell(k, l).type() != cell_type::FLUID) { // if it is not fluid aka it is a wall
+                            double distance = std::sqrt((i - k) * (i - k) * grid.dx() + (j - l) * (j - l) * grid.dy());
+                            if (distance < least_distance) {
+                                least_distance = distance;
+                            }
+                        }
+                    }
+                }
+                _delta_y(i, j) = least_distance;
+            } else {
+                _delta_y(i, j) = 0;
+            }
+
+        }
+    }
+}
+
+void Fields::calculate_yplus(Grid &grid) {
+    //skin friction coefficient
+    double C_f = 0.058 * pow(_nu, 0.2);
+
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.size_y(); j++){
+            if (grid.cell(i,j).type() == cell_type::FLUID){
+                // wall shear stress
+                double tau_w = 0.5 * C_f * _U(i,j) * _U(i,j);
+                // friction velocity
+                double u_tau = sqrt(tau_w);
+                // yplus
+                _yplus(i,j) = (u_tau * _delta_y(i,j)) / _nu;
+            }
+        }
+    }
+}
+
 void Fields::calculate_nuT(Grid &grid, const double &C0) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++){
@@ -356,6 +401,8 @@ double &Fields::nuT(int i, int j) {return _nuT(i,j);}
 double &Fields::nuT_i(int i, int j) {return _nuT_i(i,j);}
 double &Fields::nuT_j(int i, int j) {return _nuT_j(i,j);}
 double &Fields::nu(){return _nu;}
+double &Fields::yplus(int i, int j) {return _yplus(i,j);}
+double &Fields::delta_y(int i, int j) {return _delta_y(i,j);}
 
 
 Matrix<double> &Fields::p_matrix() { return _P; }
@@ -370,6 +417,8 @@ Matrix<double> &Fields::e_matrix() { return _E; }
 Matrix<double> &Fields::nuT_matrix() { return _nuT; }
 Matrix<double> &Fields::nuT_i_matrix() { return _nuT_i; }
 Matrix<double> &Fields::nuT_j_matrix() { return _nuT_j; }
+Matrix<double> &Fields::yplus_matrix() { return _yplus; }
+Matrix<double> &Fields::delta_y_matrix() { return _delta_y; }
 
 
 double Fields::dt() const { return _dt; }

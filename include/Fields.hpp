@@ -85,6 +85,9 @@ class Fields {
      */
     void calculate_nuT(Grid &grid, const double &C0);
 
+    void calculate_yplus(Grid &grid);
+    void calculate_delta_y(Grid &grid);
+
     /// x-velocity index based access and modify
     double &u(int i, int j);
 
@@ -121,6 +124,9 @@ class Fields {
 
     /// turbulent viscosity index based access and modify
     double &nuT_j(int i, int j);
+
+    double &yplus(int i, int j);
+    double &delta_y(int i, int j);
 
     /// get timestep size
     double dt() const;
@@ -161,8 +167,12 @@ class Fields {
     /// turbulent viscosity j matrix access and modify
     Matrix<double> &nuT_j_matrix();
 
+    Matrix<double> &yplus_matrix();
+    Matrix<double> &delta_y_matrix();
+
     /// get kinematic viscosity
     double &nu();
+
 
   private:
     /// x-velocity matrix
@@ -189,6 +199,9 @@ class Fields {
     Matrix<double> _nuT_i;
     /// turbulent viscosity matrix j
     Matrix<double> _nuT_j;
+
+    Matrix<double> _yplus;
+    Matrix<double> _delta_y;
 
     /// kinematic viscosity
     double _nu;

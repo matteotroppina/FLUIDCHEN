@@ -152,6 +152,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, EI);
+    _field.calculate_delta_y(_grid); // calculate delta y (distance from nearest wall) for turbulence model once
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -301,6 +302,7 @@ void Case::simulate() {
 
         _field.calculate_rs(_grid);
 
+
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
@@ -325,6 +327,7 @@ void Case::simulate() {
 
             turbulence_started = true;
 
+            _field.calculate_yplus(_grid);
             _viscosity_solver->solve(_field, _grid);
             _field.calculate_nuT(_grid, _C0);
 
@@ -476,8 +479,10 @@ void Case::output_vtk(int timestep, int my_rank) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             double temperature = _field.T(i, j);
+
             Pressure->InsertNextTuple(&pressure);
             Temperature->InsertNextTuple(&temperature);
+
             vel[0] = (_field.u(i - 1, j) + _field.u(i, j)) * 0.5;
             vel[1] = (_field.v(i, j - 1) + _field.v(i, j)) * 0.5;
             Velocity->InsertNextTuple(vel);
@@ -501,6 +506,51 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
     structuredGrid->GetCellData()->AddArray(Temperature);
+
+    // K, Epsilon, NuT, delta_y, yplus
+    if (_turbulence) {
+        vtkSmartPointer<vtkDoubleArray> K = vtkSmartPointer<vtkDoubleArray>::New();
+        K->SetName("k");
+        K->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Epsilon = vtkSmartPointer<vtkDoubleArray>::New();
+        Epsilon->SetName("epsilon");
+        Epsilon->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> NuT = vtkSmartPointer<vtkDoubleArray>::New();
+        NuT->SetName("nuT");
+        NuT->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> DeltaY = vtkSmartPointer<vtkDoubleArray>::New();
+        DeltaY->SetName("delta_y");
+        DeltaY->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Yplus = vtkSmartPointer<vtkDoubleArray>::New();
+        Yplus->SetName("yplus");
+        Yplus->SetNumberOfComponents(1);
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double k = _field.K(i, j);
+                double epsilon = _field.E(i, j);
+                double nuT = _field.nuT(i, j);
+                double delta_y = _field.delta_y(i, j);
+                double yplus = _field.yplus(i, j);
+
+                K->InsertNextTuple(&k);
+                Epsilon->InsertNextTuple(&epsilon);
+                NuT->InsertNextTuple(&nuT);
+                DeltaY->InsertNextTuple(&delta_y);
+                Yplus->InsertNextTuple(&yplus);
+                }
+            }
+
+        structuredGrid->GetCellData()->AddArray(K);
+        structuredGrid->GetCellData()->AddArray(Epsilon);
+        structuredGrid->GetCellData()->AddArray(NuT);
+        structuredGrid->GetCellData()->AddArray(DeltaY);
+        structuredGrid->GetCellData()->AddArray(Yplus);
+    }
 
     // Add Velocity to Structured Grid
     structuredGrid->GetCellData()->AddArray(Velocity);
