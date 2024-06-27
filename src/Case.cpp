@@ -341,9 +341,9 @@ void Case::simulate() {
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
-        // if(_turbulence && timestep % 10 < 1e-1){
-        //         _field.printMatrix(_grid);
-        // }
+        if(_turbulence && timestep % 10 < 1e-1){
+                _field.printMatrix(_grid);
+        }
         
 
         timestep += 1;

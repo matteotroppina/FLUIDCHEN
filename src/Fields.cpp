@@ -28,7 +28,7 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
 void Fields::printMatrix(Grid &grid) {
     
     std::cout << std::fixed;
-    std::cout << std::setprecision(5); // digits after decimal point
+    std::cout << std::setprecision(7); // digits after decimal point
 
     std::cout << "K matrix" << std::endl;
     for (auto j = grid.size_y() + 1; j >= 0; j--) {
@@ -143,6 +143,28 @@ void Fields::printBorders(Grid &grid) {
 
     
 }
+
+// void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
+
+//     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
+//         for (int j = 1; j <= grid.size_y(); j++) {
+
+//             // if(turbulence){
+
+//             //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
+//             //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
+
+//             //     double fac1 = 2 * (_nu + nuT_i(i,j)) * Discretization::laplacian_x(_U, i, j);
+//             //     double fac2 = 2 * ( (nuT_i(i+1,j) - nuT_i(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
+//             //     double fac3 = (_nu + nuT_j(i,j)) * (Discretization::laplacian_y(_U, i, j) + Discretization::mixed_derivative(_V, i, j));
+//             //     double fac4 = ( (nuT_j(i,j+1) - nuT_j(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j+1) - _U(i,j-1))/(2*grid.dy()) + (_V(i+1,j) - _V(i-1,j))/(2*grid.dx()));
+
+//             //     double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
+
+
+
+    
+// }
 
 void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
 
