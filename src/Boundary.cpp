@@ -386,6 +386,7 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
 
     double d_pipe = 2.0; //TO DO: get pipe diameter (length y, physical)
     double l = 0.07 * d_pipe;
+    double I = 0.1;
 
     for (auto cell : _cells) {
 
@@ -396,7 +397,6 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
             double u = (field.u(i, j - 1) + field.u(i, j)) / 2;
             double v = field.v(i, j - 1);
             double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
-            double I = 0.16 * std::pow(d_pipe * mean_uv/field.nu(),-1/8);
             double k_boundary = 3/2 * std::pow(mean_uv*I,2);
             double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
@@ -408,7 +408,6 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
             double u = (field.u(i, j) + field.u(i, j + 1)) / 2;
             double v = field.v(i, j);
             double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
-            double I = 0.16 * std::pow(d_pipe * mean_uv/field.nu(),-1/8);
             double k_boundary = 3/2 * std::pow(mean_uv*I,2);
             double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
@@ -421,7 +420,6 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
             double u = field.u(i, j); // = _inflow_u_velocity[GeometryIDs::fixed_velocity]
             double v = (field.v(i, j) + field.v(i + 1, j)) / 2;
             double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
-            double I = 0.16 * std::pow(d_pipe * mean_uv/field.nu(),-1/8);
             double k_boundary = 3/2 * std::pow(mean_uv*I,2);
             double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
@@ -433,7 +431,6 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
             double u = field.u(i - 1, j);
             double v = (field.v(i, j) + field.v(i - 1, j)) / 2;
             double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
-            double I = 0.16 * std::pow(d_pipe * mean_uv/field.nu(),-1/8);
             double k_boundary = 3/2 * std::pow(mean_uv*I,2);
             double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
