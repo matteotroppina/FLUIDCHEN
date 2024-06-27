@@ -421,6 +421,10 @@ double &Fields::nuT_j(int i, int j) {return _nuT_j(i,j);}
 double &Fields::nu(){return _nu;}
 double &Fields::yplus(int i, int j) {return _yplus(i,j);}
 double &Fields::delta_y(int i, int j) {return _delta_y(i,j);}
+double &Fields::ReT(int i, int j) {return _ReT(i,j);}
+double &Fields::damp1(int i, int j) {return _damp1(i,j);}
+double &Fields::damp2(int i, int j) {return _damp2(i,j);}
+double &Fields::dampmu(int i, int j) {return _dampmu(i,j);}
 
 
 Matrix<double> &Fields::p_matrix() { return _P; }
