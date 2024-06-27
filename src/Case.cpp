@@ -316,6 +316,12 @@ void Case::simulate() {
             residual = Communication::reduce_sum(residual);
         }
 
+        double max_p = _field.p_matrix().max_abs_value();
+        if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+            std::cerr << "Divergence detected" << std::endl;
+            return;
+        }
+
         iter_vec.push_back(iter);
 
         _field.calculate_velocities(_grid);
@@ -342,15 +348,16 @@ void Case::simulate() {
             Communication::communicate(_field.nuT_i_matrix());
             Communication::communicate(_field.nuT_j_matrix());
 
+            output_vtk(timestep, my_rank_global);
         }
 
 
 
         //TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
-        if(_turbulence && timestep % 10 < 1e-1){
-                _field.printMatrix(_grid);
-        }
+//        if(_turbulence && timestep % 10 < 1e-1){
+//                _field.printMatrix(_grid);
+//        }
         
 
         timestep += 1;
@@ -364,7 +371,7 @@ void Case::simulate() {
              double max_p = _field.p_matrix().max_abs_value();
              if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
                  std::cerr << "Divergence detected" << std::endl;
-                 break;
+                 return;
              }
 
             output_vtk(timestep, my_rank_global);
