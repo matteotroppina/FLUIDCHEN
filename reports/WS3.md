@@ -11,36 +11,36 @@ Run different cases:
 
 - **Lid-driven cavity**
   ```shell
-  ../mpi_liddriven.sh
+  ../example_cases/LidDrivenCavity/mpi_liddriven.sh
   ```
 - **Fluid Trap**
   ```shell
-  ../mpi_fluidtrap.sh
+  ../example_cases/FluidTrap/mpi_fluidtrap.sh
   ```
   **Plane Shear Flow**
   ```shell
-  ../mpi_shearflow.sh
+  ../example_cases/ShearFlow/mpi_shearflow.sh
   ```
 - **Karman Vortex Street**
   ```shell
-  ../mpi_obstacle.sh
+  ../example_cases/ChannelWithObstacle/mpi_obstacle.sh
   ```
 - **Flow over a step**
   ```shell
-  ../mpi_BFS.sh
+  ../example_cases/ChannelWithBFS/mpi_BFS.sh
   ```
 - **Natural Convection**
   - Case (a) - high $\nu$
     ```shell
-    ../mpi_convectionA.sh
+    ../example_cases/NaturalConvection/mpi_convectionA.sh
     ```
   - Case (b) - low $\nu$
     ```shell
-    ../mpi_convectionB.sh
+    ../example_cases/NaturalConvection/mpi_convectionB.sh
     ```
 - **Rayleigh Benard Convection**
   ```shell
-  ../mpi_rayleighBenard.sh
+  ../example_cases/RayleighBenard/mpi_rayleighBenard.sh
   ```
   If you encounter permission issues when running the `.sh` files, run the following command:
 
@@ -105,7 +105,7 @@ For the strong scaling analysis, we used the Rayleigh-Bénard case. The analysis
 | **(4,2)**            | 8          | 50s         | 2.28         | 0.57            |
 | **(4,3)**            | 12         | 34s         | 3.35         | 0.56            |
 
-![Analytical Solution](imgs/strong_scaling.png)
+![Analytical Solution](../imgs/strong_scaling.png)
 
 #### Maximum Speedup and Efficiency
 
@@ -128,7 +128,7 @@ For the strong scaling analysis, we used the Lid-driven cavity case and the foll
 | **(2,2)**            | 160         | 4          | 380s        | 0.005        | 0.00125         |
 | **(3,2)**            | 240         | 8          | 1590s       | 0.00126      | 0.0001575       |
 
-![Analytical Solution](imgs/weak_scaling.png)
+![Analytical Solution](../imgs/weak_scaling.png)
 
 #### Considerations
 
