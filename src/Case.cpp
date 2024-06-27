@@ -334,6 +334,7 @@ void Case::simulate() {
 
             _field.calculate_yplus(_grid);
             _field.calculate_damping(_grid);
+
             _viscosity_solver->solve(_field, _grid);
             _field.calculate_nuT(_grid, _C0);
 
@@ -347,6 +348,12 @@ void Case::simulate() {
             Communication::communicate(_field.nuT_matrix());
             Communication::communicate(_field.nuT_i_matrix());
             Communication::communicate(_field.nuT_j_matrix());
+            Communication::communicate(_field.yplus_matrix());
+            Communication::communicate(_field.delta_y_matrix());
+            Communication::communicate(_field.ReT_matrix());
+            Communication::communicate(_field.damp1_matrix());
+            Communication::communicate(_field.damp2_matrix());
+            Communication::communicate(_field.dampmu_matrix());
 
             // output_vtk(timestep, my_rank_global);
         }

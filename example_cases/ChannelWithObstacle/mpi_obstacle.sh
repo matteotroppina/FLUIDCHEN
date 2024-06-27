@@ -1,3 +1,3 @@
 clear # clear terminal
-rm -rf ChannelWithObstacle_Output/* #remove old output files
-make && mpirun -np 5 ./fluidchen ChannelWithObstacle.dat 5 1
+rm ../example_cases/ChannelWithObstacle/ChannelWithObstacle_Output/* #remove old output files
+make && mpirun -np 5 ./fluidchen ../example_cases/ChannelWithObstacle/ChannelWithObstacle.dat 5 1

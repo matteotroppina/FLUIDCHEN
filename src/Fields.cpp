@@ -177,7 +177,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
 
-            // if(turbulence){
+            // if(turbulence_started){
 
             //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
             //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
@@ -202,10 +202,10 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
     
             double nu_Tx;
             if(turbulence_started){ nu_Tx = Discretization::interpolate(_nuT, i, j, 1, 0); }
-            else{ nu_Tx = _nu; }
+            else{ nu_Tx = 0.0; }
  
             _F(i, j) =  _U(i, j) + 
-                        _dt * (nu_Tx * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)); // - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+                        _dt * ((_nu + nu_Tx) * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)); // - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
 //    std::cout << my_rank_global << "Calculating flux F" << std::endl;
@@ -213,7 +213,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
 
-            // if(turbulence){
+            // if(turbulence_started){
 
             //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
             //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
@@ -237,10 +237,10 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
 
             double nu_Ty;
             if(turbulence_started){ nu_Ty = Discretization::interpolate(_nuT, i, j, 0, 1); }
-            else{ nu_Ty = _nu; }
+            else{ nu_Ty = 0.0; }
 
             _G(i, j) =  _V(i, j) +
-                        _dt * (nu_Ty* (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)); //- _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+                        _dt * ((_nu + nu_Ty)* (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)); //- _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
 
         
 
@@ -306,7 +306,7 @@ void Fields::calculate_delta_y(Grid &grid) {
                 }
                 _delta_y(i, j) = least_distance;
             } else {
-                _delta_y(i, j) = 0;
+                _delta_y(i, j) = 0.0;
             }
         }
     }
@@ -334,11 +334,11 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
-                _nuT(i, j) = dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j) + _nu;
+                _nuT(i, j) = _dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j);
 
-                // assert(!isnan(_nuT(i, j)));
-                // assert(!isinf(_nuT(i, j)));
-                // assert(_nuT(i, j) > 0);
+                assert(!isnan(_nuT(i, j)));
+                assert(!isinf(_nuT(i, j)));
+                assert(_nuT(i, j) > 0);
             }
         }
     }
@@ -346,18 +346,18 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
-                double k_i = (_K(i,j) + _K(i+1,j))/2;
-                double k_j = (_K(i,j) + _K(i,j+1))/2;
-                double eps_i = (_E(i,j) + _E(i+1,j))/2;
-                double eps_j = (_E(i,j) + _E(i,j+1))/2;
+                double k_i = (_K(i,j) + _K(i+1,j))/2.0;
+                double k_j = (_K(i,j) + _K(i,j+1))/2.0;
+                double eps_i = (_E(i,j) + _E(i+1,j))/2.0;
+                double eps_j = (_E(i,j) + _E(i,j+1))/2.0;
                 double dampmu_i = (_dampmu(i,j) + _dampmu(i+1,j))/2;
                 double dampmu_j = (_dampmu(i,j) + _dampmu(i,j+1))/2;
 
                 _nuT_i(i, j) = dampmu_i * C0 * (k_i*k_i)/(eps_i);
                 _nuT_j(i, j) = dampmu_j * C0 * (k_j*k_j)/(eps_j);
 
-                // assert(!isnan(_nuT_i(i, j)));
-                // assert(!isnan(_nuT_j(i, j)));
+                assert(!isnan(_nuT_i(i, j)));
+                assert(!isnan(_nuT_j(i, j)));
             }
         }
     }
@@ -442,6 +442,11 @@ Matrix<double> &Fields::nuT_i_matrix() { return _nuT_i; }
 Matrix<double> &Fields::nuT_j_matrix() { return _nuT_j; }
 Matrix<double> &Fields::yplus_matrix() { return _yplus; }
 Matrix<double> &Fields::delta_y_matrix() { return _delta_y; }
+Matrix<double> &Fields::ReT_matrix() { return _ReT; }
+Matrix<double> &Fields::damp1_matrix() { return _damp1; }
+Matrix<double> &Fields::damp2_matrix() { return _damp2; }
+Matrix<double> &Fields::dampmu_matrix() { return _dampmu; }
+
 
 
 double Fields::dt() const { return _dt; }

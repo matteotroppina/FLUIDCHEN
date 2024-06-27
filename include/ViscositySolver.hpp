@@ -5,6 +5,8 @@
 #include "Boundary.hpp"
 #include "Fields.hpp"
 #include "Grid.hpp"
+#include <assert.h>
+#include <math.h>
 
 
 class ViscositySolver {

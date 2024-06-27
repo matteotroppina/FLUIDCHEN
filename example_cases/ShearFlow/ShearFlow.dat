@@ -71,5 +71,5 @@ VIN         0.0
 
 turbulence   1           // 0 OFF - 1 ON
 t_init       2
-KI           0.003
-EI           0.5
+KI           0.015
+EI           0.00015

@@ -93,9 +93,9 @@ double Discretization::strain_rate(const Matrix<double> &U, const Matrix<double>
     double S_yy = std::pow((V(i,j) - V(i,j-1))/std::pow(_dy,2),2);
     double su = (U(i, j + 1) + U(i - 1, j + 1) - U(i, j - 1) - U(i - 1, j - 1)) * (0.25 / _dy);
     double sv = (V(i + 1, j) + V(i + 1, j - 1) - V(i - 1, j) - V(i - 1, j - 1)) * (0.25 / _dx);
-    double Sxy = std::pow((su+sv), 2);
+    double S_xy = std::pow((su+sv), 2);
 
-    return (2 * S_xx + Sxy + 2 * S_yy);
+    return (2 * S_xx + S_xy + 2 * S_yy);
 }
 
 double Discretization::laplacian_x(const Matrix<double> &A, int i, int j) {

@@ -188,7 +188,16 @@ class Fields {
     Matrix<double> &nuT_j_matrix();
 
     Matrix<double> &yplus_matrix();
+
     Matrix<double> &delta_y_matrix();
+
+    Matrix<double> &ReT_matrix();
+
+    Matrix<double> &damp1_matrix();
+
+    Matrix<double> &damp2_matrix();
+
+    Matrix<double> &dampmu_matrix();
 
     /// get kinematic viscosity
     double &nu();
