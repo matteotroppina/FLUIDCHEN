@@ -6,7 +6,7 @@
 #include "Fields.hpp"
 
 Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double EI)
-    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
+    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY), _size_y (size_y){
     _U  = Matrix<double>(size_x + 2, size_y + 2, UI);
     _V  = Matrix<double>(size_x + 2, size_y + 2, VI);
     _P  = Matrix<double>(size_x + 2, size_y + 2, PI);
@@ -356,6 +356,7 @@ double &Fields::nuT(int i, int j) {return _nuT(i,j);}
 double &Fields::nuT_i(int i, int j) {return _nuT_i(i,j);}
 double &Fields::nuT_j(int i, int j) {return _nuT_j(i,j);}
 double &Fields::nu(){return _nu;}
+double &Fields::size_y(){return _size_y;}
 
 
 Matrix<double> &Fields::p_matrix() { return _P; }
