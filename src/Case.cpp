@@ -361,11 +361,11 @@ void Case::simulate() {
 
             output_counter = 0;
 
-            // double max_p = _field.p_matrix().max_abs_value();
-            // if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
-            //     std::cerr << "Divergence detected" << std::endl;
-            //     break;
-            // }
+             double max_p = _field.p_matrix().max_abs_value();
+             if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+                 std::cerr << "Divergence detected" << std::endl;
+                 break;
+             }
 
             output_vtk(timestep, my_rank_global);
             if (my_rank_global == 0) {
