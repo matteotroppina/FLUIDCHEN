@@ -315,87 +315,6 @@ void FixedWallBoundary::applyTemperature(Fields &field) {
     }
 }
 
-// do we have to prescribe something for k and eps?
-// void FixedWallBoundary::applyK(Fields &field) {}
-//     for (auto cell : _cells) {
-//         int i = cell->i();
-//         int j = cell->j();
-
-//         if (cell->is_border(border_position::RIGHT)) {
-//             field.K(i, j) = field.K(i + 1, j); // i = 0
-//         }
-
-//         if (cell->is_border(border_position::LEFT)) {
-//             field.K(i, j) = field.K(i - 1, j); // i = imax + 1
-//         }
-
-//         if (cell->is_border(border_position::TOP)) {
-//             field.K(i, j) = field.K(i, j + 1); // j = 0
-//         }
-
-//         if (cell->is_border(border_position::BOTTOM)) {
-//             field.K(i, j) = field.K(i, j - 1); // j = jmax + 1
-//         }
-
-//         // B_NW cell
-//         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
-//             field.K(i, j) = (field.K(i, j + 1) + field.K(i - 1, j)) / 2;
-//         }
-//         // B_SE cell
-//         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
-//             field.K(i, j) = (field.K(i + 1, j) + field.K(i, j - 1)) / 2;
-//         }
-//         // B_SW cell
-//         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-//             field.K(i, j) = (field.K(i - 1, j) + field.K(i, j - 1)) / 2;
-//         }
-//         // B_NE cell
-//         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
-//             field.K(i, j) = (field.K(i, j + 1) + field.K(i + 1, j)) / 2;
-//         }
-//     }
-// }
-
-// void FixedWallBoundary::applyEpsilon(Fields &field) {}
-//     for (auto cell : _cells) {
-//         int i = cell->i();
-//         int j = cell->j();
-
-//         if (cell->is_border(border_position::RIGHT)) {
-//             field.E(i, j) = field.E(i + 1, j); // i = 0
-//         }
-
-//         if (cell->is_border(border_position::LEFT)) {
-//             field.E(i, j) = field.E(i - 1, j); // i = imax + 1
-//         }
-
-//         if (cell->is_border(border_position::TOP)) {
-//             field.E(i, j) = field.E(i, j + 1); // j = 0
-//         }
-
-//         if (cell->is_border(border_position::BOTTOM)) {
-//             field.E(i, j) = field.E(i, j - 1); // j = jmax + 1
-//         }
-
-//         // B_NW cell
-//         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
-//             field.E(i, j) = (field.E(i, j + 1) + field.E(i - 1, j)) / 2;
-//         }
-//         // B_SE cell
-//         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
-//             field.E(i, j) = (field.E(i + 1, j) + field.E(i, j - 1)) / 2;
-//         }
-//         // B_SW cell
-//         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-//             field.E(i, j) = (field.E(i - 1, j) + field.E(i, j - 1)) / 2;
-//         }
-//         // B_NE cell
-//         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
-//             field.E(i, j) = (field.E(i, j + 1) + field.E(i + 1, j)) / 2;
-//         }
-//     }
-// }
-
 
 // INFLOW
 FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
@@ -465,7 +384,9 @@ void FixedVelocityBoundary::applyPressure(Fields &field) {
 // do we have to prescribe something for k and eps?
 void FixedVelocityBoundary::applyTurbulence(Fields &field) {
 
-    double c_bc = 0.01; // c_bc [0.003, 0.01]
+    double d_pipe = 2.0; //TO DO: get pipe diameter (length y, physical)
+    double l = 0.07 * d_pipe;
+    double I = 0.1;
 
     for (auto cell : _cells) {
 
@@ -475,9 +396,9 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
         if (cell->is_border(border_position::BOTTOM)) {
             double u = (field.u(i, j - 1) + field.u(i, j)) / 2;
             double v = field.v(i, j - 1);
-
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
-            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+            double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
+            double k_boundary = 3/2 * std::pow(mean_uv*I,2);
+            double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
             field.K(i, j) = 2*k_boundary - field.K(i, j - 1);
             field.E(i, j) = 2*eps_boundary - field.E(i, j-1);
@@ -486,9 +407,9 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
         if (cell->is_border(border_position::TOP)) {
             double u = (field.u(i, j) + field.u(i, j + 1)) / 2;
             double v = field.v(i, j);
-
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
-            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+            double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
+            double k_boundary = 3/2 * std::pow(mean_uv*I,2);
+            double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
             field.K(i, j) = 2*k_boundary - field.K(i, j + 1);
             field.E(i, j) = 2*eps_boundary - field.E(i, j+1);
@@ -496,11 +417,11 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            double u = field.u(i, j);
+            double u = field.u(i, j); // = _inflow_u_velocity[GeometryIDs::fixed_velocity]
             double v = (field.v(i, j) + field.v(i + 1, j)) / 2;
-
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
-            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+            double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
+            double k_boundary = 3/2 * std::pow(mean_uv*I,2);
+            double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
             field.K(i, j) = 2*k_boundary - field.K(i + 1, j);
             field.E(i, j) = 2*eps_boundary - field.E(i + 1, j);
@@ -509,18 +430,15 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
         if (cell->is_border(border_position::LEFT)) {
             double u = field.u(i - 1, j);
             double v = (field.v(i, j) + field.v(i - 1, j)) / 2;
-
-            double k_boundary = c_bc * std::pow(std::sqrt(std::pow(u, 2) + std::pow(v, 2)), 2);
-            double eps_boundary = C0 * std::pow(k_boundary, 1.5) / l0; 
+            double mean_uv = std::sqrt(std::pow(u,2) + std::pow(v,2));
+            double k_boundary = 3/2 * std::pow(mean_uv*I,2);
+            double eps_boundary = std::pow(C0,0.75) * std::pow(k_boundary, 1.5) / l; 
 
             field.K(i, j) = 2*k_boundary - field.K(i - 1, j);
             field.E(i, j) = 2*eps_boundary - field.E(i - 1, j);
-             
         }
     }
 }
-
-//void FixedVelocityBoundary::applyEpsilon(Fields &field) {}
 
 //OUTFLOW
 ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -621,7 +539,6 @@ void ZeroGradientBoundary::applyTurbulence(Fields &field) {
         }
     }
 }
-//void ZeroGradientBoundary::applyEpsilon(Fields &field) {}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : Boundary(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
@@ -681,6 +598,3 @@ void MovingWallBoundary::applyPressure(Fields &field) {
         }
     }
 }
-
-// void MovingWallBoundary::applyK(Fields &field) {}
-// void MovingWallBoundary::applyEpsilon(Fields &field) {}

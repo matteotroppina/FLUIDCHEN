@@ -193,6 +193,9 @@ class Fields {
     /// get kinematic viscosity
     double &nu();
 
+    /// get diameter for pipe case
+    double &size_y();
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;
@@ -237,6 +240,7 @@ class Fields {
     /// thermal diffusivity
     double _alpha;
     double _beta;
+    double _size_y;
 
     /// gravitional acceleration in x direction
     double _gx{0.0};
