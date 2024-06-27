@@ -7,10 +7,8 @@
 // Default constructor
 // K_EPS_model::K_EPS_model() {}
 
-void K_EPS_model::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+void K_EPS_model::solve(Fields &field, Grid &grid) {
     
-    double dx = grid.dx();
-    double dy = grid.dy();
     double dt = field.dt();
     double nu = field.nu();
 
@@ -25,7 +23,7 @@ void K_EPS_model::solve(Fields &field, Grid &grid, const std::vector<std::unique
         
         double e1 = Discretization::convection_KEPS(field.e_matrix(),field.u_matrix(),field.v_matrix(),i,j);
         double e2 = Discretization::laplacian_KEPS(field.k_matrix(), field.nuT_i_matrix(), field.nuT_j_matrix(), nu, _se, i ,j);
-        double e3 = _C1 * (field.E(i, j) / field.K(i,j)) * k3;
+        double e3 = _C1 * (field.E(i, j) * k3) / field.K(i,j);
         double e4 = _C2 * std::pow(field.E(i, j),2)/field.K(i,j);
 
         field.K(i, j) = field.K(i, j) + dt * (-k1 + k2 + k3 - k4);

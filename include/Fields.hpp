@@ -27,7 +27,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double K0, double E0);
+    Fields(double _nu, double _dt, double _tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double EI);
 
     void printMatrix(Grid &grid);
     void printCellTypes(Grid &grid);
@@ -192,10 +192,6 @@ class Fields {
 
     /// kinematic viscosity
     double _nu;
-    /// gravitional acceleration in x direction
-    double _gx{0.0};
-    /// gravitional acceleration in y direction
-    double _gy{0.0};
     /// timestep size
     double _dt;
     /// adaptive timestep coefficient
@@ -203,6 +199,11 @@ class Fields {
     /// thermal diffusivity
     double _alpha;
     double _beta;
+
+    /// gravitional acceleration in x direction
+    double _gx{0.0};
+    /// gravitional acceleration in y direction
+    double _gy{0.0};
 
     double _Cmu{0.09};
 };

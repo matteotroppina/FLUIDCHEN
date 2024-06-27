@@ -47,9 +47,12 @@ void Boundary::applyFlux(Fields &field) {
         }
     }
 }
-void Boundary::applyTemperature(Fields &field) {}
-void Boundary::applyK(Fields &field) {}
-void Boundary::applyEpsilon(Fields &field) {}
+
+void Boundary::applyVelocity(Fields &field){ (void)field; }
+void Boundary::applyPressure(Fields &field){ (void)field; }
+void Boundary::applyTemperature(Fields &field) { (void)field; }
+// void Boundary::applyK(Fields &field) {}
+// void Boundary::applyEpsilon(Fields &field) {}
 
 void Boundary::applyTurbulence(Fields &field) {
     for (auto cell : _cells) {
@@ -132,8 +135,8 @@ void InnerObstacle::applyVelocity(Fields &field) {
     }
 } // do nothing
 
-void InnerObstacle::applyFlux(Fields &field) {}
-void InnerObstacle::applyPressure(Fields &field) {}
+// void InnerObstacle::applyFlux(Fields &field) {}
+// void InnerObstacle::applyPressure(Fields &field) {}
 
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : Boundary(cells) {}
@@ -225,6 +228,46 @@ void FixedWallBoundary::applyVelocity(Fields &field) {
     }
 }
 
+void FixedWallBoundary::applyPressure(Fields &field) {
+    for (auto cell : _cells) {
+        int i = cell->i();
+        int j = cell->j();
+
+        if (cell->is_border(border_position::RIGHT)) {
+            field.p(i, j) = field.p(i + 1, j); // i = 0
+        }
+
+        if (cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = field.p(i - 1, j); // i = imax + 1
+        }
+
+        if (cell->is_border(border_position::TOP)) {
+            field.p(i, j) = field.p(i, j + 1); // j = 0
+        }
+
+        if (cell->is_border(border_position::BOTTOM)) {
+            field.p(i, j) = field.p(i, j - 1); // j = jmax + 1
+        }
+
+        // B_NW cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = (field.p(i, j + 1) + field.p(i - 1, j)) / 2;
+        }
+        // B_SE cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
+            field.p(i, j) = (field.p(i + 1, j) + field.p(i, j - 1)) / 2;
+        }
+        // B_SW cell
+        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
+            field.p(i, j) = (field.p(i - 1, j) + field.p(i, j - 1)) / 2;
+        }
+        // B_NE cell
+        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
+            field.p(i, j) = (field.p(i, j + 1) + field.p(i + 1, j)) / 2;
+        }
+    }
+}
+
 void FixedWallBoundary::applyTemperature(Fields &field) {
 
     if (_wall_temperature == -1) { // Neumann
@@ -272,48 +315,8 @@ void FixedWallBoundary::applyTemperature(Fields &field) {
     }
 }
 
-void FixedWallBoundary::applyPressure(Fields &field) {
-    for (auto cell : _cells) {
-        int i = cell->i();
-        int j = cell->j();
-
-        if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = field.p(i + 1, j); // i = 0
-        }
-
-        if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = field.p(i - 1, j); // i = imax + 1
-        }
-
-        if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = field.p(i, j + 1); // j = 0
-        }
-
-        if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = field.p(i, j - 1); // j = jmax + 1
-        }
-
-        // B_NW cell
-        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = (field.p(i, j + 1) + field.p(i - 1, j)) / 2;
-        }
-        // B_SE cell
-        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = (field.p(i + 1, j) + field.p(i, j - 1)) / 2;
-        }
-        // B_SW cell
-        if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = (field.p(i - 1, j) + field.p(i, j - 1)) / 2;
-        }
-        // B_NE cell
-        if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = (field.p(i, j + 1) + field.p(i + 1, j)) / 2;
-        }
-    }
-}
-
 // do we have to prescribe something for k and eps?
-void FixedWallBoundary::applyK(Fields &field) {}
+// void FixedWallBoundary::applyK(Fields &field) {}
 //     for (auto cell : _cells) {
 //         int i = cell->i();
 //         int j = cell->j();
@@ -353,7 +356,7 @@ void FixedWallBoundary::applyK(Fields &field) {}
 //     }
 // }
 
-void FixedWallBoundary::applyEpsilon(Fields &field) {}
+// void FixedWallBoundary::applyEpsilon(Fields &field) {}
 //     for (auto cell : _cells) {
 //         int i = cell->i();
 //         int j = cell->j();
@@ -460,7 +463,7 @@ void FixedVelocityBoundary::applyPressure(Fields &field) {
 }
 
 // do we have to prescribe something for k and eps?
-void FixedVelocityBoundary::applyK(Fields &field) {
+void FixedVelocityBoundary::applyTurbulence(Fields &field) {
 
     double c_bc = 0.01; // c_bc [0.003, 0.01]
 
@@ -592,7 +595,7 @@ void ZeroGradientBoundary::applyPressure(Fields &field) {
     grad(eps) = 0
     do we have to change the boundaries conditions for velocity   n*[grad(u) + grad(u)^T] = 0
 */
-void ZeroGradientBoundary::applyK(Fields &field) {
+void ZeroGradientBoundary::applyTurbulence(Fields &field) {
         for (auto cell : _cells) {
         int i = cell->i();
         int j = cell->j();

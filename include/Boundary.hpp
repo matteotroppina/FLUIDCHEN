@@ -19,14 +19,14 @@ class Boundary {
      *
      * @param[in] Field to be applied
      */
-    virtual void applyVelocity(Fields &field) = 0;
+    virtual void applyVelocity(Fields &field);
 
     /**
      * @brief Method to patch the pressure boundary conditions to the given field.
      *
      * @param[in] Field to be applied
      */
-    virtual void applyPressure(Fields &field) = 0;
+    virtual void applyPressure(Fields &field);
 
     /**
      * @brief Method to patch the flux (F & G) boundary conditions to the given field.
@@ -35,21 +35,26 @@ class Boundary {
      */
     virtual void applyFlux(Fields &field);
 
+    /**
+     * @brief Method to patch the temperature boundary conditions to the given field.
+     *
+     * @param[in] Field to be applied
+     */
     virtual void applyTemperature(Fields &field);
 
-    /**
-     * @brief Method to patch the K boundary conditions to the given field (K-epsilon turbulence model).
-     *
-     * @param[in] Field to be applied
-     */
-    virtual void applyK(Fields &field);
+    // /**
+    //  * @brief Method to patch the K boundary conditions to the given field (K-epsilon turbulence model).
+    //  *
+    //  * @param[in] Field to be applied
+    //  */
+    // virtual void applyK(Fields &field);
 
-    /**
-     * @brief Method to patch the Epsilon boundary conditions to the given field (K-eosilon turbulence model).
-     *
-     * @param[in] Field to be applied
-     */
-    virtual void applyEpsilon(Fields &field);
+    // /**
+    //  * @brief Method to patch the Epsilon boundary conditions to the given field (K-eosilon turbulence model).
+    //  *
+    //  * @param[in] Field to be applied
+    //  */
+    // virtual void applyEpsilon(Fields &field);
 
     /**
      * @brief Method to patch the NuT boundary conditions to the given field (K-eosilon turbulence model).
@@ -80,10 +85,10 @@ class FixedWallBoundary : public Boundary {
     virtual ~FixedWallBoundary() = default;
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
-    void applyTemperature(Fields &field);
+    virtual void applyTemperature(Fields &field);
 
-    void applyK(Fields &field);
-    void applyEpsilon(Fields &field);
+    // void applyK(Fields &field);
+    // void applyEpsilon(Fields &field);
 
   private:
         double _wall_temperature;
@@ -94,9 +99,9 @@ class InnerObstacle : public Boundary {
   public:
     InnerObstacle(std::vector<Cell *> cells);
     virtual ~InnerObstacle() = default;
-    virtual void applyVelocity(Fields &field); // do nothing
-    virtual void applyPressure(Fields &field); // do nothing
-    virtual void applyFlux(Fields &field); // do nothing
+    virtual void applyVelocity(Fields &field);
+    // virtual void applyPressure(Fields &field); // do nothing
+    // virtual void applyFlux(Fields &field); // do nothing
 
     // virtual void applyK(Fields &field);
     // virtual void applyEpsilon(Fields &field);
@@ -133,8 +138,9 @@ class FixedVelocityBoundary : public Boundary {
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
-    virtual void applyK(Fields &field);
+    // virtual void applyK(Fields &field);
     // virtual void applyEpsilon(Fields &field);
+    virtual void applyTurbulence(Fields &field);
 
   private:
     std::map<int, double> _inflow_u_velocity;
@@ -150,8 +156,9 @@ class ZeroGradientBoundary : public Boundary {
     virtual void applyVelocity(Fields &field);
     virtual void applyPressure(Fields &field);
 
-    virtual void applyK(Fields &field);
+    // virtual void applyK(Fields &field);
     // virtual void applyEpsilon(Fields &field);
+    virtual void applyTurbulence(Fields &field);
 
   private:
     std::map<int, double> _wall_temperature;

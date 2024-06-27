@@ -5,22 +5,22 @@
 #include "Communication.hpp"
 #include "Fields.hpp"
 
-Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double K0, double E0)
+Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double EI)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
-    _U = Matrix<double>(size_x + 2, size_y + 2, UI);
-    _V = Matrix<double>(size_x + 2, size_y + 2, VI);
-    _P = Matrix<double>(size_x + 2, size_y + 2, PI);
-    _T = Matrix<double>(size_x + 2, size_y + 2, TI);
-    _F = Matrix<double>(size_x + 2, size_y + 2, 0.0);
-    _G = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _U  = Matrix<double>(size_x + 2, size_y + 2, UI);
+    _V  = Matrix<double>(size_x + 2, size_y + 2, VI);
+    _P  = Matrix<double>(size_x + 2, size_y + 2, PI);
+    _T  = Matrix<double>(size_x + 2, size_y + 2, TI);
+    _F  = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _G  = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 
     //turbulence model
-    _K = Matrix<double>(size_x + 2, size_y + 2, K0);
-    _E = Matrix<double>(size_x + 2, size_y + 2, E0);
+    _K  = Matrix<double>(size_x + 2, size_y + 2, KI);
+    _E  = Matrix<double>(size_x + 2, size_y + 2, EI);
 
     // double nut_0 = _Cmu * k0 * k0 / eps0;
-    _nuT = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _nuT   = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _nuT_i = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _nuT_j = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 }
@@ -87,7 +87,7 @@ void Fields::printMatrix(Grid &grid) {
     // }
     // std::cout << std::endl;
 
-    std::cout << std::setprecision(4); // digits after decimal point
+    // std::cout << std::setprecision(4); // digits after decimal point
     
 }
 
@@ -155,9 +155,9 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
             //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
 
             //     double fac1 = 2 * (_nu + nuT_i(i,j)) * Discretization::laplacian_x(_U, i, j);
-            //     double fac2 = 2 * ( (_nuT(i+1,j) - _nuT(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
+            //     double fac2 = 2 * ( (nuT_i(i+1,j) - nuT_i(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
             //     double fac3 = (_nu + nuT_j(i,j)) * (Discretization::laplacian_y(_U, i, j) + Discretization::mixed_derivative(_V, i, j));
-            //     double fac4 = ( (_nuT(i,j+1) - _nuT(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j) - _U(i,j-1))/grid.dy() + (_V(i,j) - _V(i-1,j))/grid.dx());
+            //     double fac4 = ( (nuT_j(i,j+1) - nuT_j(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j+1) - _U(i,j-1))/(2*grid.dy()) + (_V(i+1,j) - _V(i-1,j))/(2*grid.dx()));
 
             //     double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
 
@@ -177,7 +177,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
             else{ nu_Tx = _nu; }
  
             _F(i, j) =  _U(i, j) + 
-                        _dt * (nu_Tx * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
+                        _dt * (nu_Tx * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)); // - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
 //    std::cout << my_rank_global << "Calculating flux F" << std::endl;
@@ -212,7 +212,7 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
             else{ nu_Ty = _nu; }
 
             _G(i, j) =  _V(i, j) +
-                        _dt * (nu_Ty* (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
+                        _dt * (nu_Ty* (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)); //- _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
 
         
 

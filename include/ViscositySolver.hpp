@@ -19,7 +19,7 @@ class ViscositySolver {
      * @param[in] grid to be used
      * @param[in] boundary to be used
      */
-    virtual void solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+    virtual void solve(Fields &field, Grid &grid) = 0;
 };
 
 /**
@@ -46,7 +46,7 @@ class K_EPS_model : public ViscositySolver {
      * @param[in] grid to be used
      * @param[in] boundary to be used
      */
-    virtual void solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+    virtual void solve(Fields &field, Grid &grid);
 
   private:
 
@@ -54,7 +54,7 @@ class K_EPS_model : public ViscositySolver {
     double _C0{0.09}; // in paper reffered as C_nu
     double _C1{1.44};
     double _C2{1.92};
-    double _sk{1.0}; // in paper reffered as sigma k
-    double _se{1.3}; // in paper reffered as sigma e
+    double _sk{1.0};  // in paper reffered as sigma k
+    double _se{1.3};  // in paper reffered as sigma e
 
 };

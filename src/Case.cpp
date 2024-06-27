@@ -49,11 +49,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
-    bool turbulence = false; /*turbulence ON-OFF*/
     double KI{}; /*initial value for turbulent kinetic energy*/
     double EI{}; /*initial value for the dissipation rate*/
-    double t_init{}; /*start turbulent simulation*/
-
+        
+        // if(_turbulence && timestep % 10 < 1e-1){
+        //         _field.printMatrix(_grid);
+        //         cc++;
+        // }
     int num_of_walls{};
 
     // initialized to sequential execution
@@ -271,8 +273,6 @@ void Case::simulate() {
     int iter = 0;
     std::vector<int> iter_vec;
 
-    int cc = 0;
-
     while (t < _t_end) {
 
         _field.calculate_dt(_grid, _turbulence);
@@ -303,7 +303,7 @@ void Case::simulate() {
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = _pressure_solver->solve(_field, _grid, _boundaries);
+            residual = _pressure_solver->solve(_field, _grid);
             Communication::communicate(_field.p_matrix());
 
             for (auto &b : _boundaries) {
@@ -321,16 +321,12 @@ void Case::simulate() {
         Communication::communicate(_field.v_matrix());
 
         if(_turbulence && t > _t_init){
-            _viscosity_solver->solve(_field, _grid, _boundaries);
+            _viscosity_solver->solve(_field, _grid);
             _field.calculate_nuT(_grid, _C0);
 
 
             for(auto &b : _boundaries){
-
                 b->applyTurbulence(_field);
-                // TODO --> aget rid of pplyK and applyEpsilon
-                b->applyK(_field);
-                b->applyEpsilon(_field);
             }
 
             Communication::communicate(_field.k_matrix());
@@ -345,10 +341,9 @@ void Case::simulate() {
 
         // TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
         
-        if(_turbulence && timestep % 10 < 1e-1){
-                _field.printMatrix(_grid);
-                cc++;
-        }
+        // if(_turbulence && timestep % 10 < 1e-1){
+        //         _field.printMatrix(_grid);
+        // }
         
 
         timestep += 1;
