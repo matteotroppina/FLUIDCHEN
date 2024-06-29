@@ -51,8 +51,6 @@ void Boundary::applyFlux(Fields &field) {
 void Boundary::applyVelocity(Fields &field){ (void)field; }
 void Boundary::applyPressure(Fields &field){ (void)field; }
 void Boundary::applyTemperature(Fields &field) { (void)field; }
-// void Boundary::applyK(Fields &field) {}
-// void Boundary::applyEpsilon(Fields &field) {}
 
 void Boundary::applyTurbulence(Fields &field) {
     for (auto cell : _cells) {
@@ -425,6 +423,8 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
 
             field.K(i, j) = 2*k_boundary - field.K(i + 1, j);
             field.E(i, j) = 2*eps_boundary - field.E(i + 1, j);
+            field.nuT(i,j) = C0 * std::pow(field.K(i, j), 2) / field.E(i, j);
+
         }
 
         if (cell->is_border(border_position::LEFT)) {

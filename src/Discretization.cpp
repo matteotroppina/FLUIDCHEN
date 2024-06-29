@@ -65,34 +65,32 @@ double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_
 }
 
 double Discretization::convection_KEPS(const Matrix<double> &K, const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    double duK_dx = 1/_dx * (U(i,j)* interpolate(K,i,j,1,0) - U(i-1,j)* interpolate(K,i-1,j,1,0))
-                    + _gamma/_dx * (std::abs(U(i,j))* (K(i,j)-K(i+1,j))/2 - std::abs(U(i-1,j))*(K(i-1,j)-K(i,j))/2.0);
+    double duK_dx = 1/_dx * (U(i,j)* interpolate(K,i,j,1,0) - U(i-1,j)* interpolate(K,i,j,-1,0))
+                    + _gamma/_dx * (std::abs(U(i,j))* (K(i,j)-K(i+1,j))/2.0 - std::abs(U(i-1,j))*(K(i-1,j)-K(i,j))/2.0);
     double dvK_dy = 1/_dy * (V(i,j) * interpolate(K,i,j,0,1) - V(i,j-1)* interpolate(K,i,j,0,-1))
-                    + _gamma/_dy * (std::abs(V(i,j))* (K(i,j)-K(i,j+1))/2 - std::abs(V(i,j-1))*(K(i,j-1)-K(i,j))/2.0);
+                    + _gamma/_dy * (std::abs(V(i,j))* (K(i,j)-K(i,j+1))/2.0 - std::abs(V(i,j-1))*(K(i,j-1)-K(i,j))/2.0);
     return duK_dx + dvK_dy;
 }
 
-double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT_i, const Matrix<double> &nuT_j, const double nu, const double _sk,int i,int j){
+double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT, const double nu, const double _sk,int i,int j){
 
-    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + nuT_i(i,j)/_sk) - (nu + nuT_i(i-1, j)/_sk) * (K(i,j)+ K(i-1,j)) ) / std::pow(_dx, 2);
-    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + nuT_j(i,j)/_sk) - (nu + nuT_j(i, j-1)/_sk) * (K(i,j)+ K(i,j-1)) ) / std::pow(_dy, 2); 
+    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + interpolate(nuT,i,j,1,0)/_sk) - (nu + interpolate(nuT,i,j,-1,0)/_sk) * (K(i,j)-K(i-1,j)) ) / std::pow(_dx, 2);
+    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + interpolate(nuT,i,j,0,1)/_sk) - (nu + interpolate(nuT,i,j,0,-1)/_sk) * (K(i,j)-K(i,j-1)) ) / std::pow(_dy, 2);
+    
     return laplacian_x + laplacian_y;
+
+    // double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + nuT_i(i,j)/_sk) - (nu + nuT_i(i-1, j)/_sk) * (K(i,j)+ K(i-1,j)) ) / std::pow(_dx, 2);
+    // double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + nuT_j(i,j)/_sk) - (nu + nuT_j(i, j-1)/_sk) * (K(i,j)+ K(i,j-1)) ) / std::pow(_dy, 2); 
+    //return laplacian_x + laplacian_y;
 }
 
 
 double Discretization::strain_rate(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    // double S_xx = std::pow((U(i,j) - U(i-1,j))/std::pow(_dx,2),2);
-    // double S_yy = std::pow((V(i,j) - V(i,j-1))/std::pow(_dy,2),2);
-    // double su = (interpolate(U,i,j+1,-1,0) - interpolate(U,i,j-1,-1,0)) / (2 * _dy);
-    // double sv = (interpolate(V,i+1,j,0,-1) - interpolate(V,i-1,j,0,-1)) / (2 * _dx);;
-    // double S_xy = std::pow((su + sv),2);
-
-    // return (2 * S_xx + S_xy + 2 * S_yy);
 
     double S_xx = std::pow((U(i,j) - U(i-1,j))/std::pow(_dx,2),2);
     double S_yy = std::pow((V(i,j) - V(i,j-1))/std::pow(_dy,2),2);
-    double su = (U(i, j + 1) + U(i - 1, j + 1) - U(i, j - 1) - U(i - 1, j - 1)) * (0.25 / _dy);
-    double sv = (V(i + 1, j) + V(i + 1, j - 1) - V(i - 1, j) - V(i - 1, j - 1)) * (0.25 / _dx);
+    double su = (interpolate(U,i,j+1,-1,0)-interpolate(U,i,j-1,-1,0))/(2*_dy);
+    double sv = (interpolate(V,i+1,j,0,-1)-interpolate(V,i-1,j,0,-1))/(2*_dx);
     double S_xy = std::pow((su+sv), 2);
 
     return (2 * S_xx + S_xy + 2 * S_yy);
