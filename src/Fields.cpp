@@ -17,16 +17,17 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _RS = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 
     //turbulence model
-    double nuTI = _Cmu * std::pow(KI,2)/EI;
+    double nuTI = _C_nu * std::pow(KI,2)/EI; //initial turbulent viscosity
     _K     = Matrix<double>(size_x + 2, size_y + 2, KI);
     _E     = Matrix<double>(size_x + 2, size_y + 2, EI);
     _nuT   = Matrix<double>(size_x + 2, size_y + 2, nuTI);
 
     // Low-Reynolds formulation matrices
     _ReT    = Matrix<double>(size_x + 2, size_y + 2, 0.0);
-    _damp1  = Matrix<double>(size_x + 2, size_y + 2, 1.0);
     _damp2  = Matrix<double>(size_x + 2, size_y + 2, 1.0);
     _dampmu = Matrix<double>(size_x + 2, size_y + 2, 1.0);
+    _L_k = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _L_e = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _yplus = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _dist_y = Matrix<double>(size_x + 2, size_y + 2, 1e10);
     _dist_x = Matrix<double>(size_x + 2, size_y + 2, 1e10);
@@ -218,35 +219,48 @@ void Fields::calculate_temperature(Grid &grid) {
 }
 
 void Fields::calculate_walldist(Grid &grid) {
+    const double PI = 3.14159265358979311599796346854;
     double dx = grid.dx();
     double dy = grid.dy();
-    for (auto fluid_cell : grid.fluid_cells()){
+
+    for (auto fluid_cell : grid.fluid_cells()) {
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         double least_dist_x = 1e10;
         double least_dist_y = 1e10;
         double least_dist = 1e10;
+        double angle = PI / 4;
         for (auto wall_cell : grid.fixed_wall_cells()) {
             int i_wall = wall_cell->i();
             int j_wall = wall_cell->j();
 
-            double distance = std::sqrt((i-i_wall)*(i-i_wall)*dx*dx + (j-j_wall)*(j-j_wall)*dy*dy);
-            if (distance < least_dist){
+            double x_component = (i - i_wall) * dx;
+            double y_component = (j - j_wall) * dy;
+            double distance = std::sqrt(x_component * x_component + y_component * y_component);
+            if (distance < least_dist) {
                 least_dist = distance;
-                least_dist_x = std::abs((i - i_wall)) * dx;
-                least_dist_y = std::abs((j - j_wall)) * dx;
+                angle = std::atan2(y_component, x_component);
+                least_dist_x = std::abs(least_dist * std::cos(angle));
+                least_dist_y = std::abs(least_dist * std::sin(angle));
             }
-
         }
-        if (least_dist_x == 0) { // parallel to wall. in that case same distance as l2 norm (x + y)
-            _dist_x(i, j) = least_dist;
-            _dist_y(i, j) = least_dist_y;
-        } else if (least_dist_y == 0) {
-            _dist_y(i, j) = least_dist;
+
+        if (least_dist_x > grid.dx()*0.95){ // floating point error
             _dist_x(i, j) = least_dist_x;
-        } else {
-            _dist_x(i, j) = least_dist_x;
+        }
+        if (least_dist_y > grid.dy()*0.95){
             _dist_y(i, j) = least_dist_y;
+        }
+
+        double abs_angle = std::abs(angle);
+        // angle is less than 45 degrees
+        if ((abs_angle < PI / 4) || (abs_angle > 3 * PI / 4)) { // wall is along x-axis
+            _dist_x(i, j) = least_dist_x;
+            _dist_y(i, j) = 1e10;
+        } else if ((abs_angle > PI / 4 && abs_angle < PI / 2) ||
+                   (abs_angle > PI / 2 && abs_angle < 3 * PI / 4)) { // wall is along y-axis
+            _dist_y(i, j) = least_dist_y;
+            _dist_x(i, j) = 1e10;
         }
     }
 }
@@ -256,7 +270,6 @@ void Fields::calculate_yplus(Grid &grid) {
     double C_f = 0.058 * pow(_nu, 0.2);
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
-            // https://www.omnicalculator.com/physics/yplus
             if (grid.cell(i,j).type() == cell_type::FLUID){
                 double u_tau = C_f * std::pow(_K(i,j), 0.5); // friction velocity
                 double y; // distance from wall
@@ -276,16 +289,26 @@ void Fields::calculate_damping(Grid &grid){
         for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
 
-                // Low-Reynolds formulation only above viscous sublayer
+                // Low-Reynolds formulation up to the viscous sublayer
                 if (_yplus(i, j) < 30) {
-//                    ReT(i, j) = yplus(i, j) * std::pow(K(i, j), 2) / (_nu * E(i, j));
-//                    damp1(i, j) =
+                    // Launder-Sharma coefficients
+                    ReT(i, j) = yplus(i, j) * std::pow(K(i, j), 2) / (_nu * E(i, j));
                     damp2(i, j) = 1 - 0.3 * std::exp(-std::pow(ReT(i, j), 2));
-                    dampmu(i, j) = std::exp(-3.40 / std::pow((1 + (ReT(i, j) / 50)), 2));
+                    dampmu(i, j) = std::exp(-3.40 / std::pow((1 + 0.02*ReT(i, j)), 2));
+                    L_e(i, j) = 2 * _nu * nuT(i,j) * std::pow((Discretization::laplacian(u_matrix(), i, j) + Discretization::laplacian(v_matrix(), i, j)), 2);
+
+                    //dissipation rate of K at the wall
+                    if (_dist_x(i, j) < _dist_y(i, j)){
+                        //divergence of sqrt(k) at the wall
+                        L_k(i, j) = 2*_nu * std::pow((std::pow(_K(i,j), 0.5) - std::pow(_K(i-1,j), 0.5)) / grid.dx(), 2);
+                    } else {
+                        L_k(i, j) = 2*_nu * std::pow((std::pow(_K(i,j), 0.5) - std::pow(_K(i,j-1), 0.5)) / grid.dy(), 2);
+                    }
                 } else {
-                    damp1(i, j) = 1;
                     damp2(i, j) = 1;
                     dampmu(i, j) = 1;
+                    L_k(i, j) = 0;
+                    L_e(i, j) = 0;
                 }
 
             }
@@ -313,8 +336,8 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
         double eps_max = _E.max_abs_value();
         double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
-        _dt = std::min(_dt, k_cond);
-        _dt = std::min(_dt, eps_cond);
+        _dt = std::min(_dt, 2 * k_cond);
+        _dt = std::min(_dt, 2 * eps_cond);
     }
 
     _dt = _tau * _dt;
@@ -337,9 +360,10 @@ double &Fields::yplus(int i, int j) {return _yplus(i,j);}
 double &Fields::dist_y(int i, int j) {return _dist_y(i,j);}
 double &Fields::dist_x(int i, int j) {return _dist_x(i,j);}
 double &Fields::ReT(int i, int j) {return _ReT(i,j);}
-double &Fields::damp1(int i, int j) {return _damp1(i,j);}
 double &Fields::damp2(int i, int j) {return _damp2(i,j);}
 double &Fields::dampmu(int i, int j) {return _dampmu(i,j);}
+double &Fields::L_k(int i, int j) {return _L_k(i,j);}
+double &Fields::L_e(int i, int j) {return _L_e(i,j);}
 
 
 Matrix<double> &Fields::p_matrix() { return _P; }
@@ -356,9 +380,10 @@ Matrix<double> &Fields::yplus_matrix() { return _yplus; }
 Matrix<double> &Fields::dist_y_matrix() { return _dist_y; }
 Matrix<double> &Fields::dist_x_matrix() { return _dist_x; }
 Matrix<double> &Fields::ReT_matrix() { return _ReT; }
-Matrix<double> &Fields::damp1_matrix() { return _damp1; }
 Matrix<double> &Fields::damp2_matrix() { return _damp2; }
 Matrix<double> &Fields::dampmu_matrix() { return _dampmu; }
+Matrix<double> &Fields::L_k_matrix() { return _L_k; }
+Matrix<double> &Fields::L_e_matrix() { return _L_e; }
 
 double Fields::dt() const { return _dt; }
 double Fields::length_x() const {return _length_x;}

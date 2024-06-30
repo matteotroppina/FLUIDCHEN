@@ -53,9 +53,16 @@ class K_EPS_model : public ViscositySolver {
   private:
 
     // nu : viscosity, nuT: turbulent eddy viscosity, nuT = C0 * (k^2 / epsilon)
-    double _C0{0.09}; // in paper reffered as C_nu
+
+    // http://www.dicat.unige.it/guerrero/turbulence2021/slides/lecture6/6closure_models_RANS_part7_1.pdf
+    // and
+    // Numerical Investigation of Turbulent Flows Using k-epsilon By Reza Barati
+
+    // Launder-Sharma model constants
+    double _C_nu{0.09}; // in paper reffered as C_nu
     double _C1{1.44};
     double _C2{1.92};
+    double _damp1{1.0};
     double _sk{1.0};  // in paper reffered as sigma k
     double _se{1.3};  // in paper reffered as sigma e
 

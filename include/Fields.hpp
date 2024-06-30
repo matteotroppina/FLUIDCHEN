@@ -140,14 +140,14 @@ class Fields {
     /// turbulent reynolds index based access and modify
     double &ReT(int i, int j);
 
-    /// damping factor 1 index based access and modify
-    double &damp1(int i, int j);
-
     /// damping factor 2 index based access and modify
     double &damp2(int i, int j);
 
     /// damping factor mu index based access and modify
     double &dampmu(int i, int j);
+
+    double &L_k(int i, int j);
+    double &L_e(int i, int j);
 
     /// get timestep size
     double dt() const;
@@ -189,11 +189,12 @@ class Fields {
 
     Matrix<double> &ReT_matrix();
 
-    Matrix<double> &damp1_matrix();
-
     Matrix<double> &damp2_matrix();
 
     Matrix<double> &dampmu_matrix();
+
+    Matrix<double> &L_k_matrix();
+    Matrix<double> &L_e_matrix();
 
     /// get kinematic viscosity
     double &nu();
@@ -225,9 +226,11 @@ class Fields {
     /// turbulent reynolds
     Matrix<double> _ReT;
 
-    Matrix<double> _damp1;
     Matrix<double> _damp2;
     Matrix<double> _dampmu;
+
+    Matrix<double> _L_k;
+    Matrix<double> _L_e;
 
     Matrix<double> _yplus;
     Matrix<double> _dist_y;
@@ -248,7 +251,7 @@ class Fields {
     /// gravitional acceleration in y direction
     double _gy{0.0};
 
-    double _Cmu{0.09};
+    double _C_nu{0.09};
 
     //domain size needed for pipe diameter calculation in turbulence models
     double _length_x;

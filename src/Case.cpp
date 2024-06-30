@@ -334,8 +334,8 @@ void Case::simulate() {
 
             _viscosity_solver->solve(_field, _grid);
 
-            //_field.printMatrix(_grid);
-
+            // huge communication overhead -> needs to be optimized
+            // e.g. combine all matrices into one and communicate once
             Communication::communicate(_field.k_matrix());
             Communication::communicate(_field.e_matrix());
             Communication::communicate(_field.nuT_matrix());
@@ -343,17 +343,17 @@ void Case::simulate() {
             Communication::communicate(_field.dist_y_matrix());
             Communication::communicate(_field.dist_x_matrix());
             Communication::communicate(_field.ReT_matrix());
-            Communication::communicate(_field.damp1_matrix());
             Communication::communicate(_field.damp2_matrix());
             Communication::communicate(_field.dampmu_matrix());
+            Communication::communicate(_field.L_k_matrix());
+            Communication::communicate(_field.L_e_matrix());
 
-//             output_vtk(timestep, my_rank_global);
-//
-//            double max_p = _field.p_matrix().max_abs_value();
-//            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
-//                std::cerr << "Divergence detected" << std::endl;
-//                return;
-//            }
+
+            double max_p = _field.p_matrix().max_abs_value();
+            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+                std::cerr << "Divergence detected" << std::endl;
+                return;
+            }
         }
 
 
@@ -371,7 +371,10 @@ void Case::simulate() {
                  return;
              }
 
-            output_vtk(timestep, my_rank_global);
+             //round t to nearest _output_freq
+             int output_time = round(1000 * t);
+
+            output_vtk(output_time, my_rank_global);
             if (my_rank_global == 0) {
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] " << "Writing Output at t = " << t << "s" << std::endl;
