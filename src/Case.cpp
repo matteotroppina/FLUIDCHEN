@@ -51,11 +51,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_5{};
     double KI{}; /*initial value for turbulent kinetic energy*/
     double EI{}; /*initial value for the dissipation rate*/
-        
-        // if(_turbulence && timestep % 10 < 1e-1){
-        //         _field.printMatrix(_grid);
-        //         cc++;
-        // }
+
     int num_of_walls{};
 
     // initialized to sequential execution
@@ -331,7 +327,6 @@ void Case::simulate() {
             //_field.calculate_yplus(_grid);
             //_field.calculate_damping(_grid);
 
-
             for(auto &b : _boundaries){
                 b->applyTurbulence(_field);
             }
@@ -388,8 +383,6 @@ void Case::simulate() {
                     std::cout << "\t\t ---> Exceeded max iterations";
                 }
                 std::cout << "\n------------------------------------------------------------------------------------" << std::flush;
-                // std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
-                //           << std::endl;
             }
 
         }

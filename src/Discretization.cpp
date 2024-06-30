@@ -50,11 +50,6 @@ double Discretization::laplacian(const Matrix<double> &A, int i, int j) {
     return (A(i+1,j) - 2*A(i,j) + A(i-1,j))/std::pow(_dx,2) + (A(i,j+1) - 2*A(i,j) + A(i,j-1))/std::pow(_dy,2);
 }
 
-
-double Discretization::mixed_derivative(const Matrix<double> &A, int i, int j) {
-    return (A(i+1,j+1) - A(i-1,j+1) - A(i+1,j-1) + A(i-1,j-1))/(4*_dx*_dy);
-}
-
 double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) + P(i - 1, j)) / (_dx * _dx) + (P(i, j + 1) + P(i, j - 1)) / (_dy * _dy);
     return result;
@@ -78,10 +73,6 @@ double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<doub
     double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + interpolate(nuT,i,j,0,1)/_sk) - (nu + interpolate(nuT,i,j,0,-1)/_sk) * (K(i,j)-K(i,j-1)) ) / std::pow(_dy, 2);
     
     return laplacian_x + laplacian_y;
-
-    // double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + nuT_i(i,j)/_sk) - (nu + nuT_i(i-1, j)/_sk) * (K(i,j)+ K(i-1,j)) ) / std::pow(_dx, 2);
-    // double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + nuT_j(i,j)/_sk) - (nu + nuT_j(i, j-1)/_sk) * (K(i,j)+ K(i,j-1)) ) / std::pow(_dy, 2); 
-    //return laplacian_x + laplacian_y;
 }
 
 

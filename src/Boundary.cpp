@@ -447,7 +447,6 @@ ZeroGradientBoundary::ZeroGradientBoundary(std::vector<Cell *> cells, std::map<i
     : Boundary(cells), _wall_temperature(wall_temperature) {}
 
 void ZeroGradientBoundary::applyVelocity(Fields &field) {
-    // Neumann condition !!! CHange needed
     for (auto cell : _cells) {
         int i = cell->i();
         int j = cell->j();

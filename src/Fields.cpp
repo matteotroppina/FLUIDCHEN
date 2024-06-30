@@ -166,7 +166,6 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
                         _dt * ((_nu + nu_Tx) * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)); // - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
         }
     }
-//    std::cout << my_rank_global << "Calculating flux F" << std::endl;
 
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
@@ -183,7 +182,6 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
 
         }
     }
-//    std::cout << my_rank_global <<" Calculating flux G" << std::endl;
 }
 
 void Fields::calculate_rs(Grid &grid) {
@@ -193,7 +191,6 @@ void Fields::calculate_rs(Grid &grid) {
             _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / grid.dx() + (_G(i, j) - _G(i, j - 1)) / grid.dy());
         }
     }
-//    std::cout << my_rank_global << "Calculating rs" << std::endl;
 }
 
 void Fields::calculate_velocities(Grid &grid) {
@@ -203,15 +200,12 @@ void Fields::calculate_velocities(Grid &grid) {
             _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
         }
     }
-//    std::cout << my_rank_global << "Calculating velocity U" << std::endl;
-    
 
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
             _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
         }
     }
-//    std::cout << my_rank_global << "Calculating velocity V" << std::endl;
 }
 
 void Fields::calculate_temperature(Grid &grid) {
@@ -291,25 +285,6 @@ void Fields::calculate_nuT(Grid &grid, const double &C0) {
             }
         }
     }
-
-    // for (int i = 1; i <= grid.size_x(); i++) {
-    //     for (int j = 1; j <= grid.size_y(); j++){
-    //         if (grid.cell(i,j).type() == cell_type::FLUID){
-    //             double k_i = (_K(i,j) + _K(i+1,j))/2.0;
-    //             double k_j = (_K(i,j) + _K(i,j+1))/2.0;
-    //             double eps_i = (_E(i,j) + _E(i+1,j))/2.0;
-    //             double eps_j = (_E(i,j) + _E(i,j+1))/2.0;
-    //             double dampmu_i = (_dampmu(i,j) + _dampmu(i+1,j))/2;
-    //             double dampmu_j = (_dampmu(i,j) + _dampmu(i,j+1))/2;
-
-    //             _nuT_i(i, j) = dampmu_i * C0 * (k_i*k_i)/(eps_i);
-    //             _nuT_j(i, j) = dampmu_j * C0 * (k_j*k_j)/(eps_j);
-
-    //             assert(!isnan(_nuT_i(i, j)));
-    //             assert(!isnan(_nuT_j(i, j)));
-    //         }
-    //     }
-    // }
 }
 
 void Fields::calculate_damping(Grid &grid){
