@@ -138,7 +138,8 @@ Case::Case(std::string file_name, int argn, char **args) {
 
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, EI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, xlength, ylength, UI, VI, PI, alpha, beta, GX, GY,
+                    TI, KI, EI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -324,8 +325,8 @@ void Case::simulate() {
 
             turbulence_started = true;
 
-            //_field.calculate_yplus(_grid);
-            //_field.calculate_damping(_grid);
+            _field.calculate_yplus(_grid);
+            _field.calculate_damping(_grid);
 
             for(auto &b : _boundaries){
                 b->applyTurbulence(_field);
@@ -333,15 +334,11 @@ void Case::simulate() {
 
             _viscosity_solver->solve(_field, _grid);
 
-            _field.calculate_nuT(_grid, _C0);
-
             //_field.printMatrix(_grid);
 
             Communication::communicate(_field.k_matrix());
             Communication::communicate(_field.e_matrix());
             Communication::communicate(_field.nuT_matrix());
-            Communication::communicate(_field.nuT_i_matrix());
-            Communication::communicate(_field.nuT_j_matrix());
             Communication::communicate(_field.yplus_matrix());
             Communication::communicate(_field.dist_y_matrix());
             Communication::communicate(_field.dist_x_matrix());

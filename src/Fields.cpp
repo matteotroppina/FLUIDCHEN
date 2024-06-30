@@ -5,8 +5,9 @@
 #include "Communication.hpp"
 #include "Fields.hpp"
 
-Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double UI, double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double EI)
-    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY) {
+Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double length_x, double length_y, double UI,
+               double VI, double PI, double alpha, double beta, double GX, double GY, double TI, double KI, double EI)
+    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha),  _beta(beta), _gx(GX), _gy(GY), _length_x(length_x), _length_y(length_y) {
     _U  = Matrix<double>(size_x + 2, size_y + 2, UI);
     _V  = Matrix<double>(size_x + 2, size_y + 2, VI);
     _P  = Matrix<double>(size_x + 2, size_y + 2, PI);
@@ -20,14 +21,12 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _K     = Matrix<double>(size_x + 2, size_y + 2, KI);
     _E     = Matrix<double>(size_x + 2, size_y + 2, EI);
     _nuT   = Matrix<double>(size_x + 2, size_y + 2, nuTI);
-    _nuT_i = Matrix<double>(size_x + 2, size_y + 2, 0.0);
-    _nuT_j = Matrix<double>(size_x + 2, size_y + 2, 0.0);
 
     // Low-Reynolds formulation matrices
     _ReT    = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _damp1  = Matrix<double>(size_x + 2, size_y + 2, 1.0);
-    _damp2  = Matrix<double>(size_x + 2, size_y + 2, 0.0);
-    _dampmu = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _damp2  = Matrix<double>(size_x + 2, size_y + 2, 1.0);
+    _dampmu = Matrix<double>(size_x + 2, size_y + 2, 1.0);
     _yplus = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _dist_y = Matrix<double>(size_x + 2, size_y + 2, 1e10);
     _dist_x = Matrix<double>(size_x + 2, size_y + 2, 1e10);
@@ -272,29 +271,22 @@ void Fields::calculate_yplus(Grid &grid) {
     }
 }
 
-void Fields::calculate_nuT(Grid &grid, const double &C0) {
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++){
-            if (grid.cell(i,j).type() == cell_type::FLUID){
-                // _nuT(i, j) = _dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j);
-                _nuT(i, j) = C0 * (_K(i,j)*_K(i,j))/_E(i,j);
-
-                assert(!isnan(_nuT(i, j)));
-                assert(!isinf(_nuT(i, j)));
-                assert(_nuT(i, j) > 0);
-            }
-        }
-    }
-}
-
 void Fields::calculate_damping(Grid &grid){
         for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++){
             if (grid.cell(i,j).type() == cell_type::FLUID){
 
-               ReT(i,j) = yplus(i,j) * std::pow(K(i,j), 2) / (_nu * E(i,j));
-               damp2(i,j) = 1 - 0.3 * std::exp(-std::pow(ReT(i,j), 2));
-               dampmu(i,j) = std::exp(-3.40/std::pow( ( 1 + (ReT(i,j)/50) ), 2));
+                // Low-Reynolds formulation only above viscous sublayer
+                if (_yplus(i, j) < 30) {
+//                    ReT(i, j) = yplus(i, j) * std::pow(K(i, j), 2) / (_nu * E(i, j));
+//                    damp1(i, j) =
+                    damp2(i, j) = 1 - 0.3 * std::exp(-std::pow(ReT(i, j), 2));
+                    dampmu(i, j) = std::exp(-3.40 / std::pow((1 + (ReT(i, j) / 50)), 2));
+                } else {
+                    damp1(i, j) = 1;
+                    damp2(i, j) = 1;
+                    dampmu(i, j) = 1;
+                }
 
             }
         }
@@ -314,12 +306,11 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
     double cfl_y = grid.dy() / v_max;
     double new_cond = (1 / (2 * _alpha)) * (1/ (1/ dx_2 + 1/dy_2));
 
-    double k_max = _K.max_abs_value();
-    double eps_max = _E.max_abs_value();
-
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
     if (turbulence_started){
+        double k_max = _K.max_abs_value();
+        double eps_max = _E.max_abs_value();
         double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
         _dt = std::min(_dt, k_cond);
@@ -341,8 +332,6 @@ double &Fields::T(int i, int j) { return _T(i, j); }
 double &Fields::K(int i, int j) {return _K(i,j);}
 double &Fields::E(int i, int j) {return _E(i,j);}
 double &Fields::nuT(int i, int j) {return _nuT(i,j);}
-double &Fields::nuT_i(int i, int j) {return _nuT_i(i,j);}
-double &Fields::nuT_j(int i, int j) {return _nuT_j(i,j);}
 double &Fields::nu(){return _nu;}
 double &Fields::yplus(int i, int j) {return _yplus(i,j);}
 double &Fields::dist_y(int i, int j) {return _dist_y(i,j);}
@@ -363,8 +352,6 @@ Matrix<double> &Fields::t_matrix() { return _T; }
 Matrix<double> &Fields::k_matrix() { return _K; }
 Matrix<double> &Fields::e_matrix() { return _E; }
 Matrix<double> &Fields::nuT_matrix() { return _nuT; }
-Matrix<double> &Fields::nuT_i_matrix() { return _nuT_i; }
-Matrix<double> &Fields::nuT_j_matrix() { return _nuT_j; }
 Matrix<double> &Fields::yplus_matrix() { return _yplus; }
 Matrix<double> &Fields::dist_y_matrix() { return _dist_y; }
 Matrix<double> &Fields::dist_x_matrix() { return _dist_x; }
@@ -373,7 +360,6 @@ Matrix<double> &Fields::damp1_matrix() { return _damp1; }
 Matrix<double> &Fields::damp2_matrix() { return _damp2; }
 Matrix<double> &Fields::dampmu_matrix() { return _dampmu; }
 
-
-
 double Fields::dt() const { return _dt; }
-
+double Fields::length_x() const {return _length_x;}
+double Fields::length_y() const {return _length_y;}

@@ -35,5 +35,12 @@ void K_EPS_model::solve(Fields &field, Grid &grid) {
 
         field.K(i, j) = k;
         field.E(i, j) = e;
+
+        double nuT = _C0 * (k*k)/e;
+        // _nuT(i, j) = _dampmu(i,j) * C0 * (_K(i,j)*_K(i,j))/_E(i,j);
+        field.nuT(i, j) = nuT;
+
+        assert(nuT != nuT); // check for NaN
+        assert(nuT > 0);
     }
 }
