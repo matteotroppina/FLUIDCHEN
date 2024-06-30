@@ -152,7 +152,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, EI);
-    _field.calculate_delta_y(_grid); // calculate delta y (distance from nearest wall) for turbulence model once
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -205,6 +204,12 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.cold_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
         }
+    }
+
+    if (_turbulence) {
+        std::cout << "Turbulence model activated" << std::endl;
+        std::cout << "Computing wall distance for turbulence model" << std::endl;
+        _field.calculate_walldist(_grid); // calculate distance from nearest wall for turbulence model once
     }
 }
 
@@ -332,6 +337,10 @@ void Case::simulate() {
 
             turbulence_started = true;
 
+            for(auto &b : _boundaries){
+                b->applyTurbulence(_field);
+            }
+
             _field.calculate_yplus(_grid);
             _field.calculate_damping(_grid);
 
@@ -339,33 +348,27 @@ void Case::simulate() {
             _field.calculate_nuT(_grid, _C0);
 
 
-            for(auto &b : _boundaries){
-                b->applyTurbulence(_field);
-            }
-
             Communication::communicate(_field.k_matrix());
             Communication::communicate(_field.e_matrix());
             Communication::communicate(_field.nuT_matrix());
             Communication::communicate(_field.nuT_i_matrix());
             Communication::communicate(_field.nuT_j_matrix());
             Communication::communicate(_field.yplus_matrix());
-            Communication::communicate(_field.delta_y_matrix());
+            Communication::communicate(_field.dist_y_matrix());
             Communication::communicate(_field.ReT_matrix());
             Communication::communicate(_field.damp1_matrix());
             Communication::communicate(_field.damp2_matrix());
             Communication::communicate(_field.dampmu_matrix());
 
-            // output_vtk(timestep, my_rank_global);
+//             output_vtk(timestep, my_rank_global);
+//
+//            double max_p = _field.p_matrix().max_abs_value();
+//            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+//                std::cerr << "Divergence detected" << std::endl;
+//                return;
+//            }
         }
 
-
-
-        //TO DO: here turbulence loop, only enter if a certain t value is reached? at the end: replace nu with nu+nuT from viscosity solver
-        
-//        if(_turbulence && timestep % 10 < 1e-1){
-//                _field.printMatrix(_grid);
-//        }
-        
 
         timestep += 1;
         output_counter += dt;
@@ -395,13 +398,6 @@ void Case::simulate() {
             }
 
         }
-
-        // output for performance analysis - comment the output above
-        
-        // if (output_counter >= _output_freq && my_rank_global == 0) {
-        //     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%" << " completed] " << std::endl; 
-        //     output_counter = 0;
-        // }
 
     }
     // output_csv(iter_vec);
@@ -519,7 +515,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetCellData()->AddArray(Pressure);
     structuredGrid->GetCellData()->AddArray(Temperature);
 
-    // K, Epsilon, NuT, delta_y, yplus
+    // K, Epsilon, NuT, dist_y, yplus
     if (_turbulence) {
         vtkSmartPointer<vtkDoubleArray> K = vtkSmartPointer<vtkDoubleArray>::New();
         K->SetName("k");
@@ -533,9 +529,13 @@ void Case::output_vtk(int timestep, int my_rank) {
         NuT->SetName("nuT");
         NuT->SetNumberOfComponents(1);
 
-        vtkSmartPointer<vtkDoubleArray> DeltaY = vtkSmartPointer<vtkDoubleArray>::New();
-        DeltaY->SetName("delta_y");
-        DeltaY->SetNumberOfComponents(1);
+        vtkSmartPointer<vtkDoubleArray> DistY = vtkSmartPointer<vtkDoubleArray>::New();
+        DistY->SetName("dist_y");
+        DistY->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> DistX = vtkSmartPointer<vtkDoubleArray>::New();
+        DistX->SetName("dist_x");
+        DistX->SetNumberOfComponents(1);
 
         vtkSmartPointer<vtkDoubleArray> Yplus = vtkSmartPointer<vtkDoubleArray>::New();
         Yplus->SetName("yplus");
@@ -546,13 +546,15 @@ void Case::output_vtk(int timestep, int my_rank) {
                 double k = _field.K(i, j);
                 double epsilon = _field.E(i, j);
                 double nuT = _field.nuT(i, j);
-                double delta_y = _field.delta_y(i, j);
+                double dist_y = _field.dist_y(i, j);
+                double dist_x = _field.dist_x(i, j);
                 double yplus = _field.yplus(i, j);
 
                 K->InsertNextTuple(&k);
                 Epsilon->InsertNextTuple(&epsilon);
                 NuT->InsertNextTuple(&nuT);
-                DeltaY->InsertNextTuple(&delta_y);
+                DistY->InsertNextTuple(&dist_y);
+                DistX->InsertNextTuple(&dist_x);
                 Yplus->InsertNextTuple(&yplus);
                 }
             }
@@ -560,7 +562,8 @@ void Case::output_vtk(int timestep, int my_rank) {
         structuredGrid->GetCellData()->AddArray(K);
         structuredGrid->GetCellData()->AddArray(Epsilon);
         structuredGrid->GetCellData()->AddArray(NuT);
-        structuredGrid->GetCellData()->AddArray(DeltaY);
+        structuredGrid->GetCellData()->AddArray(DistY);
+        structuredGrid->GetCellData()->AddArray(DistX);
         structuredGrid->GetCellData()->AddArray(Yplus);
     }
 

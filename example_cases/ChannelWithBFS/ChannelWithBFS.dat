@@ -22,14 +22,14 @@ jmax         20
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        30.0
+t_end        10.0
 tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     5.0
+dt_value     0.1
 
 #--------------------------------------------
 #               pressure
@@ -78,9 +78,9 @@ VIN          0.0
 num_of_walls 1
 
 #--------------------------------------------
-#       turbulence parameters
+#         turbulence parameters
 #--------------------------------------------
-turbulence  0           // 0 ON - 1 OFF
-t_init      0.0
-KI          0.003
-EPSI        0.0005
+turbulence   1           // 0 OFF - 1 ON
+t_init       1
+KI           0.003
+EPSI         0.0005

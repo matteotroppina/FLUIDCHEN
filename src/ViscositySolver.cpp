@@ -26,8 +26,15 @@ void K_EPS_model::solve(Fields &field, Grid &grid) {
         double e3 = field.damp1(i,j) * _C1 * (field.E(i, j) * k3) / field.K(i,j);
         double e4 = field.damp2(i,j) * _C2 * std::pow(field.E(i, j),2) / field.K(i,j);
 
-        field.K(i, j) = field.K(i, j) + dt * (-k1 + k2 + k3 - k4);
-        field.E(i, j) = field.E(i, j) + dt * (-e1 + e2 + e3 - e4);
+        double k = field.K(i, j) + dt * (-k1 + k2 + k3 - k4);
+        double e = field.E(i, j) + dt * (-e1 + e2 + e3 - e4);
+
+        // bound
+        k = std::max(k, 1e-4);
+        e = std::max(e, 1e-4);
+
+        field.K(i, j) = k;
+        field.E(i, j) = e;
 
         assert(field.K(i,j) > 0);
         assert(field.E(i,j) > 0);

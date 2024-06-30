@@ -28,7 +28,8 @@ Fields::Fields(double nu, double dt, double tau, int size_x, int size_y, double 
     _damp2  = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _dampmu = Matrix<double>(size_x + 2, size_y + 2, 0.0);
     _yplus = Matrix<double>(size_x + 2, size_y + 2, 0.0);
-    _delta_y = Matrix<double>(size_x + 2, size_y + 2, 0.0);
+    _dist_y = Matrix<double>(size_x + 2, size_y + 2, 1e10);
+    _dist_x = Matrix<double>(size_x + 2, size_y + 2, 1e10);
 }
 
 void Fields::printMatrix(Grid &grid) {
@@ -150,56 +151,12 @@ void Fields::printBorders(Grid &grid) {
     
 }
 
-// void Fields::calculate_fluxes(Grid &grid, bool turbulence) {
-
-//     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
-//         for (int j = 1; j <= grid.size_y(); j++) {
-
-//             // if(turbulence){
-
-//             //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
-//             //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
-
-//             //     double fac1 = 2 * (_nu + nuT_i(i,j)) * Discretization::laplacian_x(_U, i, j);
-//             //     double fac2 = 2 * ( (nuT_i(i+1,j) - nuT_i(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
-//             //     double fac3 = (_nu + nuT_j(i,j)) * (Discretization::laplacian_y(_U, i, j) + Discretization::mixed_derivative(_V, i, j));
-//             //     double fac4 = ( (nuT_j(i,j+1) - nuT_j(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j+1) - _U(i,j-1))/(2*grid.dy()) + (_V(i+1,j) - _V(i-1,j))/(2*grid.dx()));
-
-//             //     double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
-
-
-
-    
-// }
 
 void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
 
     for (int i = 1; i <= grid.itermax_x() - 1; i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
 
-            // if(turbulence_started){
-
-            //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
-            //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
-
-            //     double fac1 = 2 * (_nu + nuT_i(i,j)) * Discretization::laplacian_x(_U, i, j);
-            //     double fac2 = 2 * ( (nuT_i(i+1,j) - nuT_i(i-1,j)) / (2*grid.dx()) ) * (_U(i,j) - _U(i-1,j))/grid.dx();
-            //     double fac3 = (_nu + nuT_j(i,j)) * (Discretization::laplacian_y(_U, i, j) + Discretization::mixed_derivative(_V, i, j));
-            //     double fac4 = ( (nuT_j(i,j+1) - nuT_j(i,j-1)) / (2*grid.dy()) ) *  ((_U(i,j+1) - _U(i,j-1))/(2*grid.dy()) + (_V(i+1,j) - _V(i-1,j))/(2*grid.dx()));
-
-            //     double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
-
-            //     _F(i, j) = _U(i, j) +
-            //                _dt * (turbulence_diffusion - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
-
-            // } else {
-
-            //     _F(i, j) = _U(i, j) +
-            //                _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i+1,j)) * _gx;
-
-            // }
-
-    
             double nu_Tx;
             if(turbulence_started){ nu_Tx = Discretization::interpolate(_nuT, i, j, 1, 0); }
             else{ nu_Tx = 0.0; }
@@ -213,28 +170,6 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.itermax_y() - 1; j++) {
 
-            // if(turbulence_started){
-
-            //     double nuT_x = Discretization::interpolate(_nuT, i, j, 1, 0);
-            //     double nuT_y = Discretization::interpolate(_nuT, i, j, 0, 1);
-
-            //     double fac1 = 2 * (_nu + nuT_y) * Discretization::laplacian_y(_V, i, j);
-            //     double fac2 = 2 * ( (_nuT(i,j+1) - _nuT(i,j-1)) / (2*grid.dy()) ) * (_V(i,j) - _V(i,j-1))/grid.dy();
-            //     double fac3 = (_nu + nuT_x) * (Discretization::laplacian_x(_V, i, j) + Discretization::mixed_derivative(_U, i, j));
-            //     double fac4 = ( (_nuT(i+1,j) - _nuT(i-1,j)) / (2*grid.dx()) ) *  ((_U(i,j) - _U(i,j-1))/grid.dy() + (_V(i,j) - _V(i-1,j))/grid.dx());
-
-            //     double turbulence_diffusion = fac1 + fac2 + fac3 + fac4;
-
-            //     _G(i, j) = _V(i, j) +
-            //                _dt * (turbulence_diffusion - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
-
-            // }else{
-                
-            //     _G(i, j) = _V(i, j) +
-            //                _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)) - _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
-
-            // }
-
             double nu_Ty;
             if(turbulence_started){ nu_Ty = Discretization::interpolate(_nuT, i, j, 0, 1); }
             else{ nu_Ty = 0.0; }
@@ -242,9 +177,9 @@ void Fields::calculate_fluxes(Grid &grid, bool turbulence_started) {
             _G(i, j) =  _V(i, j) +
                         _dt * ((_nu + nu_Ty)* (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j)); //- _beta * _dt/2 * (_T(i,j)+_T(i,j+1)) * _gy;
 
-        
 
-            
+
+
         }
     }
 //    std::cout << my_rank_global <<" Calculating flux G" << std::endl;
@@ -288,26 +223,36 @@ void Fields::calculate_temperature(Grid &grid) {
     }
 }
 
-void Fields::calculate_delta_y(Grid &grid) {
+void Fields::calculate_walldist(Grid &grid) {
+    double dx = grid.dx();
+    double dy = grid.dy();
+    for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+        double least_dist_x = 1e10;
+        double least_dist_y = 1e10;
+        double least_dist = 1e10;
+        for (auto wall_cell : grid.fixed_wall_cells()) {
+            int i_wall = wall_cell->i();
+            int j_wall = wall_cell->j();
 
-    for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++){
-            double least_distance = 1e10;
-            if (grid.cell(i,j).type() == cell_type::FLUID){
-                for (int k = 0; k <= grid.size_x()+1; k++) {
-                    for (int l = 0; l <= grid.size_y()+1; l++) {
-                        if ( not (k == i && l == j) and grid.cell(k, l).type() != cell_type::FLUID) { // if it is not fluid aka it is a wall
-                            double distance = std::sqrt((i - k) * (i - k) * grid.dx() + (j - l) * (j - l) * grid.dy());
-                            if (distance < least_distance) {
-                                least_distance = distance;
-                            }
-                        }
-                    }
-                }
-                _delta_y(i, j) = least_distance;
-            } else {
-                _delta_y(i, j) = 0.0;
+            double distance = std::sqrt((i-i_wall)*(i-i_wall)*dx*dx + (j-j_wall)*(j-j_wall)*dy*dy);
+            if (distance < least_dist){
+                least_dist = distance;
+                least_dist_x = std::abs((i - i_wall)) * dx;
+                least_dist_y = std::abs((j - j_wall)) * dx;
             }
+
+        }
+        if (least_dist_x == 0) { // parallel to wall. in that case same distance as l2 norm (x + y)
+            _dist_x(i, j) = least_dist;
+            _dist_y(i, j) = least_dist_y;
+        } else if (least_dist_y == 0) {
+            _dist_y(i, j) = least_dist;
+            _dist_x(i, j) = least_dist_x;
+        } else {
+            _dist_x(i, j) = least_dist_x;
+            _dist_y(i, j) = least_dist_y;
         }
     }
 }
@@ -315,16 +260,18 @@ void Fields::calculate_delta_y(Grid &grid) {
 void Fields::calculate_yplus(Grid &grid) {
     //skin friction coefficient
     double C_f = 0.058 * pow(_nu, 0.2);
-
     for (int i = 1; i <= grid.size_x(); i++) {
-        for (int j = 1; j <= grid.size_y(); j++){
+        for (int j = 1; j <= grid.size_y(); j++) {
+            // https://www.omnicalculator.com/physics/yplus
             if (grid.cell(i,j).type() == cell_type::FLUID){
-                // wall shear stress
-                double tau_w = 0.5 * C_f * _U(i,j) * _U(i,j);
-                // friction velocity
-                double u_tau = sqrt(tau_w);
-                // yplus
-                _yplus(i,j) = (u_tau * _delta_y(i,j)) / _nu;
+                double u_tau = C_f * std::pow(_K(i,j), 0.5); // friction velocity
+                double y; // distance from wall
+                if (_dist_x(i,j) < _dist_y(i,j)){
+                    y = _dist_x(i,j);
+                } else {
+                    y = _dist_y(i,j);
+                }
+                _yplus(i,j) = y * u_tau / _nu;
             }
         }
     }
@@ -421,7 +368,8 @@ double &Fields::nuT_i(int i, int j) {return _nuT_i(i,j);}
 double &Fields::nuT_j(int i, int j) {return _nuT_j(i,j);}
 double &Fields::nu(){return _nu;}
 double &Fields::yplus(int i, int j) {return _yplus(i,j);}
-double &Fields::delta_y(int i, int j) {return _delta_y(i,j);}
+double &Fields::dist_y(int i, int j) {return _dist_y(i,j);}
+double &Fields::dist_x(int i, int j) {return _dist_x(i,j);}
 double &Fields::ReT(int i, int j) {return _ReT(i,j);}
 double &Fields::damp1(int i, int j) {return _damp1(i,j);}
 double &Fields::damp2(int i, int j) {return _damp2(i,j);}
@@ -441,7 +389,8 @@ Matrix<double> &Fields::nuT_matrix() { return _nuT; }
 Matrix<double> &Fields::nuT_i_matrix() { return _nuT_i; }
 Matrix<double> &Fields::nuT_j_matrix() { return _nuT_j; }
 Matrix<double> &Fields::yplus_matrix() { return _yplus; }
-Matrix<double> &Fields::delta_y_matrix() { return _delta_y; }
+Matrix<double> &Fields::dist_y_matrix() { return _dist_y; }
+Matrix<double> &Fields::dist_x_matrix() { return _dist_x; }
 Matrix<double> &Fields::ReT_matrix() { return _ReT; }
 Matrix<double> &Fields::damp1_matrix() { return _damp1; }
 Matrix<double> &Fields::damp2_matrix() { return _damp2; }
