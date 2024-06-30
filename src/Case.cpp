@@ -140,15 +140,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // double l0 = 1;
-    // double k0 = std::pow(nu / l0, 2);
-    // double eps0 = _C0 * std::pow(k0, 1.5) / l0;
-
-    // k0 = 0.1;
-    // eps0 = 0.1;
-
-    // std::cout << "k0 = " << k0 << std::endl;
-    // std::cout << "eps0 = " << eps0 << std::endl;
 
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI, KI, EI);
@@ -337,16 +328,19 @@ void Case::simulate() {
 
             turbulence_started = true;
 
+            //_field.calculate_yplus(_grid);
+            //_field.calculate_damping(_grid);
+
+
             for(auto &b : _boundaries){
                 b->applyTurbulence(_field);
             }
 
-            _field.calculate_yplus(_grid);
-            _field.calculate_damping(_grid);
-
             _viscosity_solver->solve(_field, _grid);
+
             _field.calculate_nuT(_grid, _C0);
 
+            //_field.printMatrix(_grid);
 
             Communication::communicate(_field.k_matrix());
             Communication::communicate(_field.e_matrix());
@@ -355,6 +349,7 @@ void Case::simulate() {
             Communication::communicate(_field.nuT_j_matrix());
             Communication::communicate(_field.yplus_matrix());
             Communication::communicate(_field.dist_y_matrix());
+            Communication::communicate(_field.dist_x_matrix());
             Communication::communicate(_field.ReT_matrix());
             Communication::communicate(_field.damp1_matrix());
             Communication::communicate(_field.damp2_matrix());
