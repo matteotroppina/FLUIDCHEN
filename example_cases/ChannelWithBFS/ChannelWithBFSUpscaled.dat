@@ -6,8 +6,8 @@ geo_file     ChannelWithBFSUpscaled.pgm
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
-xlength      2000
-ylength      400
+xlength      200
+ylength      40
 
 #--------------------------------------------
 #            number of cells
@@ -22,14 +22,14 @@ jmax         50
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        100.0
+t_end        1000.0
 tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     2.5
+dt_value     10
 
 #--------------------------------------------
 #               pressure
@@ -81,6 +81,6 @@ num_of_walls 1
 #         turbulence parameters
 #--------------------------------------------
 turbulence   1           // 0 OFF - 1 ON
-t_init       0
-KI           0.003
-EPSI         0.0005
+t_init       100
+KI           0.008
+EI           0.0001
