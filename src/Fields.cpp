@@ -336,8 +336,8 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
         double eps_max = _E.max_abs_value();
         double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
-        _dt = std::min(_dt, 2 * k_cond);
-        _dt = std::min(_dt, 2 * eps_cond);
+        _dt = std::min(_dt, k_cond);
+        _dt = std::min(_dt, eps_cond);
     }
 
     _dt = _tau * _dt;

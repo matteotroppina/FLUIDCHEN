@@ -6,8 +6,8 @@ geo_file     ChannelWithBFSUpscaled.pgm
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
-xlength      200
-ylength      40
+xlength      10
+ylength      2
 
 #--------------------------------------------
 #            number of cells
@@ -22,14 +22,14 @@ jmax         50
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        1000.0
-tau          0.5
+t_end        10.0
+tau          0.1
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     10
+dt_value     0.01
 
 #--------------------------------------------
 #               pressure
@@ -38,15 +38,15 @@ dt_value     10
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      500
-eps          0.001
-omg          1.7
+itermax      3000
+eps          0.00001
+omg          1.95
 gamma        0.5
 
 #--------------------------------------------
 #     kinematic viscosity
 #--------------------------------------------
-nu           0.001
+nu           0.0001
 
 #--------------------------------------------
 #        gravity / external forces
@@ -81,6 +81,6 @@ num_of_walls 1
 #         turbulence parameters
 #--------------------------------------------
 turbulence   1           // 0 OFF - 1 ON
-t_init       100
-KI           0.008
-EI           0.0001
+t_init       3
+KI           0.003
+EI           0.0005
