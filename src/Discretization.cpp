@@ -78,13 +78,11 @@ double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<doub
 
 double Discretization::strain_rate(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
 
-    double S_xx = std::pow((U(i,j) - U(i-1,j))/std::pow(_dx,2),2);
-    double S_yy = std::pow((V(i,j) - V(i,j-1))/std::pow(_dy,2),2);
-    double su = (interpolate(U,i,j+1,-1,0)-interpolate(U,i,j-1,-1,0))/(2*_dy);
-    double sv = (interpolate(V,i+1,j,0,-1)-interpolate(V,i-1,j,0,-1))/(2*_dx);
-    double S_xy = std::pow((su+sv), 2);
-
-    return (2 * S_xx + S_xy + 2 * S_yy);
+    double du_dx = (U(i, j) - U(i - 1, j)) / _dx;
+    double dv_dy = (V(i, j) - V(i, j - 1)) / _dy;
+    double du_dy = (interpolate(U, i, j, 0, 1) - interpolate(U, i, j, 0, -1)) / (2*_dy);
+    double dv_dx = (interpolate(V, i, j, 1, 0) - interpolate(V, i, j, -1, 0)) / (2*_dx);
+    return (2*du_dx * du_dx + du_dy * dv_dx + 2* dv_dy * dv_dy );
 }
 
 double Discretization::laplacian_x(const Matrix<double> &A, int i, int j) {
