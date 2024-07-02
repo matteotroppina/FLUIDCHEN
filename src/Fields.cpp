@@ -317,9 +317,9 @@ void Fields::calculate_damping(Grid &grid){
                     //dissipation rate of K at the wall
                     if (_dist_x(i, j) < _dist_y(i, j)){
                         //divergence of sqrt(k) at the wall
-                        L_k(i, j) = 2*_nu * std::pow((std::pow(_K(i,j), 0.5) - std::pow(_K(i-1,j), 0.5)) / grid.dx(), 2);
+                        L_k(i, j) = 2*_nu * std::pow(std::pow(_K(i,j), 0.5) / _dist_x(i,j), 2); // assuming k = 0 at wall
                     } else {
-                        L_k(i, j) = 2*_nu * std::pow((std::pow(_K(i,j), 0.5) - std::pow(_K(i,j-1), 0.5)) / grid.dy(), 2);
+                        L_k(i, j) = 2*_nu * std::pow(std::pow(_K(i,j), 0.5) / _dist_y(i, j), 2); // assuming k = 0 at wall
                     }
                 } else {
                     damp2(i, j) = 1;
