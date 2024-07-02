@@ -271,31 +271,14 @@ void Fields::calculate_yplus(Grid &grid) {
     for (int i = 1; i <= grid.size_x(); i++) {
         for (int j = 1; j <= grid.size_y(); j++) {
             if (grid.cell(i,j).type() == cell_type::FLUID){
-                // old implementation
-//                double u_tau = C_f * std::pow(_K(i,j), 0.5); // friction velocity
-//                double y; // distance from wall
-//                if (_dist_x(i,j) < _dist_y(i,j)){
-//                    y = _dist_x(i,j);
-//                } else {
-//                    y = _dist_y(i,j);
-//                }
-//                _yplus(i,j) = y * u_tau / _nu;
-
-                double tau_w;
-                double u_cell_center;
-                double y; //distance from wall
-                double u_star;
-
-                if (_dist_x(i, j) < _dist_y(i, j)){
-                    y = _dist_x(i, j); // take smallest distance from the wall
-                    u_cell_center = 0.5 * (_V(i, j) + _V(i, j-1));
+                double u_tau = C_f * std::pow(_K(i,j), 0.5); // friction velocity
+                double y; // distance from wall
+                if (_dist_x(i,j) < _dist_y(i,j)){
+                    y = _dist_x(i,j);
                 } else {
-                    y = _dist_y(i, j);
-                    u_cell_center = 0.5 * (_U(i, j) + _U(i-1, j));
+                    y = _dist_y(i,j);
                 }
-                tau_w = _nu * u_cell_center / y;
-                u_star = std::sqrt(tau_w);
-                _yplus(i, j) = y * u_star / _nu;
+                _yplus(i,j) = y * u_tau / _nu;
             }
         }
     }
