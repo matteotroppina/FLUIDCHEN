@@ -195,9 +195,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
 
     if (_turbulence) {
-        std::cout << "Turbulence model activated" << std::endl;
-        std::cout << "Computing wall distance for turbulence model" << std::endl;
+        if (my_rank_global == 0) {
+            std::cout << "Turbulence model activated" << std::endl;
+            std::cout << "Computing wall distance for turbulence model" << std::endl;
+        }
         _field.calculate_walldist(_grid); // calculate distance from nearest wall for turbulence model once
+        Communication::communicate(_field.dist_y_matrix());
+        Communication::communicate(_field.dist_x_matrix());
     }
 }
 
@@ -339,14 +343,15 @@ void Case::simulate() {
             Communication::communicate(_field.k_matrix());
             Communication::communicate(_field.e_matrix());
             Communication::communicate(_field.nuT_matrix());
+
             Communication::communicate(_field.yplus_matrix());
-            Communication::communicate(_field.dist_y_matrix());
-            Communication::communicate(_field.dist_x_matrix());
             Communication::communicate(_field.ReT_matrix());
-            Communication::communicate(_field.damp2_matrix());
-            Communication::communicate(_field.dampmu_matrix());
-            Communication::communicate(_field.L_k_matrix());
-            Communication::communicate(_field.L_e_matrix());
+
+            // I think these do not need to be communicated, because they are calculated from the above
+//            Communication::communicate(_field.damp2_matrix());
+//            Communication::communicate(_field.dampmu_matrix());
+//            Communication::communicate(_field.L_k_matrix());
+//            Communication::communicate(_field.L_e_matrix());
 
 
             double max_p = _field.p_matrix().max_abs_value();
@@ -517,14 +522,6 @@ void Case::output_vtk(int timestep, int my_rank) {
         NuT->SetName("nuT");
         NuT->SetNumberOfComponents(1);
 
-        vtkSmartPointer<vtkDoubleArray> DistY = vtkSmartPointer<vtkDoubleArray>::New();
-        DistY->SetName("dist_y");
-        DistY->SetNumberOfComponents(1);
-
-        vtkSmartPointer<vtkDoubleArray> DistX = vtkSmartPointer<vtkDoubleArray>::New();
-        DistX->SetName("dist_x");
-        DistX->SetNumberOfComponents(1);
-
         vtkSmartPointer<vtkDoubleArray> Yplus = vtkSmartPointer<vtkDoubleArray>::New();
         Yplus->SetName("yplus");
         Yplus->SetNumberOfComponents(1);
@@ -541,8 +538,6 @@ void Case::output_vtk(int timestep, int my_rank) {
                 K->InsertNextTuple(&k);
                 Epsilon->InsertNextTuple(&epsilon);
                 NuT->InsertNextTuple(&nuT);
-                DistY->InsertNextTuple(&dist_y);
-                DistX->InsertNextTuple(&dist_x);
                 Yplus->InsertNextTuple(&yplus);
                 }
             }
@@ -550,8 +545,6 @@ void Case::output_vtk(int timestep, int my_rank) {
         structuredGrid->GetCellData()->AddArray(K);
         structuredGrid->GetCellData()->AddArray(Epsilon);
         structuredGrid->GetCellData()->AddArray(NuT);
-        structuredGrid->GetCellData()->AddArray(DistY);
-        structuredGrid->GetCellData()->AddArray(DistX);
         structuredGrid->GetCellData()->AddArray(Yplus);
     }
 

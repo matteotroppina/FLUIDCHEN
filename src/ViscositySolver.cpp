@@ -32,8 +32,8 @@ void K_EPS_model::solve(Fields &field, Grid &grid) {
         double e = field.E(i, j) + dt * (-e1 + e2 + e3 - e4 + L_e);
 
         // bound
-        k = std::max(k, 1e-4);
-        e = std::max(e, 1e-4);
+        k = std::max(k, 1e-6);
+        e = std::max(e, 1e-6);
 
         field.K(i, j) = k;
         field.E(i, j) = e;
