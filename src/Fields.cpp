@@ -272,14 +272,18 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
 
     _dt = std::min({conv_cond, cfl_x, cfl_y, new_cond});
 
-//    if (turbulence_started){
-//        double k_max = _K.max_abs_value();
-//        double eps_max = _E.max_abs_value();
-//        double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
-//        double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
-//        _dt = std::min(_dt, 25 * k_cond);
-//        _dt = std::min(_dt, 25 * eps_cond);
-//    }
+    if (turbulence_started){
+        double k_max = _K.max_abs_value();
+        double eps_max = _E.max_abs_value();
+        double k_cond = 1 / (2 * k_max * (1 / dx_2 + 1 / dy_2));
+        double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
+
+        // TODO : Read from dat file
+        double unsafety_factor = 25; // haha
+
+        _dt = std::min(_dt, unsafety_factor * k_cond);
+        _dt = std::min(_dt, unsafety_factor * eps_cond);
+    }
 
     _dt = _tau * _dt;
 

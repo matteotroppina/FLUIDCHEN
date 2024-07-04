@@ -1,11 +1,17 @@
 #ifndef CFDLAB_UTILSGPU_H
 #define CFDLAB_UTILSGPU_H
 
-#include <cstdint>
+#ifdef __CUDACC__
+#warning "Success! CUDA acceleration enabled!"
+#else
+#warning "Warning! CUDA acceleration disabled!"
+#endif
+
 
 #ifdef __CUDACC__
 #warning "CUDA enabled"
 #include <cuda_runtime.h>
+#include <cstdint>
 
 typedef struct gridParams {
     int imax;
