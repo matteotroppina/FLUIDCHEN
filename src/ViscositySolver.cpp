@@ -35,8 +35,11 @@ void K_EPS_model::solve(Fields &field, Grid &grid) {
         k_new = std::max(k_new, 1e-6);
         e_new = std::max(e_new, 1e-6);
 
-        field.K(i, j) = k_new;
-        field.E(i, j) = e_new;
+        //TODO : read alpha from dat file
+        double alpha = 0.5;
+        // apply relaxation
+        field.K(i, j) = alpha * k_new + (1.0 - alpha) * field.K(i, j);
+        field.E(i, j) = alpha * e_new + (1.0 - alpha) * field.E(i, j);
 
         double nuT = field.dampmu(i, j) * _C_nu * (field.K(i, j)*field.K(i, j))/field.E(i, j);
         field.nuT(i, j) = nuT;
