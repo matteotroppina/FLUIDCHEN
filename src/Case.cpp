@@ -290,16 +290,53 @@ void Case::simulate() {
     int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
     bool* fluid_mask = new bool[size_linear];
     uint8_t* boundary_type = new uint8_t[size_linear];
+    uint8_t* border_position = new uint8_t[size_linear];
 
     for (int i = 0; i <= _grid.domain().size_x + 1; i++) {
         for (int j = 0; j <= _grid.domain().size_y + 1; j++) {
             int idx = i + j * (_grid.domain().size_x + 2);
-            if (_grid.cell(i, j).type() == cell_type::FLUID) {
+            Cell cell = _grid.cell(i, j);
+            if (cell.type() == cell_type::FLUID) {
                 fluid_mask[idx] = 1;
                 boundary_type[idx] = 0;
+                border_position[idx] = 8; // 8 is a flag for no boundary
             } else {
                 fluid_mask[idx] = 0;
-                boundary_type[idx] = static_cast<uint8_t>(_grid.cell(i, j).type());
+                boundary_type[idx] = static_cast<uint8_t>(cell.type());
+
+                if (cell.is_border(border_position::TOP)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::TOP); // 0
+                }
+                if (cell.is_border(border_position::BOTTOM)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::BOTTOM); // 1
+                }
+                if (cell.is_border(border_position::RIGHT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::RIGHT); // 2
+                }
+                if (cell.is_border(border_position::LEFT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::LEFT); // 3
+                }
+
+                // B_NW cell
+                if (cell.is_border(border_position::TOP) && cell.is_border(border_position::LEFT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::TOP) + 4; // 4
+                }
+                // B_SE cell
+                if (cell.is_border(border_position::BOTTOM) && cell.is_border(border_position::RIGHT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::BOTTOM) + 4; // 5
+                }
+                // B_NE cell
+                if (cell.is_border(border_position::TOP) && cell.is_border(border_position::RIGHT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::RIGHT) + 4; // 6
+                }
+                // B_SW cell
+                if (cell.is_border(border_position::BOTTOM) && cell.is_border(border_position::LEFT)) {
+                    border_position[idx] = static_cast<uint8_t>(border_position::LEFT) + 4; // 7
+                }
+
+                if (cell.type() == cell_type::INNER_OBSTACLE) {
+                    border_position[idx] = 8;
+                }
             }
         }
     }
@@ -313,12 +350,17 @@ void Case::simulate() {
         cudaMalloc(&d_p_matrix, size_linear * sizeof(double));
         double * d_rs_matrix;
         cudaMalloc(&d_rs_matrix, size_linear * sizeof(double));
+
+        // Copy data to GPU (only once)
         bool * d_fluid_mask;
         cudaMalloc(&d_fluid_mask, size_linear * sizeof(bool));
         cudaMemcpy(d_fluid_mask, fluid_mask, size_linear * sizeof(bool), cudaMemcpyHostToDevice);
         uint8_t * d_boundary_type;
         cudaMalloc(&d_boundary_type, size_linear * sizeof(uint8_t));
         cudaMemcpy(d_boundary_type, boundary_type, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
+        unit8_t * d_border_position;
+        cudaMalloc(&d_border_position, size_linear * sizeof(uint8_t));
+        cudaMemcpy(d_border_position, border_position, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
     #endif
 
     double* p_matrix = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
@@ -353,7 +395,8 @@ void Case::simulate() {
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, _gridParams, gpu_num_iterations);
+            residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
+                                  _gridParams, gpu_num_iterations);
             iter += gpu_num_iterations;
 
             // TODO : CUDA aware MPI

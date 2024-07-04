@@ -239,8 +239,8 @@ void FixedWallBoundary::applyPressure(Fields &field) {
 FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, double inflow_u_velocity,
                                              double inflow_v_velocity)
     : Boundary(cells) {
-    _inflow_u_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_u_velocity));
-    _inflow_v_velocity.insert(std::pair<int, double>(GeometryIDs::fixed_velocity, inflow_v_velocity));
+    _inflow_u_velocity.insert(std::pair<int, double>(GeometryIDs::FIXED_VELOCITY, inflow_u_velocity));
+    _inflow_v_velocity.insert(std::pair<int, double>(GeometryIDs::FIXED_VELOCITY, inflow_v_velocity));
 }
 
 FixedVelocityBoundary::FixedVelocityBoundary(std::vector<Cell *> cells, std::map<int, double> inflow_u_velocity,
@@ -256,22 +256,22 @@ void FixedVelocityBoundary::applyVelocity(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j - 1);
-            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::FIXED_VELOCITY] - field.u(i, j - 1);
+            field.v(i, j - 1) = _inflow_v_velocity[GeometryIDs::FIXED_VELOCITY];
         }
         if (cell->is_border(border_position::TOP)) {
-            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::fixed_velocity] - field.u(i, j + 1);
-            field.v(i, j) = _inflow_v_velocity[GeometryIDs::fixed_velocity];
+            field.u(i, j) = 2 * _inflow_u_velocity[GeometryIDs::FIXED_VELOCITY] - field.u(i, j + 1);
+            field.v(i, j) = _inflow_v_velocity[GeometryIDs::FIXED_VELOCITY];
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.u(i, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i + 1, j);
+            field.u(i, j) = _inflow_u_velocity[GeometryIDs::FIXED_VELOCITY];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::FIXED_VELOCITY] - field.v(i + 1, j);
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::fixed_velocity];
-            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::fixed_velocity] - field.v(i - 1, j);
+            field.u(i - 1, j) = _inflow_u_velocity[GeometryIDs::FIXED_VELOCITY];
+            field.v(i, j) = 2 * _inflow_v_velocity[GeometryIDs::FIXED_VELOCITY] - field.v(i - 1, j);
         }
     }
 }
@@ -367,21 +367,21 @@ void MovingWallBoundary::applyVelocity(Fields &field) {
         int j = cell->j();
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.u(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.u(i, j - 1);
+            field.u(i, j) = 2 * _wall_velocity[GeometryIDs::MOVING_WALL] - field.u(i, j - 1);
             field.v(i, j - 1) = 0;
         }
         if (cell->is_border(border_position::TOP)) {
-            field.u(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.u(i, j + 1);
+            field.u(i, j) = 2 * _wall_velocity[GeometryIDs::MOVING_WALL] - field.u(i, j + 1);
             field.v(i, j) = 0;
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.v(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.v(i + 1, j);
+            field.v(i, j) = 2 * _wall_velocity[GeometryIDs::MOVING_WALL] - field.v(i + 1, j);
             field.u(i, j) = 0;
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.v(i, j) = 2 * _wall_velocity[GeometryIDs::moving_wall] - field.v(i - 1, j);
+            field.v(i, j) = 2 * _wall_velocity[GeometryIDs::MOVING_WALL] - field.v(i - 1, j);
             field.u(i - 1, j) = 0;
 
         }

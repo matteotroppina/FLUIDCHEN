@@ -63,9 +63,9 @@ __global__ void jacobiKernel(double *d_p_matrix_new, double *d_p_matrix, const d
     }
 }
 
-
 double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
-                  const uint8_t *d_boundary_type, const gridParams grid, const int num_iterations) {
+                  const uint8_t *d_boundary_type, const uint8_t *d_border_position, const gridParams grid,
+                  const int num_iterations) {
 
     double dx = grid.dx;
     double dy = grid.dy;
@@ -79,13 +79,27 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
     dim3 threadsPerBlock(8, 8);
     dim3 numBlocks((imax + 2 + threadsPerBlock.x - 1) / threadsPerBlock.x, (jmax + 2 + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
-    for (int iter = 0; iter < num_iterations/2; iter++) {
+    for (int iter = 0; iter < num_iterations; iter++) {
         jacobiKernel<<<numBlocks, threadsPerBlock>>>(d_p_matrix_new, d_p_matrix, d_rs_matrix, d_fluid_mask, coeff, imax, jmax, dx, dy);
     }
 
-    //TODO apply boundary conditions
+//    //TODO apply boundary conditions
+//    for (int i = 1; i <= imax; i++) {
+//        for (int j = 1; j <= jmax; j++) {
+//            int idx = i + j * (imax + 2);
+//            int idx_left = idx - 1;
+//            int idx_right = idx + 1;
+//            int idx_top = idx + (imax + 2);
+//            int idx_bottom = idx - (imax + 2);
+//            if (d_boundary_type[idx] == static_cast<uint8_t>(cell_type::FIXED_WALL)){
+//
+//            } e., () {
+//
+//            }
+//    }
 
-    // CALCULATE RESIDUAL
+
+// CALCULATE RESIDUAL
     #pragma acc parallel loop collapse(2) reduction(+:res) deviceptr(d_p_matrix, d_rs_matrix, d_fluid_mask, d_rs_matrix)
     for (int i = 1; i <= imax; i++) {
         for (int j = 1; j <= jmax; j++) {
