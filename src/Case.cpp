@@ -65,6 +65,15 @@ Case::Case(std::string file_name, int argn, char **args) {
         jproc = *args[3] - 48;
     }
 
+    #ifdef __CUDACC__
+        if (iproc != 1 or jproc != 1){
+            std::cerr << "MPI not yet supported with GPU acceleration" << std::endl;
+            std::cerr << "Please run with 1 process in each direction" << std::endl;
+            Communication::finalize();
+            exit(1);
+        }
+    #endif
+
     if (file.is_open()) {
 
         std::string var;
