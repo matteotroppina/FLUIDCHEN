@@ -63,6 +63,81 @@ __global__ void jacobiKernel(double *d_p_matrix_new, double *d_p_matrix, const d
     }
 }
 
+void apply_pressure_bcs(double *d_p_matrix, const bool *d_fluid_mask, const uint8_t *d_boundary_type, const uint8_t *d_border_position,
+                const gridParams grid) {
+    int imax = grid.imax;
+    int jmax = grid.jmax;
+
+    uint8_t FIXED_VELOCITY = static_cast<uint8_t>(cell_type::FIXED_VELOCITY);
+    uint8_t ZERO_GRADIENT = static_cast<uint8_t>(cell_type::ZERO_GRADIENT); // zero gradient in velocity
+    uint8_t FIXED_WALL = static_cast<uint8_t>(cell_type::FIXED_WALL);
+
+    uint8_t TOP = static_cast<uint8_t>(border_position::TOP); // 0
+    uint8_t BOTTOM = static_cast<uint8_t>(border_position::BOTTOM); // 1
+    uint8_t LEFT = static_cast<uint8_t>(border_position::LEFT); // 2
+    uint8_t RIGHT = static_cast<uint8_t>(border_position::RIGHT); // 3
+    uint8_t TOP_LEFT = static_cast<uint8_t>(border_position::TOP) + 4; // 4
+    uint8_t BOTTOM_RIGHT = static_cast<uint8_t>(border_position::BOTTOM) + 4; // 5
+    uint8_t TOP_RIGHT = static_cast<uint8_t>(border_position::TOP) + 4; // 6
+    uint8_t BOTTOM_LEFT = static_cast<uint8_t>(border_position::BOTTOM) + 4; // 7
+
+    #pragma acc parallel loop collapse(2) deviceptr(d_p_matrix, d_fluid_mask, d_boundary_type, d_border_position) async
+    for (int i = 0; i <= imax+1; i++) {
+        for (int j = 0; j <= jmax+1; j++) {
+            int idx = i + j * (imax + 2);
+            int idx_left = idx - 1;
+            int idx_right = idx + 1;
+            int idx_top = idx + (imax + 2);
+            int idx_bottom = idx - (imax + 2);
+
+            if (not d_fluid_mask[idx]) {
+
+                if (d_boundary_type[idx] == ZERO_GRADIENT) {
+                    if (d_border_position[idx] == RIGHT) {
+                        d_p_matrix[idx] = -d_p_matrix[idx_right];
+                    }
+                    if (d_border_position[idx] == LEFT) {
+                        d_p_matrix[idx] = -d_p_matrix[idx_left];
+                    }
+                    if (d_border_position[idx] == TOP) {
+                        d_p_matrix[idx] = -d_p_matrix[idx_top];
+                    }
+                    if (d_border_position[idx] == BOTTOM) {
+                        d_p_matrix[idx] = -d_p_matrix[idx_bottom];
+                    }
+
+                } else { // (d_boundary_type[idx] == FIXED_VELOCITY || d_boundary_type[idx] == FIXED_WALL)
+
+                    if (d_border_position[idx] == RIGHT) {
+                        d_p_matrix[idx] = d_p_matrix[idx_right];
+                    }
+                    if (d_border_position[idx] == LEFT) {
+                        d_p_matrix[idx] = d_p_matrix[idx_left];
+                    }
+                    if (d_border_position[idx] == TOP) {
+                        d_p_matrix[idx] = d_p_matrix[idx_top];
+                    }
+                    if (d_border_position[idx] == BOTTOM) {
+                        d_p_matrix[idx] = d_p_matrix[idx_bottom];
+                    }
+                    if (d_border_position[idx] == TOP_LEFT) {
+                        d_p_matrix[idx] = (d_p_matrix[idx_top] + d_p_matrix[idx_left]) / 2;
+                    }
+                    if (d_border_position[idx] == BOTTOM_RIGHT) {
+                        d_p_matrix[idx] = (d_p_matrix[idx_bottom] + d_p_matrix[idx_right]) / 2;
+                    }
+                    if (d_border_position[idx] == TOP_RIGHT) {
+                        d_p_matrix[idx] = (d_p_matrix[idx_top] + d_p_matrix[idx_right]) / 2;
+                    }
+                    if (d_border_position[idx] == BOTTOM_LEFT) {
+                        d_p_matrix[idx] = (d_p_matrix[idx_bottom] + d_p_matrix[idx_left]) / 2;
+                    }
+                }
+            }
+        }
+    }
+}
+
 double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
                   const uint8_t *d_boundary_type, const uint8_t *d_border_position, const gridParams grid,
                   const int num_iterations) {
@@ -83,23 +158,10 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
         jacobiKernel<<<numBlocks, threadsPerBlock>>>(d_p_matrix_new, d_p_matrix, d_rs_matrix, d_fluid_mask, coeff, imax, jmax, dx, dy);
     }
 
-//    //TODO apply boundary conditions
-//    for (int i = 1; i <= imax; i++) {
-//        for (int j = 1; j <= jmax; j++) {
-//            int idx = i + j * (imax + 2);
-//            int idx_left = idx - 1;
-//            int idx_right = idx + 1;
-//            int idx_top = idx + (imax + 2);
-//            int idx_bottom = idx - (imax + 2);
-//            if (d_boundary_type[idx] == static_cast<uint8_t>(cell_type::FIXED_WALL)){
-//
-//            } e., () {
-//
-//            }
-//    }
+    apply_pressure_bcs(d_p_matrix, d_fluid_mask, d_boundary_type, d_border_position, grid);
+    #pragma acc wait
 
-
-// CALCULATE RESIDUAL
+    // CALCULATE RESIDUAL
     #pragma acc parallel loop collapse(2) reduction(+:res) deviceptr(d_p_matrix, d_rs_matrix, d_fluid_mask, d_rs_matrix)
     for (int i = 1; i <= imax; i++) {
         for (int j = 1; j <= jmax; j++) {

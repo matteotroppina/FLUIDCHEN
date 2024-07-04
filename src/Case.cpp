@@ -276,7 +276,7 @@ void Case::simulate() {
     // TODO : place into a function like init_gpu() or create a class for GPU functions
     // Place into UtilsGPU.h
 
-    int gpu_num_iterations = 64; // iterations before returning residual
+    int gpu_num_iterations = 16; // iterations before returning residual and updating boundary conditions
     // it is faster to calculate more iterations on GPU than to calculate if residual < tolerance in while loop
 
     gridParams _gridParams = {
@@ -358,7 +358,7 @@ void Case::simulate() {
         uint8_t * d_boundary_type;
         cudaMalloc(&d_boundary_type, size_linear * sizeof(uint8_t));
         cudaMemcpy(d_boundary_type, boundary_type, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
-        unit8_t * d_border_position;
+        uint8_t * d_border_position;
         cudaMalloc(&d_border_position, size_linear * sizeof(uint8_t));
         cudaMemcpy(d_border_position, border_position, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
     #endif
@@ -404,9 +404,9 @@ void Case::simulate() {
             residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
         }
+        iter_vec.push_back(iter);
 
         cudaMemcpy(p_matrix, d_p_matrix, size_linear * sizeof(double), cudaMemcpyDeviceToHost);
-        iter_vec.push_back(iter);
         
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
@@ -447,6 +447,7 @@ void Case::simulate() {
 
     delete[] fluid_mask;
     delete[] boundary_type;
+    delete[] border_position;
     #ifdef __CUDACC__
         cudaFree(d_p_matrix_new);
         cudaFree(d_p_matrix);
