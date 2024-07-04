@@ -51,7 +51,7 @@ double Discretization::convection_t(const Matrix<double> &T, const Matrix<double
 }
 
 double Discretization::laplacian(const Matrix<double> &A, int i, int j) {
-    return (A(i+1,j) - 2*A(i,j) + A(i-1,j))/square(_dx) + (A(i,j+1) - 2*A(i,j) + A(i,j-1))/square(_dy);
+    return (A(i+1,j) - 2*A(i,j) + A(i-1,j))/ (_dx * _dx) + (A(i,j+1) - 2*A(i,j) + A(i,j-1))/(_dy * _dy);
 }
 
 double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
@@ -73,8 +73,8 @@ double Discretization::convection_KEPS(const Matrix<double> &K, const Matrix<dou
 
 double Discretization::laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT, const double nu, const double _sk,int i,int j){
 
-    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + interpolate(nuT,i,j,1,0)/_sk) - (nu + interpolate(nuT,i,j,-1,0)/_sk) * (K(i,j)-K(i-1,j)) ) / std::pow(_dx, 2);
-    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + interpolate(nuT,i,j,0,1)/_sk) - (nu + interpolate(nuT,i,j,0,-1)/_sk) * (K(i,j)-K(i,j-1)) ) / std::pow(_dy, 2);
+    double laplacian_x = ( (K(i+1,j) - K(i,j)) * (nu + interpolate(nuT,i,j,1,0)/_sk) - (nu + interpolate(nuT,i,j,-1,0)/_sk) * (K(i,j)-K(i-1,j)) ) / (_dx * _dx);
+    double laplacian_y = ( (K(i,j+1) - K(i,j)) * (nu + interpolate(nuT,i,j,0,1)/_sk) - (nu + interpolate(nuT,i,j,0,-1)/_sk) * (K(i,j)-K(i,j-1)) ) / (_dy * _dy);
     
     return laplacian_x + laplacian_y;
 }
@@ -90,9 +90,9 @@ double Discretization::strain_rate(const Matrix<double> &U, const Matrix<double>
 }
 
 double Discretization::laplacian_x(const Matrix<double> &A, int i, int j) {
-    return (A(i+1,j) - 2*A(i,j) + A(i-1,j))/std::pow(_dx,2);
+    return (A(i+1,j) - 2*A(i,j) + A(i-1,j))/(_dx * _dx);
 }
 
 double Discretization::laplacian_y(const Matrix<double> &A, int i, int j) {
-    return (A(i,j+1) - 2*A(i,j) + A(i,j-1))/std::pow(_dy,2);
+    return (A(i,j+1) - 2*A(i,j) + A(i,j-1))/(_dy * _dy);
 }
