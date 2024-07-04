@@ -68,9 +68,10 @@ void apply_pressure_bcs(double *d_p_matrix, const bool *d_fluid_mask, const uint
     int imax = grid.imax;
     int jmax = grid.jmax;
 
-    uint8_t FIXED_VELOCITY = static_cast<uint8_t>(cell_type::FIXED_VELOCITY);
+
     uint8_t ZERO_GRADIENT = static_cast<uint8_t>(cell_type::ZERO_GRADIENT); // zero gradient in velocity
-    uint8_t FIXED_WALL = static_cast<uint8_t>(cell_type::FIXED_WALL);
+    //uint8_t FIXED_VELOCITY = static_cast<uint8_t>(cell_type::FIXED_VELOCITY);
+    //uint8_t FIXED_WALL = static_cast<uint8_t>(cell_type::FIXED_WALL);
 
     uint8_t TOP = static_cast<uint8_t>(border_position::TOP); // 0
     uint8_t BOTTOM = static_cast<uint8_t>(border_position::BOTTOM); // 1
@@ -90,49 +91,30 @@ void apply_pressure_bcs(double *d_p_matrix, const bool *d_fluid_mask, const uint
             int idx_top = idx + (imax + 2);
             int idx_bottom = idx - (imax + 2);
 
-            if (not d_fluid_mask[idx]) {
+            if (!d_fluid_mask[idx]) {
 
-                if (d_boundary_type[idx] == ZERO_GRADIENT) {
-                    if (d_border_position[idx] == RIGHT) {
-                        d_p_matrix[idx] = -d_p_matrix[idx_right];
-                    }
-                    if (d_border_position[idx] == LEFT) {
-                        d_p_matrix[idx] = -d_p_matrix[idx_left];
-                    }
-                    if (d_border_position[idx] == TOP) {
-                        d_p_matrix[idx] = -d_p_matrix[idx_top];
-                    }
-                    if (d_border_position[idx] == BOTTOM) {
-                        d_p_matrix[idx] = -d_p_matrix[idx_bottom];
-                    }
+                    double value_right = d_p_matrix[idx_right];
+                    double value_left = d_p_matrix[idx_left];
+                    double value_top = d_p_matrix[idx_top];
+                    double value_bottom = d_p_matrix[idx_bottom];
 
-                } else { // (d_boundary_type[idx] == FIXED_VELOCITY || d_boundary_type[idx] == FIXED_WALL)
+                    uint8_t type = d_boundary_type[idx];
 
-                    if (d_border_position[idx] == RIGHT) {
-                        d_p_matrix[idx] = d_p_matrix[idx_right];
-                    }
-                    if (d_border_position[idx] == LEFT) {
-                        d_p_matrix[idx] = d_p_matrix[idx_left];
-                    }
-                    if (d_border_position[idx] == TOP) {
-                        d_p_matrix[idx] = d_p_matrix[idx_top];
-                    }
-                    if (d_border_position[idx] == BOTTOM) {
-                        d_p_matrix[idx] = d_p_matrix[idx_bottom];
-                    }
-                    if (d_border_position[idx] == TOP_LEFT) {
-                        d_p_matrix[idx] = (d_p_matrix[idx_top] + d_p_matrix[idx_left]) / 2;
-                    }
-                    if (d_border_position[idx] == BOTTOM_RIGHT) {
-                        d_p_matrix[idx] = (d_p_matrix[idx_bottom] + d_p_matrix[idx_right]) / 2;
-                    }
-                    if (d_border_position[idx] == TOP_RIGHT) {
-                        d_p_matrix[idx] = (d_p_matrix[idx_top] + d_p_matrix[idx_right]) / 2;
-                    }
-                    if (d_border_position[idx] == BOTTOM_LEFT) {
-                        d_p_matrix[idx] = (d_p_matrix[idx_bottom] + d_p_matrix[idx_left]) / 2;
-                    }
-                }
+                    double zero_gradient_val = (type == TOP) ? -value_top :
+                                               (type == BOTTOM) ? -value_bottom :
+                                               (type == LEFT) ? -value_left :
+                                               (type == RIGHT) ? -value_right : 0;
+
+                    double fixed_wall_val = (type == TOP) ? value_top :
+                                            (type == BOTTOM) ? value_bottom :
+                                            (type == LEFT) ? value_left :
+                                            (type == RIGHT) ? value_right :
+                                            (type == TOP_LEFT) ? (value_top + value_left) / 2 :
+                                            (type == BOTTOM_RIGHT) ? (value_bottom + value_right) / 2 :
+                                            (type == TOP_RIGHT) ? (value_top + value_right) / 2 :
+                                            (type == BOTTOM_LEFT) ? (value_bottom + value_left) / 2 : 0;
+
+                    d_p_matrix[idx] = (d_boundary_type[idx] == ZERO_GRADIENT) ? zero_gradient_val : fixed_wall_val;
             }
         }
     }
