@@ -20,19 +20,19 @@ The following images created with ParaView depict the results of the simulation 
 
 ### Velocity Field
 
-![Velocity Field](imgs/velocity_field.png)
+![Velocity Field](../imgs/velocity_field.png)
 
 ### Direction Fieldimgs
 
-![Direction Field](imgs/direction_field.png)
+![Direction Field](../imgs/direction_field.png)
 
 ### Streamlines
 
-![Streamlines](imgs/streamlines.png)
+![Streamlines](../imgs/streamlines.png)
 
 ### Pressure Field
 
-![Pressure Field](imgs/pressure_field.png)
+![Pressure Field](../imgs/pressure_field.png)
 
 ## SOR's behavior depending on relaxation parameter omega
 
@@ -56,27 +56,27 @@ Decreasing the kinematic viscosity leads to a higher number of iterations needed
 
 ### nu = 0.01
 
-![nu = 0.01](imgs/nu_0.01.png)
+![nu = 0.01](../imgs/nu_0.01.png)
 
 ### nu = 0.002
 
-![nu = 0.002](imgs/nu_0.002.png)
+![nu = 0.002](../imgs/nu_0.002.png)
 
 ### nu = 0.0005
 
-![nu = 0.0005](imgs/nu_0.0005.png)
+![nu = 0.0005](../imgs/nu_0.0005.png)
 
 ### nu = 0.0001
 
-![nu = 0.0001](imgs/nu_0.0001.png)
+![nu = 0.0001](../imgs/nu_0.0001.png)
 
 ### Pressure field, nu = 0.00005
 
-![Pressure, nu = 0.0005](imgs/nu_0.0005_pressure.png)
+![Pressure, nu = 0.0005](../imgs/nu_0.0005_pressure.png)
 
 ### Convergence
 
-![Convergence](imgs/nu_iterations.png)
+![Convergence](../imgs/nu_iterations.png)
 
 ## Difficulties
 

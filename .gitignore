@@ -17,3 +17,4 @@ compile_commands.json
 .idea
 cmake-build-*
 *.sw*
+*.pdf

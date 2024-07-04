@@ -44,38 +44,38 @@ Run different cases:
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/shearflow_velocity.png)
+![Shearflow Velocity](../imgs/shearflow_velocity.png)
 
 #### Analytical Solution Comparison (x = 5.0)
 
-![Analytical Solution](imgs/shearflow_plot.png)
+![Analytical Solution](../imgs/shearflow_plot.png)
 
 #### Pressure Field
 
-![Velocity Field](imgs/shearflow_pressure.png)
+![Velocity Field](../imgs/shearflow_pressure.png)
 
 ## Karman Vortex Street
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/karman_velocity.png)
+![Shearflow Velocity](../imgs/karman_velocity.png)
 
 <!-- ### Streamlines
 ![Velocity Field](imgs/karman_streamlines.png) -->
 
 #### Pressure Field
 
-![Velocity Field](imgs/karman_pressure.png)
+![Velocity Field](../imgs/karman_pressure.png)
 
 ## Flow over a step
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/BFS_velocity.png)
+![Shearflow Velocity](../imgs/BFS_velocity.png)
 
 #### Pressure Field
 
-![Velocity Field](imgs/BFS_pressure.png)
+![Velocity Field](../imgs/BFS_pressure.png)
 
 ## Natural Convection
 
@@ -83,30 +83,30 @@ Run different cases:
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/NC_a_velocity.png)
+![Shearflow Velocity](../imgs/NC_a_velocity.png)
 
 #### Temperature Field
 
-![Velocity Field](imgs/NC_a_temp.png)
+![Velocity Field](../imgs/NC_a_temp.png)
 
 ### Case (b) - $\nu = 0.0002$
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/NC_b_velocity.png)
+![Shearflow Velocity](../imgs/NC_b_velocity.png)
 
 #### Pressure Field
 
-![Velocity Field](imgs/NC_b_temp.png)
+![Velocity Field](../imgs/NC_b_temp.png)
 
 ## Fluid Trap
 
 #### Velocity Field
 
-![Shearflow Velocity](imgs/fluidtrap_temp.png)
+![Shearflow Velocity](../imgs/fluidtrap_temp.png)
 
 ## Rayleigh Benard Convection
 
 #### Velocity Field
 
-![Rayleigh Benard Convection](imgs/rayleigh_benard_velocity.png)
+![Rayleigh Benard Convection](../imgs/rayleigh_benard_velocity.png)

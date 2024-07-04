@@ -54,6 +54,39 @@ class Discretization {
      */
     static double laplacian(const Matrix<double> &A, int i, int j);
 
+        /**
+     * @brief Laplacian term discretization using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double laplacian_x(const Matrix<double> &A, int i, int j);
+
+        /**
+     * @brief Laplacian term discretization using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double laplacian_y(const Matrix<double> &A, int i, int j);
+
+    /**
+     * @brief First derivative in x direction using central difference
+     *
+     * @param[in] data to be discretized
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double mixed_derivative(const Matrix<double> &A, int i, int j);
+
     /**
      * @brief Terms of laplacian needed for SOR, i.e. excluding unknown value at
      * (i,j)
@@ -79,10 +112,48 @@ class Discretization {
      */
     static double interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset);
 
+    /**
+     * @brief Convection term for temperature
+     *
+     * @param[in] temperature field
+     * @param[in] x-velocity field
+     * @param[in] y-velocity field
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
     static double convection_t(const Matrix<double> &T, const Matrix<double> &U, const Matrix<double> &V, int i, int j);
+
+    /**
+     * @brief Convection term for turbulent kinetic energy and dissipation rate
+     *
+     * @param[in] turbulent kinetic energy or dissipation rate field
+     * @param[in] x-velocity field
+     * @param[in] y-velocity field
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double convection_KEPS(const Matrix<double> &K, const Matrix<double> &U, const Matrix<double> &V, int i, int j);
+
+    static double laplacian_KEPS(const Matrix<double> &K, const Matrix<double> &nuT, const double nu, const double _sk, int i,int j);
+
+    /**
+     * @brief Strain rate tensor
+     *
+     * @param[in] x-velocity field
+     * @param[in] y-velocity field
+     * @param[in] x index
+     * @param[in] y index
+     * @param[out] result
+     *
+     */
+    static double strain_rate(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
 
   private:
     static double _dx;
     static double _dy;
-    static double _gamma;
+    static double _gamma; //donor cells
 };

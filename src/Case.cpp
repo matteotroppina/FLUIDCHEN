@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+
 namespace filesystem = std::filesystem;
 
 #include <vtkCellData.h>
@@ -19,6 +20,7 @@ namespace filesystem = std::filesystem;
 #include "Enums.hpp"
 
 #include "UtilsGPU.hpp"
+
 
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
@@ -49,6 +51,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_4{};
     double wall_temp_5{};
     int num_gpu_iterations{16};
+    double KI{}; /*initial value for turbulent kinetic energy*/
+    double EI{}; /*initial value for the dissipation rate*/
+
     int num_of_walls{};
 
     // initialized to sequential execution
@@ -91,6 +96,10 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
+                if (var == "turbulence") file >> _turbulence;
+                if (var == "t_init") file >> _t_init;
+                if (var == "KI") file >> KI;
+                if (var == "EI") file >> EI;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
@@ -130,11 +139,14 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, xlength, ylength, UI, VI, PI, alpha, beta, GX, GY,
+                    TI, KI, EI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
+    _viscosity_solver = std::make_unique<K_EPS_model>();
     _max_iter = itermax;
     _num_gpu_iterations = num_gpu_iterations;
     _tolerance = eps;
@@ -184,6 +196,16 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.cold_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
         }
+    }
+
+    if (_turbulence) {
+        if (my_rank_global == 0) {
+            std::cout << "Turbulence model activated" << std::endl;
+            std::cout << "Computing wall distance for turbulence model" << std::endl;
+        }
+        _field.calculate_walldist(_grid); // calculate distance from nearest wall for turbulence model once
+        Communication::communicate(_field.dist_y_matrix());
+        Communication::communicate(_field.dist_x_matrix());
     }
 }
 
@@ -252,6 +274,7 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
+    bool turbulence_started = false;
 
     // Initialize GPU memory and variables
     #ifdef __CUDACC__
@@ -285,7 +308,7 @@ void Case::simulate() {
 
     while (t < _t_end) {
 
-        _field.calculate_dt(_grid);
+        _field.calculate_dt(_grid, turbulence_started);
         dt = _field.dt();
 
         for (auto &b : _boundaries) {
@@ -293,10 +316,10 @@ void Case::simulate() {
             b->applyTemperature(_field);
         }
 
-        _field.calculate_temperature(_grid);
-        Communication::communicate(_field.t_matrix());
+//        _field.calculate_temperature(_grid);
+//        Communication::communicate(_field.t_matrix());
 
-        _field.calculate_fluxes(_grid);
+        _field.calculate_fluxes(_grid, turbulence_started);
         Communication::communicate(_field.f_matrix());
         Communication::communicate(_field.g_matrix());
 
@@ -313,15 +336,24 @@ void Case::simulate() {
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             #ifdef __CUDACC__
-            residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
-                                  _gridParams, _num_gpu_iterations);
-            iter += _num_gpu_iterations;
+                residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
+                                      _gridParams, _num_gpu_iterations);
+                iter += _num_gpu_iterations;
 
-            // TODO : CUDA aware MPI
-            Communication::communicate(_field.p_matrix());
+                // TODO : CUDA aware MPI
+                Communication::communicate(_field.p_matrix());
+            #else
+                residual = _pressure_solver->solve(_field, _grid);
+                Communication::communicate(_field.p_matrix());
+
+                for (auto &b : _boundaries) {
+                    b->applyPressure(_field);
+                }
+                iter += 1;
+            #endif
+
             residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
-            #endif
         }
         iter_vec.push_back(iter);
 
@@ -332,6 +364,43 @@ void Case::simulate() {
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
+
+        if(_turbulence && t > _t_init){
+
+            turbulence_started = true;
+
+            _field.calculate_yplus(_grid);
+            _field.calculate_damping(_grid);
+
+            for(auto &b : _boundaries){
+                b->applyTurbulence(_field);
+            }
+
+            _viscosity_solver->solve(_field, _grid);
+
+            // huge communication overhead -> needs to be optimized
+            // e.g. combine all matrices into one and communicate once
+            Communication::communicate(_field.k_matrix());
+            Communication::communicate(_field.e_matrix());
+            Communication::communicate(_field.nuT_matrix());
+
+            Communication::communicate(_field.yplus_matrix());
+            Communication::communicate(_field.ReT_matrix());
+
+            // I think these do not need to be communicated, because they are calculated from the above
+//            Communication::communicate(_field.damp2_matrix());
+//            Communication::communicate(_field.dampmu_matrix());
+//            Communication::communicate(_field.L_k_matrix());
+//            Communication::communicate(_field.L_e_matrix());
+
+
+            double max_p = _field.p_matrix().max_abs_value();
+            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+                std::cerr << "Divergence detected" << std::endl;
+                return;
+            }
+        }
+
 
         timestep += 1;
         output_counter += dt;
@@ -346,7 +415,10 @@ void Case::simulate() {
                 break;
             }
 
-            output_vtk(timestep, my_rank_global);
+             //round t to nearest _output_freq
+             int output_time = round(1000 * t);
+
+            output_vtk(output_time, my_rank_global);
             if (my_rank_global == 0) {
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] " << "Writing Output at t = " << t << "s" << std::endl;
@@ -479,6 +551,46 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
     structuredGrid->GetCellData()->AddArray(Temperature);
+
+    // K, Epsilon, NuT, dist_y, yplus
+    if (_turbulence) {
+        vtkSmartPointer<vtkDoubleArray> K = vtkSmartPointer<vtkDoubleArray>::New();
+        K->SetName("k");
+        K->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Epsilon = vtkSmartPointer<vtkDoubleArray>::New();
+        Epsilon->SetName("epsilon");
+        Epsilon->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> NuT = vtkSmartPointer<vtkDoubleArray>::New();
+        NuT->SetName("nuT");
+        NuT->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Yplus = vtkSmartPointer<vtkDoubleArray>::New();
+        Yplus->SetName("yplus");
+        Yplus->SetNumberOfComponents(1);
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double k = _field.K(i, j);
+                double epsilon = _field.E(i, j);
+                double nuT = _field.nuT(i, j);
+                double dist_y = _field.dist_y(i, j);
+                double dist_x = _field.dist_x(i, j);
+                double yplus = _field.yplus(i, j);
+
+                K->InsertNextTuple(&k);
+                Epsilon->InsertNextTuple(&epsilon);
+                NuT->InsertNextTuple(&nuT);
+                Yplus->InsertNextTuple(&yplus);
+                }
+            }
+
+        structuredGrid->GetCellData()->AddArray(K);
+        structuredGrid->GetCellData()->AddArray(Epsilon);
+        structuredGrid->GetCellData()->AddArray(NuT);
+        structuredGrid->GetCellData()->AddArray(Yplus);
+    }
 
     // Add Velocity to Structured Grid
     structuredGrid->GetCellData()->AddArray(Velocity);
