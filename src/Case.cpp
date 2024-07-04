@@ -18,7 +18,7 @@ namespace filesystem = std::filesystem;
 #include "Case.hpp"
 #include "Enums.hpp"
 
-#include "UtilsGPU.h"
+#include "UtilsGPU.hpp"
 
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
@@ -48,7 +48,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
-
+    int num_gpu_iterations{16};
     int num_of_walls{};
 
     // initialized to sequential execution
@@ -97,6 +97,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
                 if (var == "wall_temp_5") file >> wall_temp_5;
+                if (var == "num_gpu_iterations") file >> num_gpu_iterations;
             }
         }
     }
@@ -135,6 +136,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
+    _num_gpu_iterations = num_gpu_iterations;
     _tolerance = eps;
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -232,26 +234,6 @@ void Case::set_file_names(std::string file_name) {
     }
 }
 
-/**
- * This function is the main simulation loop. In the simulation loop, following steps are required
- * Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
- * using applyVelocity() member function of Boundary class
- * Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- * Flux consists of diffusion and convection part, which are located in Discretization class
- * Apply Flux boundary conditions using applyFlux()
- * Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
- *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
- * - Update pressure boundary conditions after each iteration of the SOR solver
- * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
- * - Write vtk files using output_vtk() function
- *
- * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface and/or common functions. You need to define functions with individual functionalities in inherited
- * classes such as MovingWallBoundary class.
- * For information about the classes and functions, you can check the header files.
- */
 void Case::simulate() {
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -272,99 +254,33 @@ void Case::simulate() {
     std::vector<int> iter_vec;
 
     // Initialize GPU memory and variables
-    // the GPU cannot use any classes, so we need to pass the data to the GPU as simple arrays
-    // TODO : place into a function like init_gpu() or create a class for GPU functions
-    // Place into UtilsGPU.h
-
-    int gpu_num_iterations = 16; // iterations before returning residual and updating boundary conditions
-    // it is faster to calculate more iterations on GPU than to calculate if residual < tolerance in while loop
-
-    gridParams _gridParams = {
-        _grid.domain().size_x,
-        _grid.domain().size_y,
-        _grid.dx(),
-        _grid.dy(),
-        _grid.fluid_cells().size(),
-    };
-
-    int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
-    bool* fluid_mask = new bool[size_linear];
-    uint8_t* boundary_type = new uint8_t[size_linear];
-    uint8_t* border_position = new uint8_t[size_linear];
-
-    for (int i = 0; i <= _grid.domain().size_x + 1; i++) {
-        for (int j = 0; j <= _grid.domain().size_y + 1; j++) {
-            int idx = i + j * (_grid.domain().size_x + 2);
-            Cell cell = _grid.cell(i, j);
-            if (cell.type() == cell_type::FLUID) {
-                fluid_mask[idx] = 1;
-                boundary_type[idx] = 0;
-                border_position[idx] = 8; // 8 is a flag for no boundary
-            } else {
-                fluid_mask[idx] = 0;
-                boundary_type[idx] = static_cast<uint8_t>(cell.type());
-
-                if (cell.is_border(border_position::TOP)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::TOP); // 0
-                }
-                if (cell.is_border(border_position::BOTTOM)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::BOTTOM); // 1
-                }
-                if (cell.is_border(border_position::RIGHT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::RIGHT); // 2
-                }
-                if (cell.is_border(border_position::LEFT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::LEFT); // 3
-                }
-
-                // B_NW cell
-                if (cell.is_border(border_position::TOP) && cell.is_border(border_position::LEFT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::TOP) + 4; // 4
-                }
-                // B_SE cell
-                if (cell.is_border(border_position::BOTTOM) && cell.is_border(border_position::RIGHT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::BOTTOM) + 4; // 5
-                }
-                // B_NE cell
-                if (cell.is_border(border_position::TOP) && cell.is_border(border_position::RIGHT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::RIGHT) + 4; // 6
-                }
-                // B_SW cell
-                if (cell.is_border(border_position::BOTTOM) && cell.is_border(border_position::LEFT)) {
-                    border_position[idx] = static_cast<uint8_t>(border_position::LEFT) + 4; // 7
-                }
-
-                if (cell.type() == cell_type::INNER_OBSTACLE) {
-                    border_position[idx] = 8;
-                }
-            }
-        }
-    }
-
-    // Allocating and copying data to GPU
-    // GPU has a different memory space
-    #ifdef __CUDACC__ // TODO wrap all CUDA functions
+    #ifdef __CUDACC__
         double* d_p_matrix_new;
-        cudaMalloc(&d_p_matrix_new, size_linear * sizeof(double));
         double * d_p_matrix;
-        cudaMalloc(&d_p_matrix, size_linear * sizeof(double));
         double * d_rs_matrix;
-        cudaMalloc(&d_rs_matrix, size_linear * sizeof(double));
-
-        // Copy data to GPU (only once)
         bool * d_fluid_mask;
-        cudaMalloc(&d_fluid_mask, size_linear * sizeof(bool));
-        cudaMemcpy(d_fluid_mask, fluid_mask, size_linear * sizeof(bool), cudaMemcpyHostToDevice);
         uint8_t * d_boundary_type;
-        cudaMalloc(&d_boundary_type, size_linear * sizeof(uint8_t));
-        cudaMemcpy(d_boundary_type, boundary_type, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
         uint8_t * d_border_position;
-        cudaMalloc(&d_border_position, size_linear * sizeof(uint8_t));
-        cudaMemcpy(d_border_position, border_position, size_linear * sizeof(uint8_t), cudaMemcpyHostToDevice);
-    #endif
+        bool* fluid_mask;
+        uint8_t* boundary_type;
+        uint8_t* border_position;
+        double* p_matrix = _field.p_matrix().raw_pointer();
+        double* rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
 
-    double* p_matrix = _field.p_matrix().raw_pointer(); // initial pressure, the pointers get swapped during the iterations
-    double* rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
+        generate_gpu_masks(_grid, fluid_mask, boundary_type, border_position,
+                           d_fluid_mask, d_boundary_type, d_border_position);
+        allocate_gpu_memory(_grid, d_p_matrix_new, d_p_matrix, d_rs_matrix);
+
+        gridParams _gridParams = {
+            _grid.domain().size_x,
+            _grid.domain().size_y,
+            _grid.dx(),
+            _grid.dy(),
+            _grid.fluid_cells().size(),
+        };
+
+        int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
+    #endif
 
 
     while (t < _t_end) {
@@ -377,8 +293,8 @@ void Case::simulate() {
             b->applyTemperature(_field);
         }
 
-//        _field.calculate_temperature(_grid);
-//        Communication::communicate(_field.t_matrix());
+        _field.calculate_temperature(_grid);
+        Communication::communicate(_field.t_matrix());
 
         _field.calculate_fluxes(_grid);
         Communication::communicate(_field.f_matrix());
@@ -389,25 +305,30 @@ void Case::simulate() {
         }
 
         _field.calculate_rs(_grid); // calculate rs on CPU and copy to GPU
+        #ifdef __CUDACC__
         cudaMemcpy(d_rs_matrix, rs_matrix, size_linear * sizeof(double), cudaMemcpyHostToDevice);
-
+        #endif
 
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
+            #ifdef __CUDACC__
             residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
-                                  _gridParams, gpu_num_iterations);
-            iter += gpu_num_iterations;
+                                  _gridParams, _num_gpu_iterations);
+            iter += _num_gpu_iterations;
 
             // TODO : CUDA aware MPI
             Communication::communicate(_field.p_matrix());
             residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
+            #endif
         }
         iter_vec.push_back(iter);
 
+        #ifdef __CUDACC__
         cudaMemcpy(p_matrix, d_p_matrix, size_linear * sizeof(double), cudaMemcpyDeviceToHost);
-        
+        #endif
+
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
@@ -445,16 +366,10 @@ void Case::simulate() {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
 
-    delete[] fluid_mask;
-    delete[] boundary_type;
-    delete[] border_position;
     #ifdef __CUDACC__
-        cudaFree(d_p_matrix_new);
-        cudaFree(d_p_matrix);
-        cudaFree(d_rs_matrix);
-        cudaFree(d_fluid_mask);
-        cudaFree(d_boundary_type);
+    free_gpu_memory(d_p_matrix_new, d_p_matrix, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position);
     #endif
+
 }
 
 void Case::output_csv(const std::vector<int> &vec) {

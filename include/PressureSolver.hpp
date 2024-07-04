@@ -5,8 +5,7 @@
 #include "Boundary.hpp"
 #include "Fields.hpp"
 #include "Grid.hpp"
-#include "UtilsGPU.h"
-
+#include "UtilsGPU.hpp"
 
 /**
  * @brief Abstract class for pressure Poisson equation solver

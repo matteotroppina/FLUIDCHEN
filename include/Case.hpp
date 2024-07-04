@@ -69,6 +69,10 @@ class Case {
     /// Maximum number of iterations for the solver
     int _max_iter;
 
+    /// Iterations before returning residual and updating boundary conditions
+    /// it is faster to calculate more iterations on GPU than to calculate if residual < tolerance in while loop
+    int _num_gpu_iterations;
+
     /**
      * @brief Creating file names from given input data file
      *

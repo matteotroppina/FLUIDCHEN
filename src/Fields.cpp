@@ -41,6 +41,7 @@ void Fields::calculate_rs(Grid &grid) {
     }
 }
 
+#ifdef __CUDACC__
 void Fields::calculate_velocities(Grid &grid) {
 
     int itermax_x = grid.itermax_x();
@@ -100,21 +101,22 @@ void Fields::calculate_velocities(Grid &grid) {
     cudaFree(d_F_matrix);
     cudaFree(d_G_matrix);
 }
+#else
+void Fields::calculate_velocities(Grid &grid) {
 
-//void Fields::calculate_velocities(Grid &grid) {
-//
-//    for (int i = 1; i <= grid.itermax_x() - 1; i++) {
-//        for (int j = 1; j <= grid.size_y(); j++) {
-//            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
-//        }
-//    }
-//
-//    for (int i = 1; i <= grid.size_x(); i++) {
-//        for (int j = 1; j <= grid.itermax_y() - 1; j++) {
-//            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
-//        }
-//    }
-//}
+    for (int i = 1; i <= grid.itermax_x() - 1; i++) {
+        for (int j = 1; j <= grid.size_y(); j++) {
+            _U(i, j) = _F(i, j) - _dt / grid.dx() * (_P(i + 1, j) - _P(i, j));
+        }
+    }
+
+    for (int i = 1; i <= grid.size_x(); i++) {
+        for (int j = 1; j <= grid.itermax_y() - 1; j++) {
+            _V(i, j) = _G(i, j) - _dt / grid.dy() * (_P(i, j + 1) - _P(i, j));
+        }
+    }
+}
+#endif
 
 void Fields::calculate_temperature(Grid &grid) {
     for (int i = 1; i <= grid.size_x(); i++) {

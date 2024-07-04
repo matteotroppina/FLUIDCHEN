@@ -1,7 +1,6 @@
-#include <cmath>
-#include "Communication.hpp"
 #include "PressureSolver.hpp"
-#include "UtilsGPU.h"
+#include "Communication.hpp"
+#include <cmath>
 
 SOR::SOR(double omega) : _omega(omega) {}
 
@@ -42,6 +41,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return res;
 }
 
+#ifdef __CUDACC__
 __global__ void jacobiKernel(double *d_p_matrix_new, double *d_p_matrix, const double *d_rs_matrix, const bool *d_fluid_mask,
                              const double coeff, const int imax, const int jmax, const double dx, const double dy) {
 
@@ -131,7 +131,7 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
     int size_linear = (imax + 2) * (jmax + 2);
     double coeff = 1.0 / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
     double res = 0;
-    int size_fluid_cells = grid.size_fluid_cells;
+    size_t size_fluid_cells = grid.size_fluid_cells;
 
     dim3 threadsPerBlock(8, 8);
     dim3 numBlocks((imax + 2 + threadsPerBlock.x - 1) / threadsPerBlock.x, (jmax + 2 + threadsPerBlock.y - 1) / threadsPerBlock.y);
@@ -162,3 +162,4 @@ double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs
     return res / size_fluid_cells;
 
 }
+#endif
