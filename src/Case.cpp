@@ -270,6 +270,7 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
+    std::vector<double> res_vec;
     bool turbulence_started = false;
 
     while (t < _t_end) {
@@ -320,6 +321,7 @@ void Case::simulate() {
         }
 
         iter_vec.push_back(iter);
+        res_vec.push_back(residual);
 
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
@@ -393,27 +395,39 @@ void Case::simulate() {
         }
 
     }
-    // output_csv(iter_vec);
+    output_csv(iter_vec, res_vec);
 
     if (my_rank_global == 0) {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
 }
 
-void Case::output_csv(const std::vector<int> &vec) {
-    std::string filename = _dict_name + "/iterations.csv";
+void Case::output_csv(const std::vector<int> &vec1,const std::vector<double> &vec2){
+    std::string filename1 = _dict_name + "/iterations.csv";
+    std::string filename2 = _dict_name + "/residuals.csv";
 
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        for (size_t i = 0; i < vec.size(); ++i) {
-            file << vec[i];
-            if (i != vec.size() - 1) {
-                file << ",";
+    std::ofstream file1(filename1);
+    std::ofstream file2(filename2);
+    if (file1.is_open()) {
+        for (size_t i = 0; i < vec1.size(); ++i) {
+            file1 << vec1[i];
+            if (i != vec1.size() - 1) {
+                file1 << ",";
             }
         }
-        file.close();
+        file1.close();
+    if (file2.is_open()) {
+        for (size_t i = 0; i < vec2.size(); ++i) {
+            file2 << vec2[i];
+            if (i != vec2.size() - 1) {
+                file2 << ",";
+            }
+        }
+        file2.close();
     } else {
-        std::cerr << "Unable to open file: " << filename << std::endl;
+        std::cerr << "Unable to open file." << std::endl;
+    }
+
     }
 }
 
