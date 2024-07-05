@@ -57,6 +57,8 @@ class SOR : public PressureSolver {
     double _omega;
 };
 
+#ifdef __CUDACC__
 double gpu_psolve(double *d_p_matrix, double *d_p_matrix_new, const double *d_rs_matrix, const bool *d_fluid_mask,
                   const uint8_t *d_boundary_type, const uint8_t *d_border_position, const gridParams grid,
                   const int num_iterations);
+#endif
