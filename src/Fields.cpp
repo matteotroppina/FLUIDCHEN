@@ -280,7 +280,7 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
 
         // TODO : Read from dat file
-        double unsafety_factor = 25; // haha
+        double unsafety_factor = 10; // haha
 
         _dt = std::min(_dt, unsafety_factor * k_cond);
         _dt = std::min(_dt, unsafety_factor * eps_cond);
