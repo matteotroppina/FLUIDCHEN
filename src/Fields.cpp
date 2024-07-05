@@ -236,14 +236,15 @@ void Fields::calculate_damping(Grid &grid){
                     ReT(i, j) = yplus(i, j) * std::pow(K(i, j), 2) / (_nu * E(i, j));
                     damp2(i, j) = 1 - 0.3 * std::exp(-std::pow(ReT(i, j), 2));
                     dampmu(i, j) = std::exp(-3.40 / std::pow((1 + 0.02*ReT(i, j)), 2));
-                    L_e(i, j) = 2 * _nu * nuT(i,j) * std::pow((Discretization::laplacian(u_matrix(), i, j) + Discretization::laplacian(v_matrix(), i, j)), 2);
 
                     //dissipation rate of K at the wall
                     if (_dist_x(i, j) < _dist_y(i, j)){
                         //divergence of sqrt(k) at the wall
-                        L_k(i, j) = 2*_nu * std::pow(std::pow(_K(i,j), 0.5) / _dist_x(i,j), 2); // assuming k = 0 at wall
+                        L_k(i, j) = 2 * _nu * std::pow(std::sqrt(_K(i,j)) / _dist_x(i, j), 2); // assuming k is 0 at wall
+                        L_e(i, j) = 2 * _nu * nuT(i,j) * std::pow(Discretization::laplacian_x(u_matrix(), i, j), 2);
                     } else {
-                        L_k(i, j) = 2*_nu * std::pow(std::pow(_K(i,j), 0.5) / _dist_y(i, j), 2); // assuming k = 0 at wall
+                        L_k(i, j) = 2 * _nu * std::pow(std::sqrt(_K(i,j)) / _dist_y(i, j), 2);
+                        L_e(i, j) = 2 * _nu * nuT(i,j) * std::pow(Discretization::laplacian_y(v_matrix(), i, j), 2);
                     }
                 } else {
                     damp2(i, j) = 1;
@@ -279,7 +280,7 @@ void Fields::calculate_dt(Grid &grid, bool turbulence_started) {
         double eps_cond = 1 / (2 * eps_max * (1 / dx_2 + 1 / dy_2));
 
         // TODO : Read from dat file
-        double unsafety_factor = 25; // haha
+        double unsafety_factor = 1; // haha
 
         _dt = std::min(_dt, unsafety_factor * k_cond);
         _dt = std::min(_dt, unsafety_factor * eps_cond);

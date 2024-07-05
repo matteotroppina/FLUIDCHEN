@@ -215,6 +215,15 @@ Case::Case(std::string file_name, int argn, char **args) {
         _field.calculate_walldist(_grid); // calculate distance from nearest wall for turbulence model once
         Communication::communicate(_field.dist_y_matrix());
         Communication::communicate(_field.dist_x_matrix());
+        double min_y = _field.dist_y_matrix().min_value();
+        double min_x = _field.dist_x_matrix().min_value();
+        if (min_y > 30 or min_x > 30) {
+            if (my_rank_global == 0) {
+                std::cerr << "Wall distance is too large for turbulence model" << std::endl;
+                std::cerr << "Please check yplus and adjust case parameters" << std::endl;
+            }
+        }
+
     }
 }
 

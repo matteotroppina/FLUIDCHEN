@@ -59,54 +59,54 @@ void Boundary::applyTurbulence(Fields &field) {
 
         // B_NW cell
         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::LEFT)) {
-            field.K(i,j) = ( field.K(i-1,j) + field.K(i,j+1) ) / 2.0;
-            field.E(i,j) = ( field.E(i-1,j) + field.E(i,j+1) ) / 2.0;
+            field.K(i,j) = -( field.K(i-1,j) + field.K(i,j+1) ) / 2.0;
+            field.E(i,j) = -( field.E(i-1,j) + field.E(i,j+1) ) / 2.0;
 
             continue;
         }
         // B_SE cell
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::RIGHT)) {
-            field.K(i,j) = ( field.K(i+1,j) + field.K(i,j+1) ) / 2.0;
-            field.E(i,j) = ( field.E(i+1,j) + field.E(i,j+1) ) / 2.0;
+            field.K(i,j) = -( field.K(i+1,j) + field.K(i,j+1) ) / 2.0;
+            field.E(i,j) = -( field.E(i+1,j) + field.E(i,j+1) ) / 2.0;
 
             continue;
         }
         // B_NE cell
         if (cell->is_border(border_position::TOP) && cell->is_border(border_position::RIGHT)) {
-            field.K(i,j) = ( field.K(i+1,j) + field.K(i,j+1) ) / 2.0;
-            field.E(i,j) = ( field.E(i+1,j) + field.E(i,j+1) ) / 2.0;
+            field.K(i,j) = -( field.K(i+1,j) + field.K(i,j+1) ) / 2.0;
+            field.E(i,j) = -( field.E(i+1,j) + field.E(i,j+1) ) / 2.0;
 
             continue;
         }
         // B_SW cell
         if (cell->is_border(border_position::BOTTOM) && cell->is_border(border_position::LEFT)) {
-            field.K(i,j) = ( field.K(i-1,j) + field.K(i,j-1) ) / 2.0;
-            field.E(i,j) = ( field.E(i-1,j) + field.E(i,j-1) ) / 2.0;
+            field.K(i,j) = -( field.K(i-1,j) + field.K(i,j-1) ) / 2.0;
+            field.E(i,j) = -( field.E(i-1,j) + field.E(i,j-1) ) / 2.0;
 
             continue;
         }
 
         if (cell->is_border(border_position::RIGHT)) {
-            field.K(i,j) = field.K(i+1,j);
-            field.E(i,j) = field.E(i+1,j);
+            field.K(i,j) = -field.K(i+1,j);
+            field.E(i,j) = -field.E(i+1,j);
 
         }
 
         if (cell->is_border(border_position::LEFT)) {
-            field.K(i,j) = field.K(i-1,j);
-            field.E(i,j) = field.E(i-1,j);
+            field.K(i,j) = -field.K(i-1,j);
+            field.E(i,j) = -field.E(i-1,j);
 
         }
 
         if (cell->is_border(border_position::TOP)) {
-            field.K(i,j) = field.K(i,j+1);
-            field.E(i,j) = field.E(i,j+1);
+            field.K(i,j) = -field.K(i,j+1);
+            field.E(i,j) = -field.E(i,j+1);
 
         }
 
         if (cell->is_border(border_position::BOTTOM)) {
-            field.K(i,j) = field.K(i,j-1);
-            field.E(i,j) = field.E(i,j-1);
+            field.K(i,j) = -field.K(i,j-1);
+            field.E(i,j) = -field.E(i,j-1);
 
         }
     }
@@ -417,9 +417,6 @@ void FixedVelocityBoundary::applyTurbulence(Fields &field) {
 
             field.K(i, j) = 2*k_boundary - field.K(i + 1, j);
             field.E(i, j) = 2*eps_boundary - field.E(i + 1, j);
-            // why is nuT here?
-//            field.nuT(i,j) = C0 * std::pow(field.K(i, j), 2) / field.E(i, j);
-
         }
 
         if (cell->is_border(border_position::LEFT)) {
