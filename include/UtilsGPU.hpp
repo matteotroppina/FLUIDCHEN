@@ -9,7 +9,6 @@
 
 
 #ifdef __CUDACC__
-#warning "CUDA enabled"
 #include <cuda_runtime.h>
 #include <cstdint>
 
