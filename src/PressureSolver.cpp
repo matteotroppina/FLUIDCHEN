@@ -92,21 +92,21 @@ void apply_pressure_bcs(double *d_p_matrix, const bool *d_fluid_mask, const uint
                     double value_top = d_p_matrix[idx_top];
                     double value_bottom = d_p_matrix[idx_bottom];
 
-                    uint8_t type = d_boundary_type[idx];
+                    uint8_t bpos = d_border_position[idx];
 
-                    double zero_gradient_val = (type == TOP) ? -value_top :
-                                               (type == BOTTOM) ? -value_bottom :
-                                               (type == LEFT) ? -value_left :
-                                               (type == RIGHT) ? -value_right : 0;
+                    double zero_gradient_val = (bpos == TOP) ? -value_top :
+                                               (bpos == BOTTOM) ? -value_bottom :
+                                               (bpos == LEFT) ? -value_left :
+                                               (bpos == RIGHT) ? -value_right : 0;
 
-                    double fixed_wall_val = (type == TOP) ? value_top :
-                                            (type == BOTTOM) ? value_bottom :
-                                            (type == LEFT) ? value_left :
-                                            (type == RIGHT) ? value_right :
-                                            (type == TOP_LEFT) ? (value_top + value_left) / 2 :
-                                            (type == BOTTOM_RIGHT) ? (value_bottom + value_right) / 2 :
-                                            (type == TOP_RIGHT) ? (value_top + value_right) / 2 :
-                                            (type == BOTTOM_LEFT) ? (value_bottom + value_left) / 2 : 0;
+                    double fixed_wall_val = (bpos == TOP) ? value_top :
+                                            (bpos == BOTTOM) ? value_bottom :
+                                            (bpos == LEFT) ? value_left :
+                                            (bpos == RIGHT) ? value_right :
+                                            (bpos == TOP_LEFT) ? (value_top + value_left) / 2 :
+                                            (bpos == BOTTOM_RIGHT) ? (value_bottom + value_right) / 2 :
+                                            (bpos == TOP_RIGHT) ? (value_top + value_right) / 2 :
+                                            (bpos == BOTTOM_LEFT) ? (value_bottom + value_left) / 2 : 0;
 
                     d_p_matrix[idx] = (d_boundary_type[idx] == ZERO_GRADIENT) ? zero_gradient_val : fixed_wall_val;
             }
