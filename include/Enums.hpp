@@ -17,17 +17,6 @@ const double wall_velocity = 1.0;
 // # 4  Wall/Obstacle (hot)
 // # 5  Wall/Obstacle (cold)
 
-namespace GeometryIDs {
-const int fluid = 0;
-const int fixed_velocity = 1;
-const int zero_gradient = 2;
-const int fixed_wall = 3;
-const int moving_wall = 8;
-const int hot_wall = 4;
-const int cold_wall = 5;
-} // namespace GeometryIDs
-
-
 enum class border_position {
     TOP,
     BOTTOM,
@@ -35,16 +24,29 @@ enum class border_position {
     RIGHT,
 };
 
+
+namespace GeometryIDs {
+const int FLUID = 0;
+const int FIXED_VELOCITY = 1;
+const int ZERO_GRADIENT = 2;
+const int FIXED_WALL = 3;
+const int HOT_WALL = 4;
+const int COLD_WALL = 5;
+const int INNER_OBSTACLE = 6;
+const int DEFAULT = 7;
+const int MOVING_WALL = 8;
+} // namespace GeometryIDs
+
 enum class cell_type {
     FLUID,
-    FIXED_WALL,
-    MOVING_WALL,
     FIXED_VELOCITY,
     ZERO_GRADIENT,
-    DEFAULT,
-    INNER_OBSTACLE,
+    FIXED_WALL,
     HOT_WALL,
-    COLD_WALL
+    COLD_WALL,
+    INNER_OBSTACLE,
+    DEFAULT,
+    MOVING_WALL
 };
 
 enum DIRECTIONS {DOWN, UP, LEFT, RIGHT };

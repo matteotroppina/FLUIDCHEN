@@ -1,7 +1,7 @@
 #--------------------------------------------
 #           geometry file            
 #--------------------------------------------
-geo_file     ChannelWithBFS.pgm
+geo_file     ChannelWithObstacleUpscaled.pgm
 
 #--------------------------------------------
 #            size of the domain             
@@ -12,8 +12,8 @@ ylength      2
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax         100
-jmax         20
+imax         230
+jmax         48
 
 #--------------------------------------------
 #               time steps
@@ -22,14 +22,14 @@ jmax         20
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        10.0
+t_end        30.0
 tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.1
+dt_value     0.2
 
 #--------------------------------------------
 #               pressure
@@ -46,7 +46,7 @@ gamma        0.5
 #--------------------------------------------
 #     kinematic viscosity
 #--------------------------------------------
-nu           0.0001
+nu           0.001
 
 #--------------------------------------------
 #        gravity / external forces
@@ -81,6 +81,6 @@ num_of_walls 1
 #         turbulence parameters
 #--------------------------------------------
 turbulence   1           // 0 OFF - 1 ON
-t_init       1
+t_init       0
 KI           0.003
 EI           0.0005

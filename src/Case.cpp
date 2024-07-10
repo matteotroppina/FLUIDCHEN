@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -19,6 +18,9 @@ namespace filesystem = std::filesystem;
 
 #include "Case.hpp"
 #include "Enums.hpp"
+
+#include "UtilsGPU.hpp"
+
 
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
@@ -48,6 +50,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_3{};
     double wall_temp_4{};
     double wall_temp_5{};
+    int num_gpu_iterations{16};
+    double KI{}; /*initial value for turbulent kinetic energy*/
+    double EI{}; /*initial value for the dissipation rate*/
 
     int num_of_walls{};
 
@@ -55,10 +60,19 @@ Case::Case(std::string file_name, int argn, char **args) {
     int iproc{1};
     int jproc{1};
 
-    if (argn > 2){
+    if (argn > 2){ // arguments for parallel execution
         iproc = *args[2] - 48;  //convert to ASCII
         jproc = *args[3] - 48;
     }
+
+    #ifdef __CUDACC__
+        if (iproc != 1 or jproc != 1){
+            std::cerr << "MPI not yet supported with GPU acceleration" << std::endl;
+            std::cerr << "Please run with 1 process in each direction" << std::endl;
+            Communication::finalize();
+            exit(1);
+        }
+    #endif
 
     if (file.is_open()) {
 
@@ -91,12 +105,17 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
+                if (var == "turbulence") file >> _turbulence;
+                if (var == "t_init") file >> _t_init;
+                if (var == "KI") file >> KI;
+                if (var == "EI") file >> EI;
                 // read geometry file name from .dat file and directly assign it to private member fo Case
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
                 if (var == "wall_temp_5") file >> wall_temp_5;
+                if (var == "num_gpu_iterations") file >> num_gpu_iterations;
             }
         }
     }
@@ -129,12 +148,16 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, alpha, beta, GX, GY, TI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, xlength, ylength, UI, VI, PI, alpha, beta, GX, GY,
+                    TI, KI, EI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
+    _viscosity_solver = std::make_unique<K_EPS_model>();
     _max_iter = itermax;
+    _num_gpu_iterations = num_gpu_iterations;
     _tolerance = eps;
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -182,6 +205,25 @@ Case::Case(std::string file_name, int argn, char **args) {
         if (not _grid.cold_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_wall_cells(), wall_temp_5));
         }
+    }
+
+    if (_turbulence) {
+        if (my_rank_global == 0) {
+            std::cout << "Turbulence model activated" << std::endl;
+            std::cout << "Computing wall distance for turbulence model" << std::endl;
+        }
+        _field.calculate_walldist(_grid); // calculate distance from nearest wall for turbulence model once
+        Communication::communicate(_field.dist_y_matrix());
+        Communication::communicate(_field.dist_x_matrix());
+        double min_y = _field.dist_y_matrix().min_value();
+        double min_x = _field.dist_x_matrix().min_value();
+        if (min_y > 30 or min_x > 30) {
+            if (my_rank_global == 0) {
+                std::cerr << "Wall distance is too large for turbulence model" << std::endl;
+                std::cerr << "Please check yplus and adjust case parameters" << std::endl;
+            }
+        }
+
     }
 }
 
@@ -232,26 +274,6 @@ void Case::set_file_names(std::string file_name) {
     }
 }
 
-/**
- * This function is the main simulation loop. In the simulation loop, following steps are required
- * Calculate and apply velocity boundary conditions for all the boundaries in _boundaries container
- * using applyVelocity() member function of Boundary class
- * Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- * Flux consists of diffusion and convection part, which are located in Discretization class
- * Apply Flux boundary conditions using applyFlux()
- * Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
- *   or the maximum number of the iterations are performed using solve() member function of PressureSolver
- * - Update pressure boundary conditions after each iteration of the SOR solver
- * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
- * - Write vtk files using output_vtk() function
- *
- * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface and/or common functions. You need to define functions with individual functionalities in inherited
- * classes such as MovingWallBoundary class.
- * For information about the classes and functions, you can check the header files.
- */
 void Case::simulate() {
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -270,10 +292,42 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
+    std::vector<double> res_vec;
+    bool turbulence_started = false;
+
+    // Initialize GPU memory and variables
+    #ifdef __CUDACC__
+        double* d_p_matrix_new;
+        double * d_p_matrix;
+        double * d_rs_matrix;
+        bool * d_fluid_mask;
+        uint8_t * d_boundary_type;
+        uint8_t * d_border_position;
+        bool* fluid_mask;
+        uint8_t* boundary_type;
+        uint8_t* border_position;
+        double* p_matrix = _field.p_matrix().raw_pointer();
+        double* rs_matrix = _field.rs_matrix().raw_pointer(); // rs matrix is calculated on CPU and copied to GPU
+
+        generate_gpu_masks(_grid, fluid_mask, boundary_type, border_position,
+                           d_fluid_mask, d_boundary_type, d_border_position);
+        allocate_gpu_memory(_grid, d_p_matrix_new, d_p_matrix, d_rs_matrix);
+
+        gridParams _gridParams = {
+            _grid.domain().size_x,
+            _grid.domain().size_y,
+            _grid.dx(),
+            _grid.dy(),
+            _grid.fluid_cells().size(),
+        };
+
+        int size_linear = (_grid.domain().size_x + 2) * (_grid.domain().size_y + 2);
+    #endif
+
 
     while (t < _t_end) {
 
-        _field.calculate_dt(_grid);
+        _field.calculate_dt(_grid, turbulence_started);
         dt = _field.dt();
 
         for (auto &b : _boundaries) {
@@ -281,102 +335,161 @@ void Case::simulate() {
             b->applyTemperature(_field);
         }
 
+//        _field.calculate_temperature(_grid);
+//        Communication::communicate(_field.t_matrix());
 
-        _field.calculate_temperature(_grid);
-        Communication::communicate(_field.t_matrix());
-
-
-        _field.calculate_fluxes(_grid);
+        _field.calculate_fluxes(_grid, turbulence_started);
         Communication::communicate(_field.f_matrix());
         Communication::communicate(_field.g_matrix());
-
 
         for (auto &b : _boundaries) {
             b->applyFlux(_field);
         }
 
-        _field.calculate_rs(_grid);
+        _field.calculate_rs(_grid); // calculate rs on CPU and copy to GPU
+        #ifdef __CUDACC__
+        cudaMemcpy(d_rs_matrix, rs_matrix, size_linear * sizeof(double), cudaMemcpyHostToDevice);
+        #endif
 
         residual = 1;
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
-            residual = _pressure_solver->solve(_field, _grid, _boundaries);
-            Communication::communicate(_field.p_matrix());
+            #ifdef __CUDACC__
+                residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
+                                      _gridParams, _num_gpu_iterations);
+                iter += _num_gpu_iterations;
 
-            for (auto &b : _boundaries) {
-                b->applyPressure(_field);
-            }
-            iter += 1;
+                // TODO : CUDA aware MPI
+                Communication::communicate(_field.p_matrix());
+            #else
+                residual = _pressure_solver->solve(_field, _grid);
+                Communication::communicate(_field.p_matrix());
+
+                for (auto &b : _boundaries) {
+                    b->applyPressure(_field);
+                }
+                iter += 1;
+            #endif
 
             residual = Communication::reduce_sum(residual);
+            residual = std::sqrt(residual);
         }
-
         iter_vec.push_back(iter);
+        res_vec.push_back(residual);
+
+        #ifdef __CUDACC__
+        cudaMemcpy(p_matrix, d_p_matrix, size_linear * sizeof(double), cudaMemcpyDeviceToHost);
+        #endif
 
         _field.calculate_velocities(_grid);
         Communication::communicate(_field.u_matrix());
         Communication::communicate(_field.v_matrix());
 
-//        return;
-        
+        if(_turbulence && t > _t_init){
+
+            turbulence_started = true;
+
+            _field.calculate_yplus(_grid);
+            _field.calculate_damping(_grid);
+
+            for(auto &b : _boundaries){
+                b->applyTurbulence(_field);
+            }
+
+            _viscosity_solver->solve(_field, _grid);
+
+            // huge communication overhead -> needs to be optimized
+            // e.g. combine all matrices into one and communicate once
+            Communication::communicate(_field.k_matrix());
+            Communication::communicate(_field.e_matrix());
+            Communication::communicate(_field.nuT_matrix());
+
+            Communication::communicate(_field.yplus_matrix());
+            Communication::communicate(_field.ReT_matrix());
+
+            // I think these do not need to be communicated, because they are calculated from the above
+//            Communication::communicate(_field.damp2_matrix());
+//            Communication::communicate(_field.dampmu_matrix());
+//            Communication::communicate(_field.L_k_matrix());
+//            Communication::communicate(_field.L_e_matrix());
+
+
+            double max_p = _field.p_matrix().max_abs_value();
+            if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
+                std::cerr << "Divergence detected" << std::endl;
+                return;
+            }
+        }
+
+
         timestep += 1;
         output_counter += dt;
         t += dt;
 
-        if (output_counter >= _output_freq or timestep == 1) {
+        if (output_counter >= _output_freq or (timestep == 1 or t >= _t_end)) {
 
             output_counter = 0;
-
             double max_p = _field.p_matrix().max_abs_value();
             if (max_p > 1e6 or max_p != max_p or residual != residual) { // check larger than or nan
                 std::cerr << "Divergence detected" << std::endl;
                 break;
             }
 
-            output_vtk(timestep, my_rank_global);
+             //round t to nearest _output_freq
+             int output_time = round(1000 * t);
+
+            output_vtk(output_time, my_rank_global);
             if (my_rank_global == 0) {
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] " << "Writing Output at t = " << t << "s" << std::endl;
-                std::cout << std::left << "[ " << "Timestep: " << timestep << "\t\tSOR Iterations: " << iter << "\tSOR Residual: " << residual << " ]"<< std::flush;
-                if (iter == _max_iter) {
+                std::cout << std::left << "[ " << "Timestep: " << timestep << "\t\t Iterations: " << iter << "\tResidual: " << residual << " ]"<< std::flush;
+                if (iter >= _max_iter) {
                     std::cout << "\t\t ---> Exceeded max iterations";
                 }
                 std::cout << "\n------------------------------------------------------------------------------------" << std::flush;
-                // std::cout << "min/max p: " << _field.p_matrix().min_value() << " / " << _field.p_matrix().max_value()
-                //           << std::endl;
             }
 
         }
 
-        // output for performance analysis - comment the output above
-        
-        // if (output_counter >= _output_freq && my_rank_global == 0) {
-        //     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%" << " completed] " << std::endl; 
-        //     output_counter = 0;
-        // }
-
     }
-    // output_csv(iter_vec);
+    output_csv(iter_vec, res_vec);
 
     if (my_rank_global == 0) {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
     }
+
+    #ifdef __CUDACC__
+    free_gpu_memory(d_p_matrix_new, d_p_matrix, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position);
+    #endif
+
 }
 
-void Case::output_csv(const std::vector<int> &vec) {
-    std::string filename = _dict_name + "/iterations.csv";
+void Case::output_csv(const std::vector<int> &vec1,const std::vector<double> &vec2){
+    std::string filename1 = _dict_name + "/iterations.csv";
+    std::string filename2 = _dict_name + "/residuals.csv";
 
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        for (size_t i = 0; i < vec.size(); ++i) {
-            file << vec[i];
-            if (i != vec.size() - 1) {
-                file << ",";
+    std::ofstream file1(filename1);
+    std::ofstream file2(filename2);
+    if (file1.is_open()) {
+        for (size_t i = 0; i < vec1.size(); ++i) {
+            file1 << vec1[i];
+            if (i != vec1.size() - 1) {
+                file1 << ",";
             }
         }
-        file.close();
-    } else {
-        std::cerr << "Unable to open file: " << filename << std::endl;
+        file1.close();
+        if (file2.is_open()) {
+            for (size_t i = 0; i < vec2.size(); ++i) {
+                file2 << vec2[i];
+                if (i != vec2.size() - 1) {
+                    file2 << ",";
+                }
+            }
+            file2.close();
+        } else {
+            std::cerr << "Unable to open file." << std::endl;
+        }
+
     }
 }
 
@@ -471,6 +584,46 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetCellData()->AddArray(Pressure);
     structuredGrid->GetCellData()->AddArray(Temperature);
 
+    // K, Epsilon, NuT, dist_y, yplus
+    if (_turbulence) {
+        vtkSmartPointer<vtkDoubleArray> K = vtkSmartPointer<vtkDoubleArray>::New();
+        K->SetName("k");
+        K->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Epsilon = vtkSmartPointer<vtkDoubleArray>::New();
+        Epsilon->SetName("epsilon");
+        Epsilon->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> NuT = vtkSmartPointer<vtkDoubleArray>::New();
+        NuT->SetName("nuT");
+        NuT->SetNumberOfComponents(1);
+
+        vtkSmartPointer<vtkDoubleArray> Yplus = vtkSmartPointer<vtkDoubleArray>::New();
+        Yplus->SetName("yplus");
+        Yplus->SetNumberOfComponents(1);
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double k = _field.K(i, j);
+                double epsilon = _field.E(i, j);
+                double nuT = _field.nuT(i, j);
+                double dist_y = _field.dist_y(i, j);
+                double dist_x = _field.dist_x(i, j);
+                double yplus = _field.yplus(i, j);
+
+                K->InsertNextTuple(&k);
+                Epsilon->InsertNextTuple(&epsilon);
+                NuT->InsertNextTuple(&nuT);
+                Yplus->InsertNextTuple(&yplus);
+                }
+            }
+
+        structuredGrid->GetCellData()->AddArray(K);
+        structuredGrid->GetCellData()->AddArray(Epsilon);
+        structuredGrid->GetCellData()->AddArray(NuT);
+        structuredGrid->GetCellData()->AddArray(Yplus);
+    }
+
     // Add Velocity to Structured Grid
     structuredGrid->GetCellData()->AddArray(Velocity);
     structuredGrid->GetPointData()->AddArray(VelocityPoints);
@@ -515,12 +668,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain, int ip
 
     if (neighbours[RIGHT] != MPI_PROC_NULL){ // if there is a right neighbour
         domain.itermax_x = size_x + 1;
-        // std::cout << "rank: " << my_rank_global << " has right neighbour" << std::endl;
     }
 
     if (neighbours[UP] != MPI_PROC_NULL){ // if there is an upper neighbour
         domain.itermax_y = size_y + 1;
-        // std::cout << "rank: " << my_rank_global << " has upper neighbour" << std::endl;
     }
 
 }

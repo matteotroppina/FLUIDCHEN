@@ -51,25 +51,25 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     for (int j_geom = _domain.jminb; j_geom < _domain.jmaxb; ++j_geom) {
         { i = 0; }
         for (int i_geom = _domain.iminb; i_geom < _domain.imaxb; ++i_geom) {
-            if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fluid) {
+            if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::FLUID) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 if ( not ((i == 0) or (i == _domain.size_x + 1) or (j == 0) or (j == _domain.size_y + 1)) ) {
                     _fluid_cells.push_back(&_cells(i, j));
-                } // don't add ghost cells to fluid cells
-            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::moving_wall) {
+                } // don't add ghost cells to FLUID cells
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::MOVING_WALL) {
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                 _moving_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::fixed_velocity) {
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::FIXED_VELOCITY) {
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_VELOCITY, geometry_data.at(i_geom).at(j_geom));
                 _fixed_velocity_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::zero_gradient) {
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::ZERO_GRADIENT) {
                 _cells(i, j) = Cell(i, j, cell_type::ZERO_GRADIENT, geometry_data.at(i_geom).at(j_geom));
                 _zero_gradient_cells.push_back(&_cells(i, j));
-                // determine fixed walls in the next sections by checking if neighbour is fluid
-            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::hot_wall) {
+                // determine fixed walls in the next sections by checking if neighbour is FLUID
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::HOT_WALL) {
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                 _hot_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::cold_wall) {
+            } else if (geometry_data.at(i_geom).at(j_geom) == GeometryIDs::COLD_WALL) {
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                 _cold_wall_cells.push_back(&_cells(i, j));
             } else {

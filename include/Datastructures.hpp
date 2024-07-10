@@ -62,6 +62,8 @@ template <typename T> class Matrix {
      */
     const T *data() const { return _container.data(); }
 
+    T *raw_pointer() { return _container.data(); }
+
     /**
      * @brief Access of the size of the structure
      *
