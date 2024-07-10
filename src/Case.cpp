@@ -252,6 +252,7 @@ void Case::simulate() {
     double residual = 1;
     int iter = 0;
     std::vector<int> iter_vec;
+    std::vector<double> res_vec;
 
     // Initialize GPU memory and variables
     #ifdef __CUDACC__
@@ -313,17 +314,23 @@ void Case::simulate() {
         iter = 0;
         while (iter < _max_iter and residual > _tolerance) {
             #ifdef __CUDACC__
-            residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
-                                  _gridParams, _num_gpu_iterations);
-            iter += _num_gpu_iterations;
+                residual = gpu_psolve(d_p_matrix, d_p_matrix_new, d_rs_matrix, d_fluid_mask, d_boundary_type, d_border_position,
+                                      _gridParams, _num_gpu_iterations);
+                iter += _num_gpu_iterations;
 
-            // TODO : CUDA aware MPI
-            Communication::communicate(_field.p_matrix());
+                // TODO : CUDA aware MPI
+                Communication::communicate(_field.p_matrix());
+            #else
+                residual = _pressure_solver->solve(_field, _grid, _boundaries);
+                Communication::communicate(_field.p_matrix());
+                iter += 1;
+            #endif
+
             residual = Communication::reduce_sum(residual);
             residual = std::sqrt(residual);
-            #endif
         }
         iter_vec.push_back(iter);
+        res_vec.push_back(residual);
 
         #ifdef __CUDACC__
         cudaMemcpy(p_matrix, d_p_matrix, size_linear * sizeof(double), cudaMemcpyDeviceToHost);
@@ -360,7 +367,7 @@ void Case::simulate() {
         }
 
     }
-    // output_csv(iter_vec);
+    output_csv(iter_vec, res_vec);
 
     if (my_rank_global == 0) {
         std::cout << "\n\n[100% completed] Simulation completed successfully!\n" << std::endl;
@@ -372,22 +379,35 @@ void Case::simulate() {
 
 }
 
-void Case::output_csv(const std::vector<int> &vec) {
-    std::string filename = _dict_name + "/iterations.csv";
+void Case::output_csv(const std::vector<int> &vec1, const std::vector<double> &vec2){
+    std::string filename1 = _dict_name + "/iterations.csv";
+    std::string filename2 = _dict_name + "/residuals.csv";
 
-    std::ofstream file(filename);
-    if (file.is_open()) {
-        for (size_t i = 0; i < vec.size(); ++i) {
-            file << vec[i];
-            if (i != vec.size() - 1) {
-                file << ",";
+    std::ofstream file1(filename1);
+    std::ofstream file2(filename2);
+    if (file1.is_open()) {
+        for (size_t i = 0; i < vec1.size(); ++i) {
+            file1 << vec1[i];
+            if (i != vec1.size() - 1) {
+                file1 << ",";
             }
         }
-        file.close();
-    } else {
-        std::cerr << "Unable to open file: " << filename << std::endl;
+        file1.close();
+        if (file2.is_open()) {
+            for (size_t i = 0; i < vec2.size(); ++i) {
+                file2 << vec2[i];
+                if (i != vec2.size() - 1) {
+                    file2 << ",";
+                }
+            }
+            file2.close();
+        } else {
+            std::cerr << "Unable to open file." << std::endl;
+        }
+
     }
 }
+
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
